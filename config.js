@@ -4,7 +4,7 @@ const Config = {
   // Backend Configuration
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxm93dTLvnyQOLIvVQY5Q_-QrVfVylUhdKXchKyoHK-GIRMSDkvxkMleYW5FYxThfcM/exec',
   
-  // API Endpoints
+   // API Endpoints
   ENDPOINTS: {
     WORLDS: 'worlds',
     ARTICLES: 'articles', 
