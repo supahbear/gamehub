@@ -50,12 +50,10 @@ class TTRPGHub {
     const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
     Config.log('Loading worlds from:', url);
 
+    // In your script.js, replace the fetch call with this simpler version:
     const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+      method: 'GET'
+      // Remove the headers that trigger preflight
     });
 
     if (!response.ok) {
