@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTRPG World Hub</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TTRPG World Hub</h1>
+            <p class="subtitle">Your gateway to adventure</p>
+        </header>
+
+        <main>
+            <section class="landing-screen">
+                <h2>Where are you going?</h2>
+                <div class="worlds-grid" id="worldsGrid">
+                    <!-- Worlds will be loaded dynamically -->
+                    <div class="world-card loading">Loading worlds...</div>
+                </div>
+            </section>
+
+            <section class="mode-selection" id="modeSelection" style="display: none;">
+                <h2>What do you want to do?</h2>
+                <div class="mode-buttons">
+                    <button class="mode-btn play-btn" data-mode="play">
+                        <span class="mode-icon">🎲</span>
+                        <span class="mode-text">Play</span>
+                        <small>Join sessions, roll dice, track characters</small>
+                    </button>
+                    <button class="mode-btn read-btn" data-mode="read">
+                        <span class="mode-icon">📖</span>
+                        <span class="mode-text">Read</span>
+                        <small>Browse lore, rules, and stories</small>
+                    </button>
+                    <button class="mode-btn build-btn" data-mode="build">
+                        <span class="mode-icon">🔨</span>
+                        <span class="mode-text">Build</span>
+                        <small>Create content, edit worlds</small>
+                    </button>
+                </div>
+                <button class="back-btn" id="backBtn">← Back to Worlds</button>
+            </section>
+
+            <section class="world-hub" id="worldHub" style="display: none;">
+                <div class="hub-header">
+                    <h2 id="currentWorldName">World Name</h2>
+                    <span class="current-mode" id="currentMode">Mode: Play</span>
+                </div>
+                <div class="hub-content" id="hubContent">
+                    <!-- Dynamic content based on world and mode -->
+                </div>
+                <button class="back-btn" id="hubBackBtn">← Back to Mode Selection</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
