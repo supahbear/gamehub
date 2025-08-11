@@ -50,39 +50,49 @@ class TTRPGHub {
     const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
     Config.log('Loading worlds from:', url);
 
-    // In your script.js, replace the fetch call with this simpler version:
-    const response = await fetch(url, {
-      method: 'GET'
-      // Remove the headers that trigger preflight
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-    }
-
-    const responseText = await response.text();
-    let data;
-    
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
-    }
-
-    if (data.success && Array.isArray(data.data)) {
-      this.worlds = data.data.map((world, index) => ({
-        id: world.id || world.key || `world-${index}`,
-        name: world.name || world.world_name || 'Unnamed World',
-        description: world.description || world.world_description || 'No description available',
-        system: world.system || world.dice_set || world.game_system || 'Unknown System'
-      }));
+    // Use JSONP instead of fetch to bypass CORS completely
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const callbackName = 'jsonp_callback_' + Date.now();
       
-      Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
-      this.renderWorlds();
-    } else {
-      throw new Error(`Unexpected response format: ${JSON.stringify(data).substring(0, 200)}`);
-    }
+      // Create global callback function
+      window[callbackName] = (data) => {
+        // Cleanup
+        document.head.removeChild(script);
+        delete window[callbackName];
+        
+        try {
+          if (data.success && Array.isArray(data.data)) {
+            this.worlds = data.data.map((world, index) => ({
+              id: world.id || world.key || `world-${index}`,
+              name: world.name || world.world_name || 'Unnamed World',
+              description: world.description || world.world_description || 'No description available',
+              system: world.system || world.dice_set || world.game_system || 'Unknown System'
+            }));
+            
+            Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
+            this.renderWorlds();
+            resolve();
+          } else {
+            reject(new Error('Unexpected response format'));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      // Handle script loading errors
+      script.onerror = () => {
+        document.head.removeChild(script);
+        delete window[callbackName];
+        reject(new Error('JSONP request failed'));
+      };
+      
+      // Add callback parameter to URL
+      const separator = url.includes('?') ? '&' : '?';
+      script.src = url + separator + 'callback=' + callbackName;
+      document.head.appendChild(script);
+    });
   }
 
   useFallbackWorlds() {

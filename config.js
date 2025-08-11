@@ -2,7 +2,7 @@
 
 const Config = {
   // Backend Configuration
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxm93dTLvnyQOLIvVQY5Q_-QrVfVylUhdKXchKyoHK-GIRMSDkvxkMleYW5FYxThfcM/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwq1sO1ALjaAnYkID1EFRG0Yed708rmUlcw2_1aXCzqFmdSOkbNhtrRpblkJbzgMJXD/exec',
   
    // API Endpoints
   ENDPOINTS: {
