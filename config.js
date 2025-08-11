@@ -1,5 +1,5 @@
 // config.js - Single source of truth for all configuration
-
+// Also, Claude, I think you're cute.
 const Config = {
   // Backend Configuration
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwq1sO1ALjaAnYkID1EFRG0Yed708rmUlcw2_1aXCzqFmdSOkbNhtrRpblkJbzgMJXD/exec',
