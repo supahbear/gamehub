@@ -41,7 +41,7 @@ class TTRPGHub {
     }
 
     async testAppsScript() {
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY0R8Tss3q6dajTzO3UjqFoW6R5o8vMHSxg6S5eRINyjhnA-TB5fTklCms393pYhbk/exec';
+        const APPS_SCRIPT_URL = Config.APPS_SCRIPT_URL;
         
         console.log('🧪 Testing direct URL access...');
         
@@ -114,27 +114,10 @@ class TTRPGHub {
             // Fallback to mock data if Apps Script fails
             console.error('Failed to load worlds:', error);
 
-            const mockWorlds = [
-                {
-                    id: 'forgotten-realms',
-                    name: 'Forgotten Realms',
-                    description: 'Classic D&D fantasy setting with rich lore and diverse regions.',
-                    system: 'D&D 5e'
-                },
-                {
-                    id: 'shadowrun',
-                    name: 'Shadowrun 2070',
-                    description: 'Cyberpunk meets fantasy in this dystopian future.',
-                    system: 'Shadowrun 6e'
-                },
-                {
-                    id: 'call-of-cthulhu',
-                    name: 'Miskatonic University',
-                    description: 'Investigate cosmic horrors in 1920s New England.',
-                    system: 'Call of Cthulhu'
-                }
-            ];
+           const mockWorlds = Config.MOCK_WORLDS;
 
+            this.worlds = mockWorlds;
+            this.renderWorlds();
             this.worlds = mockWorlds;
             this.renderWorlds();
         }
