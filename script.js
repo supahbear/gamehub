@@ -45,55 +45,58 @@ class TTRPGHub {
       this.useFallbackWorlds();
     }
   }
+  // ========== JSONP Helper ==========
+jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const callbackName = 'jsonp_callback_' + Date.now();
+    
+    // Create global callback function
+    window[callbackName] = (data) => {
+      // Cleanup
+      document.head.removeChild(script);
+      delete window[callbackName];
+      resolve(data);
+    };
+    
+    // Handle script loading errors
+    script.onerror = () => {
+      document.head.removeChild(script);
+      delete window[callbackName];
+      reject(new Error('JSONP request failed'));
+    };
+    
+    // Add callback parameter to URL
+    const separator = url.includes('?') ? '&' : '?';
+    script.src = url + separator + 'callback=' + callbackName;
+    document.head.appendChild(script);
+  });
+}
 
   async loadWorldsFromAppsScript() {
-    const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
-    Config.log('Loading worlds from:', url);
+  const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
+  Config.log('Loading worlds from:', url);
 
-    // Use JSONP instead of fetch to bypass CORS completely
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      const callbackName = 'jsonp_callback_' + Date.now();
+  try {
+    const data = await this.jsonp(url);
+    
+    if (data.success && Array.isArray(data.data)) {
+      this.worlds = data.data.map((world, index) => ({
+        id: world.id || world.key || `world-${index}`,
+        name: world.name || world.world_name || 'Unnamed World',
+        description: world.description || world.world_description || 'No description available',
+        system: world.system || world.dice_set || world.game_system || 'Unknown System'
+      }));
       
-      // Create global callback function
-      window[callbackName] = (data) => {
-        // Cleanup
-        document.head.removeChild(script);
-        delete window[callbackName];
-        
-        try {
-          if (data.success && Array.isArray(data.data)) {
-            this.worlds = data.data.map((world, index) => ({
-              id: world.id || world.key || `world-${index}`,
-              name: world.name || world.world_name || 'Unnamed World',
-              description: world.description || world.world_description || 'No description available',
-              system: world.system || world.dice_set || world.game_system || 'Unknown System'
-            }));
-            
-            Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
-            this.renderWorlds();
-            resolve();
-          } else {
-            reject(new Error('Unexpected response format'));
-          }
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      // Handle script loading errors
-      script.onerror = () => {
-        document.head.removeChild(script);
-        delete window[callbackName];
-        reject(new Error('JSONP request failed'));
-      };
-      
-      // Add callback parameter to URL
-      const separator = url.includes('?') ? '&' : '?';
-      script.src = url + separator + 'callback=' + callbackName;
-      document.head.appendChild(script);
-    });
+      Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
+      this.renderWorlds();
+    } else {
+      throw new Error('Unexpected response format');
+    }
+  } catch (error) {
+    throw new Error(`JSONP request failed: ${error.message}`);
   }
+}
 
   useFallbackWorlds() {
     this.worlds = Config.MOCK_WORLDS;
@@ -339,13 +342,7 @@ class TTRPGHub {
   async loadArticles(worldId) {
     try {
       const url = Config.getUrl(Config.ENDPOINTS.ARTICLES, { world_id: worldId });
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await this.jsonp(url);
       return data.success ? data.data : [];
     } catch (error) {
       Config.error('Failed to load articles:', error);
@@ -356,13 +353,7 @@ class TTRPGHub {
   async loadCategories(worldId) {
     try {
       const url = Config.getUrl(Config.ENDPOINTS.CATEGORIES, { world_id: worldId });
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await this.jsonp(url);
       return data.success ? data.data : [];
     } catch (error) {
       Config.error('Failed to load categories:', error);
