@@ -1,4 +1,4 @@
-// article-viewer.js - Article viewing functionality with flexible layouts
+// article-viewer.js - Fixed modal display issues
 class ArticleViewer {
   constructor(hub) {
     this.hub = hub;
@@ -111,10 +111,10 @@ class ArticleViewer {
       return 'location'; // Header image layout for locations
     }
     if (categoryKey.includes('mertech') || categoryKey.includes('tech') || categoryKey.includes('gear')) {
-      return 'tech'; // Compact layout for tech/gear
+      return 'tech'; // Side-by-side layout for tech
     }
     if (categoryKey.includes('mergear') || categoryKey.includes('item') || categoryKey.includes('equipment')) {
-      return 'gear'; // Item-focused layout
+      return 'gear'; // Side-by-side layout for gear
     }
     if (categoryKey.includes('merlore') || categoryKey.includes('lore') || categoryKey.includes('history')) {
       return 'lore'; // Text-focused layout
@@ -243,7 +243,6 @@ class ArticleViewer {
         `;
 
       default:
-        // Fallback to current layout
         return `
           <div class="article-card layout-default" data-article-id="${article.id}">
             ${article.image_url ? `<img src="${article.image_url}" class="article-thumbnail" alt="${article.title}" loading="lazy">` : ''}
@@ -284,14 +283,15 @@ class ArticleViewer {
 
   renderArticleModal() {
     return `
-      <div id="articleModalOverlay"></div>
-      <div id="articleModal" class="article-modal">
-        <div class="modal-header">
-          <h2 id="modalTitle">Article Title</h2>
-          <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div id="modalContent">Loading...</div>
+      <div id="articleModal" class="article-modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="modalTitle">Article Title</h2>
+            <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id="modalContent">Loading...</div>
+          </div>
         </div>
       </div>
     `;
@@ -422,7 +422,7 @@ class ArticleViewer {
     }
 
     if (modal) {
-      modal.style.display = 'block';
+      modal.style.display = 'flex';
       document.body.style.overflow = 'hidden'; // Prevent background scroll
     }
   }
@@ -669,6 +669,11 @@ class ArticleViewer {
         border: 2px solid rgba(76, 175, 80, 0.3);
       }
 
+      .gear-content {
+        flex: 1;
+        min-width: 0;
+      }
+
       /* Text Layout - Minimal image */
       .layout-text {
         padding: 20px;
@@ -756,7 +761,7 @@ class ArticleViewer {
         color: #a0a0a0;
       }
 
-      /* Modal Styles */
+      /* Modal Styles - Fixed */
       .article-modal {
         position: fixed;
         top: 0;
@@ -765,7 +770,7 @@ class ArticleViewer {
         height: 100%;
         background: rgba(0, 0, 0, 0.8);
         z-index: 1000;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
       }
