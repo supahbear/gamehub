@@ -196,15 +196,33 @@ h2 {
 /* FIXED MODAL STYLES */
 
 /* Modal Overlay - Full screen background */
+#modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(17, 17, 17, 0.7);
+  backdrop-filter: blur(5px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9998;
+  transition: opacity 0.3s ease;
+}
+
+#modalOverlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Modal Container - Full screen positioning */
 .article-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
-  z-index: 10000;
+  z-index: 9999;
   
   /* Hidden by default */
   display: none;
@@ -232,9 +250,9 @@ h2 {
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   
-  /* Prevent the modal content from being blurred */
+  /* Ensure modal is always on top */
   position: relative;
-  z-index: 10001;
+  z-index: 10000;
 }
 
 /* Modal Header */
@@ -316,14 +334,15 @@ h2 {
   background: #222;
 }
 
-/* Blur effect for background content - more specific targeting */
-body.modal-active .container > *:not(.article-modal),
+/* Blur effect for background content - specific targeting like the working example */
+body.modal-active .container > *:not(#modalOverlay):not(.article-modal),
 body.modal-active header {
   filter: blur(5px);
   pointer-events: none;
 }
 
-/* Ensure modal content is never blurred */
+/* Ensure modal overlay and content are never blurred */
+body.modal-active #modalOverlay,
 body.modal-active .article-modal,
 body.modal-active .modal-content {
   filter: none !important;

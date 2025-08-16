@@ -283,6 +283,7 @@ class ArticleViewer {
 
   renderArticleModal() {
     return `
+      <div id="modalOverlay"></div>
       <div id="articleModal" class="article-modal">
         <div class="modal-content">
           <div class="modal-header">
@@ -370,12 +371,20 @@ class ArticleViewer {
 
     // Modal background click handling - ONLY close on background click, not content click
     const modal = document.getElementById('articleModal');
+    const overlay = document.getElementById('modalOverlay');
+    
     if (modal) {
       modal.addEventListener('click', (e) => {
         // Only close if clicking the modal overlay itself, not the content
         if (e.target === modal) {
           this.closeModal();
         }
+      });
+    }
+
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        this.closeModal();
       });
     }
 
@@ -415,6 +424,7 @@ class ArticleViewer {
     if (!article) return;
 
     const modal = document.getElementById('articleModal');
+    const overlay = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
 
@@ -434,7 +444,8 @@ class ArticleViewer {
       }
     }
 
-    if (modal) {
+    if (modal && overlay) {
+      overlay.classList.add('show');
       modal.classList.add('show');
       document.body.classList.add('modal-active');
       document.body.style.overflow = 'hidden';
@@ -443,7 +454,10 @@ class ArticleViewer {
 
   closeModal() {
     const modal = document.getElementById('articleModal');
-    if (modal) {
+    const overlay = document.getElementById('modalOverlay');
+    
+    if (modal && overlay) {
+      overlay.classList.remove('show');
       modal.classList.remove('show');
       document.body.classList.remove('modal-active');
       document.body.style.overflow = 'auto';
