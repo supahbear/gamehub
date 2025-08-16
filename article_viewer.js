@@ -422,9 +422,8 @@ class ArticleViewer {
     }
 
     if (modal) {
-      modal.style.display = 'flex !important';
-      modal.style.setProperty('display', 'flex', 'important');
-      document.body.style.overflow = 'hidden'; // Prevent background scroll
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
     }
   }
 
@@ -762,18 +761,17 @@ class ArticleViewer {
         color: #a0a0a0;
       }
 
-      /* Modal Styles - Fixed with higher specificity */
+      /* Modal Styles - Clean approach */
       .article-modal {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        z-index: 10000 !important;
-        display: none !important;
-        align-items: center !important;
-        justify-content: center !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
       }
 
       .modal-content {
