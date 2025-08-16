@@ -357,24 +357,34 @@ class ArticleViewer {
       clearFilters.addEventListener('click', () => this.clearFilters());
     }
 
-    // Article cards
+    // Article cards - only bind to cards that exist now
     document.querySelectorAll('.article-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        const articleId = e.currentTarget.dataset.articleId;
-        this.openArticle(articleId);
+        // Only open if body doesn't have modal-active class
+        if (!document.body.classList.contains('modal-active')) {
+          const articleId = e.currentTarget.dataset.articleId;
+          this.openArticle(articleId);
+        }
       });
     });
 
-    // Modal close on background click
+    // Modal background click handling - ONLY close on background click, not content click
     const modal = document.getElementById('articleModal');
     if (modal) {
       modal.addEventListener('click', (e) => {
-        // Only close if clicking the modal background, not the content
+        // Only close if clicking the modal overlay itself, not the content
         if (e.target === modal) {
           this.closeModal();
         }
       });
     }
+
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
+        this.closeModal();
+      }
+    });
   }
 
   refreshArticleGrid() {
@@ -425,7 +435,6 @@ class ArticleViewer {
     }
 
     if (modal) {
-      // Use your CSS approach: show class + opacity
       modal.classList.add('show');
       document.body.classList.add('modal-active');
       document.body.style.overflow = 'hidden';
@@ -767,83 +776,6 @@ class ArticleViewer {
         color: #a0a0a0;
       }
 
-      /* Modal Styles - Clean approach */
-      .article-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .modal-content {
-        background: #1a1a2e;
-        border-radius: 10px;
-        max-width: 800px;
-        max-height: 90vh;
-        width: 90%;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      }
-
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .modal-header h2 {
-        margin: 0;
-        color: #ffd700;
-      }
-
-      .close-btn {
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 3px;
-      }
-
-      .close-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .modal-body {
-        padding: 20px;
-        max-height: 70vh;
-        overflow-y: auto;
-        line-height: 1.6;
-      }
-
-      .article-image {
-        width: 100%;
-        max-height: 300px;
-        object-fit: cover;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        display: block;
-      }
-
-      .modal-body h1, .modal-body h2, .modal-body h3 {
-        color: #ffd700;
-        margin-top: 20px;
-        margin-bottom: 10px;
-      }
-
-      .modal-body p {
-        margin-bottom: 15px;
-        color: #c0c0c0;
-      }
-
       @media (max-width: 768px) {
         .article-filters {
           flex-direction: column;
@@ -851,11 +783,6 @@ class ArticleViewer {
 
         .filter-group {
           width: 100%;
-        }
-
-        .modal-content {
-          width: 95%;
-          max-height: 95vh;
         }
 
         .articles-grid {
