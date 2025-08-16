@@ -45,58 +45,88 @@ class TTRPGHub {
       this.useFallbackWorlds();
     }
   }
+
   // ========== JSONP Helper ==========
-jsonp(url) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    const callbackName = 'jsonp_callback_' + Date.now();
-    
-    // Create global callback function
-    window[callbackName] = (data) => {
-      // Cleanup
-      document.head.removeChild(script);
-      delete window[callbackName];
-      resolve(data);
-    };
-    
-    // Handle script loading errors
-    script.onerror = () => {
-      document.head.removeChild(script);
-      delete window[callbackName];
-      reject(new Error('JSONP request failed'));
-    };
-    
-    // Add callback parameter to URL
-    const separator = url.includes('?') ? '&' : '?';
-    script.src = url + separator + 'callback=' + callbackName;
-    document.head.appendChild(script);
-  });
-}
+  jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      // Create global callback function FIRST
+      window[callbackName] = (data) => {
+        // Cleanup
+        try {
+          document.head.removeChild(script);
+        } catch (e) {
+          // Script might already be removed
+        }
+        delete window[callbackName];
+        resolve(data);
+      };
+      
+      const script = document.createElement('script');
+      
+      // Handle script loading errors
+      script.onerror = () => {
+        try {
+          document.head.removeChild(script);
+        } catch (e) {
+          // Script might already be removed
+        }
+        delete window[callbackName];
+        reject(new Error('JSONP request failed - script load error'));
+      };
+      
+      // Handle timeout
+      const timeout = setTimeout(() => {
+        try {
+          document.head.removeChild(script);
+        } catch (e) {
+          // Script might already be removed
+        }
+        delete window[callbackName];
+        reject(new Error('JSONP request timed out'));
+      }, 10000); // 10 second timeout
+      
+      // Clear timeout when callback succeeds
+      const originalCallback = window[callbackName];
+      window[callbackName] = (data) => {
+        clearTimeout(timeout);
+        originalCallback(data);
+      };
+      
+      // Add callback parameter to URL
+      const separator = url.includes('?') ? '&' : '?';
+      script.src = url + separator + 'callback=' + callbackName;
+      
+      Config.log('JSONP request:', script.src);
+      document.head.appendChild(script);
+    });
+  }
 
   async loadWorldsFromAppsScript() {
-  const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
-  Config.log('Loading worlds from:', url);
+    const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
+    Config.log('Loading worlds from:', url);
 
-  try {
-    const data = await this.jsonp(url);
-    
-    if (data.success && Array.isArray(data.data)) {
-      this.worlds = data.data.map((world, index) => ({
-        id: world.id || world.key || `world-${index}`,
-        name: world.name || world.world_name || 'Unnamed World',
-        description: world.description || world.world_description || 'No description available',
-        system: world.system || world.dice_set || world.game_system || 'Unknown System'
-      }));
+    try {
+      const data = await this.jsonp(url);
       
-      Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
-      this.renderWorlds();
-    } else {
-      throw new Error('Unexpected response format');
+      if (data.success && Array.isArray(data.data)) {
+        this.worlds = data.data.map((world, index) => ({
+          id: world.id || world.key || `world-${index}`,
+          name: world.name || world.world_name || 'Unnamed World',
+          description: world.description || world.world_description || 'No description available',
+          system: world.system || world.dice_set || world.game_system || 'Unknown System'
+        }));
+        
+        Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
+        this.renderWorlds();
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (error) {
+      throw new Error(`JSONP request failed: ${error.message}`);
     }
-  } catch (error) {
-    throw new Error(`JSONP request failed: ${error.message}`);
   }
-}
 
   useFallbackWorlds() {
     this.worlds = Config.MOCK_WORLDS;
