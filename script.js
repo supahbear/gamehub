@@ -204,7 +204,7 @@ jsonp(url) {
   }
 
   // ========== Hub Content ==========
-  loadHubContent() {
+  async loadHubContent() {
     const hubContent = document.getElementById('hubContent');
     if (!hubContent) return;
 
@@ -215,7 +215,22 @@ jsonp(url) {
     };
 
     const contentFunction = contentMap[this.currentMode];
-    hubContent.innerHTML = contentFunction ? contentFunction() : '<p>Unknown mode selected.</p>';
+    if (contentFunction) {
+      try {
+        hubContent.innerHTML = '<div class="loading">Loading...</div>';
+        const content = await contentFunction();
+        hubContent.innerHTML = content;
+        
+        if (this.currentMode === 'read' && this.articleViewer) {
+          this.articleViewer.setupEventListeners();
+        }
+      } catch (error) {
+        hubContent.innerHTML = `<div class="error">Error loading ${this.currentMode} mode: ${error.message}</div>`;
+        Config.error('Error loading hub content:', error);
+      }
+    } else {
+      hubContent.innerHTML = '<p>Unknown mode selected.</p>';
+    }
   }
 
   getPlayModeContent() {
@@ -227,13 +242,13 @@ jsonp(url) {
     ], '#4CAF50');
   }
 
-  getReadModeContent() {
-    return this.createModeContent('📖 Read Mode', [
-      { title: 'World Lore', desc: 'History and background', action: 'World lore coming soon!' },
-      { title: 'NPCs & Factions', desc: 'Important characters', action: 'NPCs coming soon!' },
-      { title: 'Rules Reference', desc: 'System mechanics', action: 'Rules coming soon!' },
-      { title: 'Campaign Journal', desc: 'Story so far', action: 'Journal coming soon!' }
-    ], '#2196F3');
+  async getReadModeContent() {
+    if (!this.articleViewer) {
+      this.articleViewer = new ArticleViewer(this);
+      window.articleViewer = this.articleViewer;
+    }
+    
+    return await this.articleViewer.renderReadMode(this.currentWorld.id);
   }
 
   getBuildModeContent() {

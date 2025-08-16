@@ -1,0 +1,538 @@
+// article-viewer.js - Article viewing functionality
+class ArticleViewer {
+  constructor(hub) {
+    this.hub = hub;
+    this.currentArticles = [];
+    this.currentCategories = [];
+    this.currentFilters = {
+      category: '',
+      tag: '',
+      search: ''
+    };
+  }
+
+  async loadArticleData(worldId) {
+    try {
+      const [articles, categories] = await Promise.all([
+        this.hub.loadArticles(worldId),
+        this.hub.loadCategories(worldId)
+      ]);
+      
+      this.currentArticles = articles;
+      this.currentCategories = categories;
+      
+      Config.log(`Loaded ${articles.length} articles, ${categories.length} categories`);
+      return { articles, categories };
+    } catch (error) {
+      Config.error('Failed to load article data:', error);
+      return { articles: [], categories: [] };
+    }
+  }
+
+  async renderReadMode(worldId) {
+    await this.loadArticleData(worldId);
+
+    if (this.currentArticles.length === 0) {
+      return this.renderEmptyState();
+    }
+
+    return `
+      <div class="article-viewer">
+        ${this.renderFilters()}
+        ${this.renderArticleGrid()}
+        ${this.renderArticleModal()}
+      </div>
+      <style>
+        ${this.getArticleViewerStyles()}
+      </style>
+    `;
+  }
+
+  renderEmptyState() {
+    return `
+      <div class="empty-state">
+        <h3>📚 No Articles Yet</h3>
+        <p>This world doesn't have any published articles yet.</p>
+        <p>Switch to Build mode to start creating content!</p>
+      </div>
+    `;
+  }
+
+  renderFilters() {
+    const categoryOptions = this.currentCategories
+      .map(cat => `<option value="${cat.id}">${cat.name}</option>`)
+      .join('');
+
+    const allTags = [...new Set(
+      this.currentArticles
+        .flatMap(article => (article.tags_csv || '').split(','))
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+    )].sort();
+
+    const tagOptions = allTags
+      .map(tag => `<option value="${tag}">${tag}</option>`)
+      .join('');
+
+    return `
+      <div class="article-filters">
+        <div class="filter-group">
+          <input type="text" 
+                 id="articleSearch" 
+                 placeholder="Search articles..." 
+                 value="${this.currentFilters.search}">
+        </div>
+        <div class="filter-group">
+          <select id="categoryFilter">
+            <option value="">All Categories</option>
+            ${categoryOptions}
+          </select>
+        </div>
+        <div class="filter-group">
+          <select id="tagFilter">
+            <option value="">All Tags</option>
+            ${tagOptions}
+          </select>
+        </div>
+        <button id="clearFilters" class="clear-btn">Clear All</button>
+      </div>
+    `;
+  }
+
+  renderArticleGrid() {
+    const filteredArticles = this.filterArticles();
+    
+    if (filteredArticles.length === 0) {
+      return `
+        <div class="no-results">
+          <p>No articles match your current filters.</p>
+          <button onclick="window.articleViewer.clearFilters()">Clear Filters</button>
+        </div>
+      `;
+    }
+
+    const articleCards = filteredArticles.map(article => {
+      const category = this.currentCategories.find(cat => cat.id == article.category_id);
+      const tags = (article.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
+      
+      return `
+        <div class="article-card" data-article-id="${article.id}">
+          <div class="article-header">
+            <h4>${article.title}</h4>
+            ${category ? `<span class="category-badge">${category.name}</span>` : ''}
+          </div>
+          <p class="article-summary">${article.summary || 'No summary available'}</p>
+          ${tags.length > 0 ? `
+            <div class="article-tags">
+              ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
+          ` : ''}
+          <div class="article-meta">
+            <small>Updated: ${this.formatDate(article.updated_at)}</small>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="articles-grid">
+        ${articleCards}
+      </div>
+    `;
+  }
+
+  renderArticleModal() {
+    return `
+      <div id="articleModal" class="article-modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="modalTitle">Article Title</h2>
+            <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id="modalContent">Loading...</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  filterArticles() {
+    return this.currentArticles.filter(article => {
+      // Search filter
+      if (this.currentFilters.search) {
+        const searchTerm = this.currentFilters.search.toLowerCase();
+        const searchableText = `${article.title} ${article.summary} ${article.content_md}`.toLowerCase();
+        if (!searchableText.includes(searchTerm)) return false;
+      }
+
+      // Category filter
+      if (this.currentFilters.category && article.category_id != this.currentFilters.category) {
+        return false;
+      }
+
+      // Tag filter
+      if (this.currentFilters.tag) {
+        const articleTags = (article.tags_csv || '').split(',').map(t => t.trim().toLowerCase());
+        if (!articleTags.includes(this.currentFilters.tag.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  setupEventListeners() {
+    // Search input
+    const searchInput = document.getElementById('articleSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.currentFilters.search = e.target.value;
+        this.refreshArticleGrid();
+      });
+    }
+
+    // Category filter
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', (e) => {
+        this.currentFilters.category = e.target.value;
+        this.refreshArticleGrid();
+      });
+    }
+
+    // Tag filter
+    const tagFilter = document.getElementById('tagFilter');
+    if (tagFilter) {
+      tagFilter.addEventListener('change', (e) => {
+        this.currentFilters.tag = e.target.value;
+        this.refreshArticleGrid();
+      });
+    }
+
+    // Clear filters
+    const clearFilters = document.getElementById('clearFilters');
+    if (clearFilters) {
+      clearFilters.addEventListener('click', () => this.clearFilters());
+    }
+
+    // Article cards
+    document.querySelectorAll('.article-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const articleId = e.currentTarget.dataset.articleId;
+        this.openArticle(articleId);
+      });
+    });
+
+    // Modal close on background click
+    const modal = document.getElementById('articleModal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeModal();
+      });
+    }
+  }
+
+  refreshArticleGrid() {
+    const gridContainer = document.querySelector('.articles-grid');
+    if (gridContainer) {
+      gridContainer.outerHTML = this.renderArticleGrid();
+      this.setupEventListeners();
+    }
+  }
+
+  clearFilters() {
+    this.currentFilters = { category: '', tag: '', search: '' };
+    
+    // Reset form elements
+    const searchInput = document.getElementById('articleSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const tagFilter = document.getElementById('tagFilter');
+    
+    if (searchInput) searchInput.value = '';
+    if (categoryFilter) categoryFilter.value = '';
+    if (tagFilter) tagFilter.value = '';
+    
+    this.refreshArticleGrid();
+  }
+
+  openArticle(articleId) {
+    const article = this.currentArticles.find(a => a.id == articleId);
+    if (!article) return;
+
+    const modal = document.getElementById('articleModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('modalContent');
+
+    if (title) title.textContent = article.title;
+    if (content) {
+      // Simple markdown-to-HTML conversion (basic)
+      const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
+      content.innerHTML = htmlContent;
+    }
+
+    if (modal) {
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+  }
+
+  closeModal() {
+    const modal = document.getElementById('articleModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  markdownToHtml(markdown) {
+    if (!markdown) return 'No content available';
+    
+    // Basic markdown conversion - you might want a proper library later
+    return markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^(.*)/, '<p>$1</p>');
+  }
+
+  formatDate(dateString) {
+    if (!dateString) return 'Unknown';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch {
+      return 'Invalid date';
+    }
+  }
+
+  getArticleViewerStyles() {
+    return `
+      .article-viewer {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #a0a0a0;
+      }
+
+      .article-filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+      }
+
+      .filter-group {
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .filter-group input, .filter-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 14px;
+      }
+
+      .filter-group input::placeholder {
+        color: #a0a0a0;
+      }
+
+      .clear-btn {
+        padding: 10px 20px;
+        background: #ff6b35;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .clear-btn:hover {
+        background: #ff5722;
+      }
+
+      .articles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .article-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .article-card:hover {
+        transform: translateY(-3px);
+        border-color: #2196F3;
+        box-shadow: 0 5px 20px rgba(33, 150, 243, 0.3);
+      }
+
+      .article-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+      }
+
+      .article-header h4 {
+        margin: 0;
+        color: #ffd700;
+        font-size: 1.2rem;
+      }
+
+      .category-badge {
+        background: #2196F3;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .article-summary {
+        color: #c0c0c0;
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.4;
+      }
+
+      .article-tags {
+        margin-bottom: 10px;
+      }
+
+      .tag {
+        display: inline-block;
+        background: rgba(255, 215, 0, 0.2);
+        color: #ffd700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 12px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+      }
+
+      .article-meta {
+        color: #888;
+        font-size: 12px;
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #a0a0a0;
+      }
+
+      .article-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: #1a1a2e;
+        border-radius: 10px;
+        max-width: 800px;
+        max-height: 90vh;
+        width: 90%;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        color: #ffd700;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 3px;
+      }
+
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .modal-body {
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+        line-height: 1.6;
+      }
+
+      .modal-body h1, .modal-body h2, .modal-body h3 {
+        color: #ffd700;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      .modal-body p {
+        margin-bottom: 15px;
+        color: #c0c0c0;
+      }
+
+      @media (max-width: 768px) {
+        .article-filters {
+          flex-direction: column;
+        }
+
+        .filter-group {
+          width: 100%;
+        }
+
+        .modal-content {
+          width: 95%;
+          max-height: 95vh;
+        }
+
+        .articles-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+  }
+}
+
+// Export for use in main hub
+window.ArticleViewer = ArticleViewer;
