@@ -283,7 +283,7 @@ class ArticleViewer {
 
   renderArticleModal() {
     return `
-      <div id="articleModal" class="article-modal" style="display: none;">
+      <div id="articleModal" class="article-modal">
         <div class="modal-content">
           <div class="modal-header">
             <h2 id="modalTitle">Article Title</h2>
