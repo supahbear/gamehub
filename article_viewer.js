@@ -40,8 +40,8 @@ class ArticleViewer {
       <div class="article-viewer">
         ${this.renderFilters()}
         ${this.renderArticleGrid()}
-        ${this.renderArticleModal()}
       </div>
+      ${this.renderArticleModal()}
       <style>
         ${this.getArticleViewerStyles()}
       </style>
