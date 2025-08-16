@@ -1,4 +1,4 @@
-// article-viewer.js - Article viewing functionality with image support
+// article-viewer.js - Article viewing functionality with flexible layouts
 class ArticleViewer {
   constructor(hub) {
     this.hub = hub;
@@ -99,6 +99,168 @@ class ArticleViewer {
     `;
   }
 
+  getLayoutType(categoryId) {
+    const category = this.currentCategories.find(cat => cat.id == categoryId);
+    const categoryKey = (category?.key || category?.name || '').toLowerCase();
+    
+    // Define layout rules based on your category keys
+    if (categoryKey.includes('merchar') || categoryKey.includes('char') || categoryKey.includes('npc')) {
+      return 'character'; // Side-by-side layout for characters
+    }
+    if (categoryKey.includes('merloc') || categoryKey.includes('location') || categoryKey.includes('place')) {
+      return 'location'; // Header image layout for locations
+    }
+    if (categoryKey.includes('mertech') || categoryKey.includes('tech') || categoryKey.includes('gear')) {
+      return 'tech'; // Compact layout for tech/gear
+    }
+    if (categoryKey.includes('mergear') || categoryKey.includes('item') || categoryKey.includes('equipment')) {
+      return 'gear'; // Item-focused layout
+    }
+    if (categoryKey.includes('merlore') || categoryKey.includes('lore') || categoryKey.includes('history')) {
+      return 'lore'; // Text-focused layout
+    }
+    
+    return 'default'; // Fallback layout
+  }
+
+  renderArticleCard(article) {
+    const category = this.currentCategories.find(cat => cat.id == article.category_id);
+    const tags = (article.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
+    const layoutType = this.getLayoutType(article.category_id);
+    
+    // Common elements
+    const categoryBadge = category ? `<span class="category-badge">${category.name}</span>` : '';
+    const tagsHtml = tags.length > 0 ? `
+      <div class="article-tags">
+        ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+      </div>
+    ` : '';
+    const metaHtml = `
+      <div class="article-meta">
+        <small>Updated: ${this.formatDate(article.updated_at)}</small>
+      </div>
+    `;
+
+    switch (layoutType) {
+      case 'character':
+        return `
+          <div class="article-card layout-character" data-article-id="${article.id}">
+            <div class="character-layout">
+              ${article.image_url ? `
+                <div class="character-image">
+                  <img src="${article.image_url}" alt="${article.title}" loading="lazy">
+                </div>
+              ` : '<div class="character-image-placeholder">👤</div>'}
+              <div class="character-content">
+                <div class="article-header">
+                  <h4>${article.title}</h4>
+                  ${categoryBadge}
+                </div>
+                <p class="article-summary">${article.summary || 'No summary available'}</p>
+                ${tagsHtml}
+                ${metaHtml}
+              </div>
+            </div>
+          </div>
+        `;
+
+      case 'location':
+        return `
+          <div class="article-card layout-location" data-article-id="${article.id}">
+            ${article.image_url ? `<img src="${article.image_url}" class="location-header-image" alt="${article.title}" loading="lazy">` : ''}
+            <div class="location-content">
+              <div class="article-header">
+                <h4>${article.title}</h4>
+                ${categoryBadge}
+              </div>
+              <p class="article-summary">${article.summary || 'No summary available'}</p>
+              ${tagsHtml}
+              ${metaHtml}
+            </div>
+          </div>
+        `;
+
+      case 'tech':
+        return `
+          <div class="article-card layout-tech" data-article-id="${article.id}">
+            <div class="tech-layout">
+              ${article.image_url ? `
+                <div class="tech-image">
+                  <img src="${article.image_url}" alt="${article.title}" loading="lazy">
+                </div>
+              ` : '<div class="tech-image-placeholder">⚙️</div>'}
+              <div class="tech-content">
+                <div class="article-header">
+                  <h4>${article.title}</h4>
+                  ${categoryBadge}
+                </div>
+                <p class="article-summary">${article.summary || 'No summary available'}</p>
+                ${tagsHtml}
+                ${metaHtml}
+              </div>
+            </div>
+          </div>
+        `;
+
+      case 'gear':
+        return `
+          <div class="article-card layout-gear" data-article-id="${article.id}">
+            <div class="gear-layout">
+              ${article.image_url ? `
+                <div class="gear-image">
+                  <img src="${article.image_url}" alt="${article.title}" loading="lazy">
+                </div>
+              ` : '<div class="gear-image-placeholder">🛡️</div>'}
+              <div class="gear-content">
+                <div class="article-header">
+                  <h4>${article.title}</h4>
+                  ${categoryBadge}
+                </div>
+                <p class="article-summary">${article.summary || 'No summary available'}</p>
+                ${tagsHtml}
+                ${metaHtml}
+              </div>
+            </div>
+          </div>
+        `;
+
+      case 'lore':
+        return `
+          <div class="article-card layout-text" data-article-id="${article.id}">
+            <div class="article-header">
+              <h4>${article.title}</h4>
+              ${categoryBadge}
+            </div>
+            <p class="article-summary">${article.summary || 'No summary available'}</p>
+            ${tagsHtml}
+            ${metaHtml}
+            ${article.image_url ? `
+              <div class="text-layout-image">
+                <img src="${article.image_url}" alt="${article.title}" loading="lazy">
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+      default:
+        // Fallback to current layout
+        return `
+          <div class="article-card layout-default" data-article-id="${article.id}">
+            ${article.image_url ? `<img src="${article.image_url}" class="article-thumbnail" alt="${article.title}" loading="lazy">` : ''}
+            <div class="article-content">
+              <div class="article-header">
+                <h4>${article.title}</h4>
+                ${categoryBadge}
+              </div>
+              <p class="article-summary">${article.summary || 'No summary available'}</p>
+              ${tagsHtml}
+              ${metaHtml}
+            </div>
+          </div>
+        `;
+    }
+  }
+
   renderArticleGrid() {
     const filteredArticles = this.filterArticles();
     
@@ -111,31 +273,7 @@ class ArticleViewer {
       `;
     }
 
-    const articleCards = filteredArticles.map(article => {
-      const category = this.currentCategories.find(cat => cat.id == article.category_id);
-      const tags = (article.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
-      
-      return `
-        <div class="article-card" data-article-id="${article.id}">
-          ${article.image_url ? `<img src="${article.image_url}" class="article-thumbnail" alt="${article.title}" loading="lazy">` : ''}
-          <div class="article-content">
-            <div class="article-header">
-              <h4>${article.title}</h4>
-              ${category ? `<span class="category-badge">${category.name}</span>` : ''}
-            </div>
-            <p class="article-summary">${article.summary || 'No summary available'}</p>
-            ${tags.length > 0 ? `
-              <div class="article-tags">
-                ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-              </div>
-            ` : ''}
-            <div class="article-meta">
-              <small>Updated: ${this.formatDate(article.updated_at)}</small>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const articleCards = filteredArticles.map(article => this.renderArticleCard(article)).join('');
 
     return `
       <div class="articles-grid">
@@ -382,17 +520,18 @@ class ArticleViewer {
 
       .articles-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         gap: 20px;
       }
 
+      /* Base Article Card */
       .article-card {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        overflow: hidden;
         cursor: pointer;
         transition: all 0.3s ease;
+        overflow: hidden;
       }
 
       .article-card:hover {
@@ -401,28 +540,178 @@ class ArticleViewer {
         box-shadow: 0 5px 20px rgba(33, 150, 243, 0.3);
       }
 
-      .article-thumbnail {
+      /* Character Layout - Side by side */
+      .layout-character .character-layout {
+        display: flex;
+        padding: 20px;
+        gap: 15px;
+      }
+
+      .character-image {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+      }
+
+      .character-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .character-image-placeholder {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+      }
+
+      .character-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* Location Layout - Header image */
+      .layout-location {
+        overflow: hidden;
+      }
+
+      .location-header-image {
         width: 100%;
         height: 180px;
         object-fit: cover;
-        display: block;
       }
 
-      .article-content {
+      .location-content {
         padding: 20px;
       }
 
+      /* Tech Layout - Side by side like character */
+      .layout-tech .tech-layout {
+        display: flex;
+        padding: 20px;
+        gap: 15px;
+      }
+
+      .tech-image {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid rgba(33, 150, 243, 0.3);
+      }
+
+      .tech-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .tech-image-placeholder {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        border: 2px solid rgba(33, 150, 243, 0.3);
+      }
+
+      .tech-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* Gear Layout - Side by side like character */
+      .layout-gear .gear-layout {
+        display: flex;
+        padding: 20px;
+        gap: 15px;
+      }
+
+      .gear-image {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid rgba(76, 175, 80, 0.3);
+      }
+
+      .gear-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .gear-image-placeholder {
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        border: 2px solid rgba(76, 175, 80, 0.3);
+      }
+
+      /* Text Layout - Minimal image */
+      .layout-text {
+        padding: 20px;
+      }
+
+      .text-layout-image {
+        margin-top: 15px;
+      }
+
+      .text-layout-image img {
+        width: 100%;
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 5px;
+        opacity: 0.8;
+      }
+
+      /* Default Layout - Current style */
+      .layout-default .article-thumbnail {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+      }
+
+      .layout-default .article-content {
+        padding: 20px;
+      }
+
+      /* Common Elements */
       .article-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 10px;
+        gap: 10px;
       }
 
       .article-header h4 {
         margin: 0;
         color: #ffd700;
         font-size: 1.2rem;
+        line-height: 1.3;
       }
 
       .category-badge {
@@ -432,6 +721,7 @@ class ArticleViewer {
         border-radius: 12px;
         font-size: 12px;
         white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .article-summary {
@@ -467,6 +757,7 @@ class ArticleViewer {
         color: #a0a0a0;
       }
 
+      /* Modal Styles */
       .article-modal {
         position: fixed;
         top: 0;
@@ -562,12 +853,20 @@ class ArticleViewer {
           grid-template-columns: 1fr;
         }
 
-        .article-thumbnail {
-          height: 200px;
+        /* Responsive adjustments */
+        .layout-character .character-layout,
+        .layout-tech .tech-layout,
+        .layout-gear .gear-layout {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
 
-        .article-image {
-          max-height: 250px;
+        .character-image, .character-image-placeholder,
+        .tech-image, .tech-image-placeholder,
+        .gear-image, .gear-image-placeholder {
+          width: 100px;
+          height: 100px;
         }
       }
     `;
