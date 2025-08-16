@@ -761,18 +761,18 @@ class ArticleViewer {
         color: #a0a0a0;
       }
 
-      /* Modal Styles - Fixed */
+      /* Modal Styles - Fixed with higher specificity */
       .article-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        z-index: 10000 !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
 
       .modal-content {
