@@ -422,7 +422,9 @@ class ArticleViewer {
     }
 
     if (modal) {
-      modal.style.display = 'flex';
+      // Use your CSS approach: show class + opacity
+      modal.classList.add('show');
+      document.body.classList.add('modal-active');
       document.body.style.overflow = 'hidden';
     }
   }
@@ -430,7 +432,8 @@ class ArticleViewer {
   closeModal() {
     const modal = document.getElementById('articleModal');
     if (modal) {
-      modal.style.display = 'none';
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-active');
       document.body.style.overflow = 'auto';
     }
   }
