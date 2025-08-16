@@ -321,9 +321,13 @@ h2 {
   background: #222;
 }
 
-/* Background blur when modal active */
-body.modal-active .container {
+body.modal-active .container,
+body.modal-active header {
   filter: blur(5px);
+}
+
+body.modal-active .article-modal {
+  filter: none !important; /* Ensure modal isn't blurred */
 }
 
 /* Character/Portrait Image Fixes */
@@ -351,9 +355,10 @@ body.modal-active .container {
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .article-modal {
-    top: 50px;
-    width: 95%;
-    max-height: calc(100vh - 100px);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   }
   
   .modal-header h2 {

@@ -369,7 +369,10 @@ class ArticleViewer {
     const modal = document.getElementById('articleModal');
     if (modal) {
       modal.addEventListener('click', (e) => {
-        if (e.target === modal) this.closeModal();
+        // Only close if clicking the modal background, not the content
+        if (e.target === modal) {
+          this.closeModal();
+        }
       });
     }
   }
