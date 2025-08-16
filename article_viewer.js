@@ -36,16 +36,30 @@ class ArticleViewer {
       return this.renderEmptyState();
     }
 
+    // Inject modal at body level, outside .container
+    this.injectModalAtBodyLevel();
+
     return `
       <div class="article-viewer">
         ${this.renderFilters()}
         ${this.renderArticleGrid()}
       </div>
-      ${this.renderArticleModal()}
       <style>
         ${this.getArticleViewerStyles()}
       </style>
     `;
+  }
+
+  injectModalAtBodyLevel() {
+    // Remove any existing modal
+    const existingOverlay = document.getElementById('modalOverlay');
+    const existingModal = document.getElementById('articleModal');
+    if (existingOverlay) existingOverlay.remove();
+    if (existingModal) existingModal.remove();
+
+    // Create modal HTML and inject at body level
+    const modalHTML = this.renderArticleModal();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
   }
 
   renderEmptyState() {
@@ -288,7 +302,7 @@ class ArticleViewer {
         <div class="modal-content">
           <div class="modal-header">
             <h2 id="modalTitle">Article Title</h2>
-            <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
+            <button class="close-btn">&times;</button>
           </div>
           <div class="modal-body">
             <div id="modalContent">Loading...</div>
@@ -369,13 +383,19 @@ class ArticleViewer {
       });
     });
 
-    // Modal background click handling - ONLY close on background click, not content click
+    // X button - use addEventListener instead of onclick
+    const closeBtn = document.querySelector('.close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeModal());
+    }
+
+    // Modal background click handling
     const modal = document.getElementById('articleModal');
     const overlay = document.getElementById('modalOverlay');
     
     if (modal) {
       modal.addEventListener('click', (e) => {
-        // Only close if clicking the modal overlay itself, not the content
+        // Only close if clicking the modal itself, not the content
         if (e.target === modal) {
           this.closeModal();
         }
