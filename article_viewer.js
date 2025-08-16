@@ -1,4 +1,4 @@
-// article-viewer.js - Article viewing functionality
+// article-viewer.js - Article viewing functionality with image support
 class ArticleViewer {
   constructor(hub) {
     this.hub = hub;
@@ -117,18 +117,21 @@ class ArticleViewer {
       
       return `
         <div class="article-card" data-article-id="${article.id}">
-          <div class="article-header">
-            <h4>${article.title}</h4>
-            ${category ? `<span class="category-badge">${category.name}</span>` : ''}
-          </div>
-          <p class="article-summary">${article.summary || 'No summary available'}</p>
-          ${tags.length > 0 ? `
-            <div class="article-tags">
-              ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+          ${article.image_url ? `<img src="${article.image_url}" class="article-thumbnail" alt="${article.title}" loading="lazy">` : ''}
+          <div class="article-content">
+            <div class="article-header">
+              <h4>${article.title}</h4>
+              ${category ? `<span class="category-badge">${category.name}</span>` : ''}
             </div>
-          ` : ''}
-          <div class="article-meta">
-            <small>Updated: ${this.formatDate(article.updated_at)}</small>
+            <p class="article-summary">${article.summary || 'No summary available'}</p>
+            ${tags.length > 0 ? `
+              <div class="article-tags">
+                ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            <div class="article-meta">
+              <small>Updated: ${this.formatDate(article.updated_at)}</small>
+            </div>
           </div>
         </div>
       `;
@@ -269,7 +272,16 @@ class ArticleViewer {
     if (content) {
       // Simple markdown-to-HTML conversion (basic)
       const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
-      content.innerHTML = htmlContent;
+      
+      // Add image to modal if it exists
+      if (article.image_url) {
+        content.innerHTML = `
+          <img src="${article.image_url}" class="article-image" alt="${article.title}" loading="lazy">
+          ${htmlContent}
+        `;
+      } else {
+        content.innerHTML = htmlContent;
+      }
     }
 
     if (modal) {
@@ -378,7 +390,7 @@ class ArticleViewer {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        padding: 20px;
+        overflow: hidden;
         cursor: pointer;
         transition: all 0.3s ease;
       }
@@ -387,6 +399,17 @@ class ArticleViewer {
         transform: translateY(-3px);
         border-color: #2196F3;
         box-shadow: 0 5px 20px rgba(33, 150, 243, 0.3);
+      }
+
+      .article-thumbnail {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .article-content {
+        padding: 20px;
       }
 
       .article-header {
@@ -501,6 +524,15 @@ class ArticleViewer {
         line-height: 1.6;
       }
 
+      .article-image {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        display: block;
+      }
+
       .modal-body h1, .modal-body h2, .modal-body h3 {
         color: #ffd700;
         margin-top: 20px;
@@ -528,6 +560,14 @@ class ArticleViewer {
 
         .articles-grid {
           grid-template-columns: 1fr;
+        }
+
+        .article-thumbnail {
+          height: 200px;
+        }
+
+        .article-image {
+          max-height: 250px;
         }
       }
     `;
