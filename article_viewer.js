@@ -422,7 +422,8 @@ class ArticleViewer {
     }
 
     if (modal) {
-      modal.style.display = 'flex';
+      modal.style.display = 'flex !important';
+      modal.style.setProperty('display', 'flex', 'important');
       document.body.style.overflow = 'hidden'; // Prevent background scroll
     }
   }
