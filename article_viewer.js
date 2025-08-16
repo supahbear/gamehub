@@ -284,15 +284,14 @@ class ArticleViewer {
 
   renderArticleModal() {
     return `
-      <div id="articleModal" class="article-modal" style="display: none;">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 id="modalTitle">Article Title</h2>
-            <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div id="modalContent">Loading...</div>
-          </div>
+      <div id="articleModalOverlay"></div>
+      <div id="articleModal" class="article-modal">
+        <div class="modal-header">
+          <h2 id="modalTitle">Article Title</h2>
+          <button class="close-btn" onclick="window.articleViewer.closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="modalContent">Loading...</div>
         </div>
       </div>
     `;
