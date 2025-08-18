@@ -149,13 +149,42 @@ class ArticleViewer {
       `;
     }
 
-    const articleCards = filteredArticles.map(article => this.renderArticleCard(article)).join('');
+    // Sort articles
+    const sortedArticles = this.sortArticles(filteredArticles);
+    const articleCards = sortedArticles.map(article => this.renderArticleCard(article)).join('');
 
     return `
       <div class="articles-grid">
         ${articleCards}
       </div>
     `;
+  }
+
+  sortArticles(articles) {
+    // If no category filter (showing all), group by category then alphabetical
+    if (!this.currentFilters.category) {
+      return articles.sort((a, b) => {
+        // Get category data for sort_order
+        const catA = this.currentCategories.find(c => c.id === a.category_id) || { sort_order: 999, name: 'Unknown' };
+        const catB = this.currentCategories.find(c => c.id === b.category_id) || { sort_order: 999, name: 'Unknown' };
+        
+        // First sort by category sort_order
+        if (catA.sort_order !== catB.sort_order) {
+          return catA.sort_order - catB.sort_order;
+        }
+        
+        // If sort_order is the same, sort by category name
+        if (catA.name !== catB.name) {
+          return catA.name.localeCompare(catB.name);
+        }
+        
+        // Finally, alphabetical by article title within category
+        return a.title.localeCompare(b.title);
+      });
+    } else {
+      // Single category selected - just alphabetical by title
+      return articles.sort((a, b) => a.title.localeCompare(b.title));
+    }
   }
 
   renderArticleModal() {
@@ -177,19 +206,23 @@ class ArticleViewer {
 
   filterArticles() {
     return this.currentArticles.filter(article => {
-      // Search filter
+      // Category filter is exclusive - if set, only show that category
+      if (this.currentFilters.category) {
+        // Handle both single and comma-separated category IDs
+        const articleCategories = (article.category_id || '').split(',').map(c => c.trim());
+        if (!articleCategories.includes(this.currentFilters.category)) {
+          return false;
+        }
+      }
+
+      // Search filter (applies within current category view)
       if (this.currentFilters.search) {
         const searchTerm = this.currentFilters.search.toLowerCase();
         const searchableText = `${article.title} ${article.summary} ${article.content_md}`.toLowerCase();
         if (!searchableText.includes(searchTerm)) return false;
       }
 
-      // Category filter
-      if (this.currentFilters.category && article.category_id != this.currentFilters.category) {
-        return false;
-      }
-
-      // Tag filter
+      // Tag filter (applies within current category view)
       if (this.currentFilters.tag) {
         const articleTags = (article.tags_csv || '').split(',').map(t => t.trim().toLowerCase());
         if (!articleTags.includes(this.currentFilters.tag.toLowerCase())) {
@@ -289,6 +322,17 @@ class ArticleViewer {
     if (gridContainer) {
       gridContainer.outerHTML = this.renderArticleGrid();
       this.setupEventListeners();
+    } else {
+      console.error('articles-grid container not found for refresh');
+      // Try to find the parent and inject the grid
+      const articleViewer = document.querySelector('.article-viewer');
+      if (articleViewer) {
+        const filterDiv = articleViewer.querySelector('.article-filters');
+        if (filterDiv) {
+          filterDiv.insertAdjacentHTML('afterend', this.renderArticleGrid());
+          this.setupEventListeners();
+        }
+      }
     }
   }
 

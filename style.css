@@ -235,6 +235,12 @@ h2 {
     font-weight: 400;
 }
 
+.filter-group select option {
+    background: #2a2a3e;
+    color: white;
+    padding: 8px;
+}
+
 .filter-group input::placeholder {
     color: #a0a0a0;
 }
