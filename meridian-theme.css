@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+body.world-meridian {
+    /* Meridian Cyberpunk Theme Variables */
+    --primary-bg: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    --secondary-bg: rgba(255, 255, 255, 0.1);
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-accent: #ffd700;
+    --border-color: rgba(255, 255, 255, 0.3);
+    --button-bg: rgba(255, 255, 255, 0.1);
+    --button-hover: rgba(255, 255, 255, 0.2);
+    --font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --font-weight-heavy: 900;
+    
+    /* Cyberpunk Card Effects */
+    --card-border-operator: #d4edef;
+    --card-glow-operator: #56f8ff;
+    --card-border-handler: #f4e5a3;
+    --card-glow-handler: #ffb347;
+    --card-border-broker: #d4a5d4;
+    --card-glow-broker: #8b0051;
+    --card-border-default: rgba(255, 255, 255, 0.3);
+    --card-glow-default: rgba(255, 255, 255, 0.2);
+    
+    /* Cyberpunk Overlay Gradient */
+    --card-overlay-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.2) 80%, rgba(0, 0, 0, 0.1) 90%, transparent 100%);
+    
+    /* Modal Theme */
+    --modal-bg: #1a1a2e;
+    --modal-border: #8c5523;
+    --modal-overlay: rgba(17, 17, 17, 0.7);
+}
+
+/* Meridian-specific styling that can't be done with just variables */
+
+body.world-meridian h1 {
+    background: linear-gradient(45deg, #ffd700, #ff6b35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.world-meridian .world-card:hover {
+    border-color: #ffd700;
+    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+}
+
+body.world-meridian .play-btn:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+}
+
+body.world-meridian .read-btn:hover {
+    border-color: #2196F3;
+    box-shadow: 0 10px 25px rgba(33, 150, 243, 0.3);
+}
+
+body.world-meridian .build-btn:hover {
+    border-color: #FF9800;
+    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.3);
+}
+
+body.world-meridian .mode-btn:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced card glows with proper shadows */
+body.world-meridian .article-card.tag-operator {
+    box-shadow: 0 0 20px var(--card-glow-operator), 0 10px 30px rgba(86, 248, 255, 0.3);
+}
+
+body.world-meridian .article-card.tag-operator:hover {
+    box-shadow: 0 0 30px var(--card-glow-operator), 0 15px 40px rgba(86, 248, 255, 0.5);
+}
+
+body.world-meridian .article-card.tag-handler {
+    box-shadow: 0 0 20px var(--card-glow-handler), 0 10px 30px rgba(255, 179, 71, 0.3);
+}
+
+body.world-meridian .article-card.tag-handler:hover {
+    box-shadow: 0 0 30px var(--card-glow-handler), 0 15px 40px rgba(255, 179, 71, 0.5);
+}
+
+body.world-meridian .article-card.tag-broker {
+    box-shadow: 0 0 20px var(--card-glow-broker), 0 10px 30px rgba(139, 0, 81, 0.3);
+}
+
+body.world-meridian .article-card.tag-broker:hover {
+    box-shadow: 0 0 30px var(--card-glow-broker), 0 15px 40px rgba(139, 0, 81, 0.5);
+}
+
+body.world-meridian .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
+    box-shadow: 0 0 20px var(--card-glow-default), 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+body.world-meridian .card-background-placeholder {
+    background: linear-gradient(135deg, #2a2a3e, #1a1a2e);
+}
+
+body.world-meridian .card-category-badge {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+body.world-meridian .clear-btn {
+    background: #ff6b35;
+}
+
+body.world-meridian .clear-btn:hover {
+    background: #ff5722;
+}
+
+body.world-meridian .current-mode {
+    background: #ffd700;
+    color: #1a1a2e;
+}
+
+/* Modal scrollbar styling */
+body.world-meridian .modal-body::-webkit-scrollbar-thumb {
+    background: #8c5523;
+}
+
+body.world-meridian .modal-body::-webkit-scrollbar-track {
+    background: #222;
+}
+
+body.world-meridian .modal-header {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.world-meridian .modal-header h2 {
+    color: #e3c37b;
+}
+
+body.world-meridian .close-btn:hover {
+    color: #e3c37b;
+}
+
+body.world-meridian .modal-body h1, 
+body.world-meridian .modal-body h2, 
+body.world-meridian .modal-body h3 {
+    color: #e3c37b;
+}
+
+body.world-meridian .modal-body p {
+    color: #c0c0c0;
+}
+
+/* Dropdown option styling fix */
+body.world-meridian .filter-group select option {
+    background: #2a2a3e;
+    color: white;
+    padding: 8px;
+}

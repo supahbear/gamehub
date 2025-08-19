@@ -176,11 +176,31 @@ class TTRPGHub {
     Config.error(message);
   }
 
+  // ========== World Theme Management ==========
+  applyWorldTheme(worldId) {
+    // Remove any existing world theme classes
+    document.body.className = document.body.className.replace(/world-\w+/g, '').trim();
+    
+    // Add the new world theme class
+    if (worldId) {
+      const themeClass = `world-${worldId}`;
+      document.body.classList.add(themeClass);
+      Config.log('Applied world theme:', themeClass);
+    }
+  }
+
+  clearWorldTheme() {
+    document.body.className = document.body.className.replace(/world-\w+/g, '').trim();
+    Config.log('Cleared world theme');
+  }
+
   // ========== Navigation ==========
   selectWorld(worldId) {
     this.currentWorld = this.worlds.find(w => w.id === worldId);
     if (this.currentWorld) {
       Config.log('Selected world:', this.currentWorld.name);
+      // Apply world theme when entering a world
+      this.applyWorldTheme(worldId);
       this.showModeSelection();
     }
   }
@@ -195,6 +215,8 @@ class TTRPGHub {
     this.setPageVisibility('landing');
     this.currentWorld = null;
     this.currentMode = null;
+    // Clear world theme when returning to hub
+    this.clearWorldTheme();
   }
 
   showModeSelection() {

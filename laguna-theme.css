@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Fredoka+One:wght@400&display=swap');
+
+body.world-laguna {
+    /* Laguna Tropical Theme Variables */
+    --primary-bg: linear-gradient(135deg, #87CEEB, #20B2AA, #008B8B, #006994);
+    --secondary-bg: rgba(255, 255, 255, 0.2);
+    --card-bg: rgba(255, 255, 255, 0.15);
+    --text-color: #ffffff;
+    --text-secondary: #e0f6ff;
+    --text-accent: #ffeb3b;
+    --border-color: rgba(255, 255, 255, 0.4);
+    --button-bg: rgba(255, 255, 255, 0.2);
+    --button-hover: rgba(255, 255, 255, 0.3);
+    --font-family: 'Poppins', 'Segoe UI', sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 600;
+    --font-weight-heavy: 800;
+    
+    /* Tropical Card Effects */
+    --card-border-operator: #ff6b6b;
+    --card-glow-operator: #ff4757;
+    --card-border-handler: #ffa726;
+    --card-glow-handler: #ff9500;
+    --card-border-broker: #ab47bc;
+    --card-glow-broker: #9c27b0;
+    --card-border-default: rgba(255, 255, 255, 0.4);
+    --card-glow-default: rgba(255, 255, 255, 0.3);
+    
+    /* Tropical Overlay Gradient */
+    --card-overlay-gradient: linear-gradient(to top, rgba(0, 150, 136, 0.9) 0%, rgba(0, 150, 136, 0.7) 30%, rgba(0, 150, 136, 0.4) 60%, rgba(0, 150, 136, 0.2) 80%, transparent 100%);
+    
+    /* Modal Theme */
+    --modal-bg: #006994;
+    --modal-border: #20B2AA;
+    --modal-overlay: rgba(0, 105, 148, 0.8);
+}
+
+/* Laguna-specific styling */
+
+body.world-laguna h1 {
+    font-family: 'Fredoka One', cursive;
+    background: linear-gradient(45deg, #ffeb3b, #ff9500, #e91e63);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.world-laguna .world-card:hover {
+    border-color: #ffeb3b;
+    box-shadow: 0 10px 25px rgba(255, 235, 59, 0.4);
+}
+
+body.world-laguna .play-btn:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+}
+
+body.world-laguna .read-btn:hover {
+    border-color: #03A9F4;
+    box-shadow: 0 10px 25px rgba(3, 169, 244, 0.4);
+}
+
+body.world-laguna .build-btn:hover {
+    border-color: #FF5722;
+    box-shadow: 0 10px 25px rgba(255, 87, 34, 0.4);
+}
+
+body.world-laguna .mode-btn:hover {
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+}
+
+/* Tropical card glows */
+body.world-laguna .article-card.tag-operator {
+    box-shadow: 0 0 20px var(--card-glow-operator), 0 10px 30px rgba(255, 71, 87, 0.3);
+}
+
+body.world-laguna .article-card.tag-operator:hover {
+    box-shadow: 0 0 30px var(--card-glow-operator), 0 15px 40px rgba(255, 71, 87, 0.5);
+}
+
+body.world-laguna .article-card.tag-handler {
+    box-shadow: 0 0 20px var(--card-glow-handler), 0 10px 30px rgba(255, 149, 0, 0.3);
+}
+
+body.world-laguna .article-card.tag-handler:hover {
+    box-shadow: 0 0 30px var(--card-glow-handler), 0 15px 40px rgba(255, 149, 0, 0.5);
+}
+
+body.world-laguna .article-card.tag-broker {
+    box-shadow: 0 0 20px var(--card-glow-broker), 0 10px 30px rgba(156, 39, 176, 0.3);
+}
+
+body.world-laguna .article-card.tag-broker:hover {
+    box-shadow: 0 0 30px var(--card-glow-broker), 0 15px 40px rgba(156, 39, 176, 0.5);
+}
+
+body.world-laguna .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
+    box-shadow: 0 0 20px var(--card-glow-default), 0 10px 30px rgba(255, 255, 255, 0.2);
+}
+
+body.world-laguna .card-background-placeholder {
+    background: linear-gradient(135deg, #4dd0e1, #26c6da);
+}
+
+body.world-laguna .card-category-badge {
+    background: rgba(0, 105, 148, 0.9);
+    color: white;
+    border: 2px solid #ffeb3b;
+}
+
+body.world-laguna .clear-btn {
+    background: #ff5722;
+}
+
+body.world-laguna .clear-btn:hover {
+    background: #e64a19;
+}
+
+body.world-laguna .current-mode {
+    background: #ffeb3b;
+    color: #006994;
+    font-weight: 800;
+}
+
+/* Dropdown option styling */
+body.world-laguna .filter-group select option {
+    background: #006994;
+    color: white;
+    padding: 8px;
+}
+
+/* Modal styling */
+body.world-laguna .modal-body::-webkit-scrollbar-thumb {
+    background: #20B2AA;
+}
+
+body.world-laguna .modal-body::-webkit-scrollbar-track {
+    background: #004d5c;
+}
+
+body.world-laguna .modal-header {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 2px solid #20B2AA;
+}
+
+body.world-laguna .modal-header h2 {
+    color: #ffeb3b;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.world-laguna .close-btn:hover {
+    color: #ffeb3b;
+}
+
+body.world-laguna .modal-body h1, 
+body.world-laguna .modal-body h2, 
+body.world-laguna .modal-body h3 {
+    color: #ffeb3b;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+body.world-laguna .modal-body p {
+    color: #e0f6ff;
+}

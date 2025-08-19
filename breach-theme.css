@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Crimson+Text:wght@400;600;700&display=swap');
+
+body.world-breach {
+    /* Breach High Fantasy Theme Variables */
+    --primary-bg: linear-gradient(135deg, #2c1810, #4a2c2a, #8b0000, #2c1810);
+    --secondary-bg: rgba(139, 69, 19, 0.3);
+    --card-bg: rgba(160, 82, 45, 0.2);
+    --text-color: #f4e4bc;
+    --text-secondary: #d4af37;
+    --text-accent: #ffd700;
+    --border-color: rgba(212, 175, 55, 0.5);
+    --button-bg: rgba(139, 69, 19, 0.4);
+    --button-hover: rgba(139, 69, 19, 0.6);
+    --font-family: 'Crimson Text', 'Georgia', serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 600;
+    --font-weight-heavy: 700;
+    
+    /* Fantasy Card Effects */
+    --card-border-operator: #8b4513;
+    --card-glow-operator: #cd853f;
+    --card-border-handler: #32cd32;
+    --card-glow-handler: #228b22;
+    --card-border-broker: #8a2be2;
+    --card-glow-broker: #9932cc;
+    --card-border-default: rgba(212, 175, 55, 0.5);
+    --card-glow-default: rgba(205, 133, 63, 0.3);
+    
+    /* Fantasy Overlay Gradient */
+    --card-overlay-gradient: linear-gradient(to top, rgba(44, 24, 16, 0.95) 0%, rgba(44, 24, 16, 0.8) 30%, rgba(44, 24, 16, 0.5) 60%, rgba(44, 24, 16, 0.2) 80%, transparent 100%);
+    
+    /* Modal Theme */
+    --modal-bg: #2c1810;
+    --modal-border: #8b4513;
+    --modal-overlay: rgba(44, 24, 16, 0.85);
+}
+
+/* Breach-specific styling */
+
+body.world-breach h1 {
+    font-family: 'Cinzel', serif;
+    background: linear-gradient(45deg, #ffd700, #daa520, #b8860b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+    filter: drop-shadow(2px 2px 4px rgba(218, 165, 32, 0.3));
+}
+
+body.world-breach .world-card:hover {
+    border-color: #ffd700;
+    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+}
+
+body.world-breach .play-btn:hover {
+    border-color: #32cd32;
+    box-shadow: 0 10px 25px rgba(50, 205, 50, 0.4);
+}
+
+body.world-breach .read-btn:hover {
+    border-color: #4169e1;
+    box-shadow: 0 10px 25px rgba(65, 105, 225, 0.4);
+}
+
+body.world-breach .build-btn:hover {
+    border-color: #dc143c;
+    box-shadow: 0 10px 25px rgba(220, 20, 60, 0.4);
+}
+
+body.world-breach .mode-btn:hover {
+    box-shadow: 0 10px 25px rgba(139, 69, 19, 0.4);
+}
+
+/* Fantasy card glows */
+body.world-breach .article-card.tag-operator {
+    box-shadow: 0 0 20px var(--card-glow-operator), 0 10px 30px rgba(205, 133, 63, 0.4);
+}
+
+body.world-breach .article-card.tag-operator:hover {
+    box-shadow: 0 0 30px var(--card-glow-operator), 0 15px 40px rgba(205, 133, 63, 0.6);
+}
+
+body.world-breach .article-card.tag-handler {
+    box-shadow: 0 0 20px var(--card-glow-handler), 0 10px 30px rgba(34, 139, 34, 0.4);
+}
+
+body.world-breach .article-card.tag-handler:hover {
+    box-shadow: 0 0 30px var(--card-glow-handler), 0 15px 40px rgba(34, 139, 34, 0.6);
+}
+
+body.world-breach .article-card.tag-broker {
+    box-shadow: 0 0 20px var(--card-glow-broker), 0 10px 30px rgba(153, 50, 204, 0.4);
+}
+
+body.world-breach .article-card.tag-broker:hover {
+    box-shadow: 0 0 30px var(--card-glow-broker), 0 15px 40px rgba(153, 50, 204, 0.6);
+}
+
+body.world-breach .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
+    box-shadow: 0 0 20px var(--card-glow-default), 0 10px 30px rgba(139, 69, 19, 0.3);
+}
+
+body.world-breach .card-background-placeholder {
+    background: linear-gradient(135deg, #8b4513, #a0522d);
+}
+
+body.world-breach .card-category-badge {
+    background: rgba(44, 24, 16, 0.9);
+    color: #ffd700;
+    border: 2px solid #8b4513;
+    font-family: 'Cinzel', serif;
+}
+
+body.world-breach .clear-btn {
+    background: #8b0000;
+    font-family: 'Cinzel', serif;
+}
+
+body.world-breach .clear-btn:hover {
+    background: #a52a2a;
+}
+
+body.world-breach .current-mode {
+    background: #ffd700;
+    color: #2c1810;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+}
+
+/* Typography overrides for fantasy feel */
+body.world-breach h2,
+body.world-breach h3,
+body.world-breach h4 {
+    font-family: 'Cinzel', serif;
+}
+
+body.world-breach .card-title {
+    font-family: 'Cinzel', serif;
+}
+
+body.world-breach .card-tag {
+    font-family: 'Cinzel', serif;
+    text-transform: capitalize;
+}
+
+/* Dropdown option styling */
+body.world-breach .filter-group select option {
+    background: #2c1810;
+    color: #f4e4bc;
+    padding: 8px;
+}
+
+/* Modal styling */
+body.world-breach .modal-body::-webkit-scrollbar-thumb {
+    background: #8b4513;
+}
+
+body.world-breach .modal-body::-webkit-scrollbar-track {
+    background: #1a0f08;
+}
+
+body.world-breach .modal-header {
+    background: rgba(139, 69, 19, 0.2);
+    border-bottom: 2px solid #8b4513;
+}
+
+body.world-breach .modal-header h2 {
+    color: #ffd700;
+    font-family: 'Cinzel', serif;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+body.world-breach .close-btn:hover {
+    color: #ffd700;
+}
+
+body.world-breach .modal-body h1, 
+body.world-breach .modal-body h2, 
+body.world-breach .modal-body h3 {
+    color: #ffd700;
+    font-family: 'Cinzel', serif;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+body.world-breach .modal-body p {
+    color: #f4e4bc;
+}
