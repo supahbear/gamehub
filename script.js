@@ -115,7 +115,8 @@ class TTRPGHub {
           id: world.id || world.key || `world-${index}`,
           name: world.name || world.world_name || 'Unnamed World',
           description: world.description || world.world_description || 'No description available',
-          system: world.system || world.dice_set || world.game_system || 'Unknown System'
+          system: world.system || world.dice_set || world.game_system || 'Unknown System',
+          video_url: world.video_url || null // New field for video
         }));
         
         Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
@@ -129,7 +130,30 @@ class TTRPGHub {
   }
 
   useFallbackWorlds() {
-    this.worlds = Config.MOCK_WORLDS;
+    // Enhanced fallback data with video URLs
+    this.worlds = [
+      {
+        id: 'breach',
+        name: 'The Breach',
+        description: 'A D&D 5e campaign where reality itself has been torn asunder.',
+        system: 'D&D 5e',
+        video_url: 'assets/videos/breach-loop.mp4'
+      },
+      {
+        id: 'laguna',
+        name: 'Laguna', 
+        description: 'A Pokémon adventure in tropical paradise with hidden mysteries.',
+        system: 'Pokémon',
+        video_url: 'assets/videos/laguna-loop.mp4'
+      },
+      {
+        id: 'meridian',
+        name: 'Meridian City',
+        description: 'Stranded in a mysterious city where survival is just the beginning.',
+        system: 'Castaway',
+        video_url: 'assets/videos/meridian-loop.mp4'
+      }
+    ];
     Config.log('Using fallback worlds:', this.worlds);
     this.renderWorlds();
   }
@@ -147,13 +171,7 @@ class TTRPGHub {
       return;
     }
 
-    worldsGrid.innerHTML = this.worlds.map(world => `
-      <div class="world-card" data-world-id="${world.id}">
-        <div class="world-name">${world.name}</div>
-        <div class="world-description">${world.description}</div>
-        <small style="color: #ffd700; margin-top: 10px; display: block;">System: ${world.system}</small>
-      </div>
-    `).join('');
+    worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
 
     // Add click listeners to world cards
     worldsGrid.querySelectorAll('.world-card').forEach(card => {
@@ -165,7 +183,57 @@ class TTRPGHub {
       }
     });
 
+    // Setup hover-to-play for video cards
+    this.setupVideoHoverEvents();
+
     Config.log(`Rendered ${this.worlds.length} worlds`);
+  }
+
+  setupVideoHoverEvents() {
+    const worldCards = document.querySelectorAll('.world-card');
+    
+    worldCards.forEach(card => {
+      const video = card.querySelector('.world-video');
+      if (!video) return;
+      
+      // Pause video initially and show first frame
+      video.addEventListener('loadeddata', () => {
+        video.currentTime = 0;
+        video.pause();
+      });
+      
+      // Play on hover
+      card.addEventListener('mouseenter', () => {
+        video.play().catch(e => Config.log('Video play failed:', e));
+      });
+      
+      // Pause on leave and reset to first frame
+      card.addEventListener('mouseleave', () => {
+        video.pause();
+        video.currentTime = 0;
+      });
+    });
+  }
+
+  renderWorldCard(world) {
+    const hasVideo = world.video_url && world.video_url.trim();
+    const videoElement = hasVideo ? 
+      `<video class="world-video" muted loop playsinline>
+         <source src="${world.video_url}" type="video/mp4">
+         <div class="world-video-placeholder"></div>
+       </video>` :
+      `<div class="world-video-placeholder"></div>`;
+
+    return `
+      <div class="world-card" data-world-id="${world.id}">
+        ${videoElement}
+        <div class="world-overlay">
+          <div class="world-name">${world.name}</div>
+          <div class="world-description">${world.description}</div>
+          <div class="world-system">System: ${world.system}</div>
+        </div>
+      </div>
+    `;
   }
 
   showError(message) {

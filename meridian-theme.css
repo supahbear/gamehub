@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
 body.world-meridian {
-    /* Meridian Cyberpunk Theme Variables */
-    --primary-bg: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    /* Meridian Cyberpunk Theme Variables - Deeper Background */
+    --primary-bg: linear-gradient(135deg, #0a0a1a, #0f1228, #1a1a3a);
     --secondary-bg: rgba(255, 255, 255, 0.1);
     --card-bg: rgba(255, 255, 255, 0.1);
     --text-color: #ffffff;
@@ -30,9 +30,9 @@ body.world-meridian {
     --card-overlay-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.2) 80%, rgba(0, 0, 0, 0.1) 90%, transparent 100%);
     
     /* Modal Theme */
-    --modal-bg: #1a1a2e;
+    --modal-bg: #0a0a1a;
     --modal-border: #8c5523;
-    --modal-overlay: rgba(17, 17, 17, 0.7);
+    --modal-overlay: rgba(8, 8, 8, 0.8);
 }
 
 /* Meridian-specific styling that can't be done with just variables */
@@ -70,35 +70,35 @@ body.world-meridian .mode-btn:hover {
 
 /* Enhanced card glows with proper shadows */
 body.world-meridian .article-card.tag-operator {
-    box-shadow: 0 0 20px var(--card-glow-operator), 0 10px 30px rgba(86, 248, 255, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-operator), 0 10px 30px rgba(86, 248, 255, 0.3);
 }
 
 body.world-meridian .article-card.tag-operator:hover {
-    box-shadow: 0 0 30px var(--card-glow-operator), 0 15px 40px rgba(86, 248, 255, 0.5);
+    box-shadow: 0 0 25px var(--card-glow-operator), 0 15px 40px rgba(86, 248, 255, 0.5);
 }
 
 body.world-meridian .article-card.tag-handler {
-    box-shadow: 0 0 20px var(--card-glow-handler), 0 10px 30px rgba(255, 179, 71, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-handler), 0 10px 30px rgba(255, 179, 71, 0.3);
 }
 
 body.world-meridian .article-card.tag-handler:hover {
-    box-shadow: 0 0 30px var(--card-glow-handler), 0 15px 40px rgba(255, 179, 71, 0.5);
+    box-shadow: 0 0 25px var(--card-glow-handler), 0 15px 40px rgba(255, 179, 71, 0.5);
 }
 
 body.world-meridian .article-card.tag-broker {
-    box-shadow: 0 0 20px var(--card-glow-broker), 0 10px 30px rgba(139, 0, 81, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-broker), 0 10px 30px rgba(139, 0, 81, 0.3);
 }
 
 body.world-meridian .article-card.tag-broker:hover {
-    box-shadow: 0 0 30px var(--card-glow-broker), 0 15px 40px rgba(139, 0, 81, 0.5);
+    box-shadow: 0 0 25px var(--card-glow-broker), 0 15px 40px rgba(139, 0, 81, 0.5);
 }
 
 body.world-meridian .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
-    box-shadow: 0 0 20px var(--card-glow-default), 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-default), 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 body.world-meridian .card-background-placeholder {
-    background: linear-gradient(135deg, #2a2a3e, #1a1a2e);
+    background: linear-gradient(135deg, #1a1a2e, #0a0a1a);
 }
 
 body.world-meridian .card-category-badge {
@@ -115,7 +115,7 @@ body.world-meridian .clear-btn:hover {
 
 body.world-meridian .current-mode {
     background: #ffd700;
-    color: #1a1a2e;
+    color: #0a0a1a;
 }
 
 /* Modal scrollbar styling */
@@ -124,7 +124,7 @@ body.world-meridian .modal-body::-webkit-scrollbar-thumb {
 }
 
 body.world-meridian .modal-body::-webkit-scrollbar-track {
-    background: #222;
+    background: #111;
 }
 
 body.world-meridian .modal-header {
@@ -151,7 +151,7 @@ body.world-meridian .modal-body p {
 
 /* Dropdown option styling fix */
 body.world-meridian .filter-group select option {
-    background: #2a2a3e;
+    background: #1a1a2e;
     color: white;
     padding: 8px;
 }
