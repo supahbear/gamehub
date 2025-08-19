@@ -12,7 +12,7 @@
 <body>
     <div class="container">
         <header>
-            <div class="logo-container">
+            <div class="logo-container" onclick="window.location.reload()">
                 <img src="assets/nexus-logo.png" alt="NEXUS" class="logo" />
                 <h1 class="logo-fallback">NEXUS</h1>
             </div>
@@ -20,10 +20,17 @@
 
         <main>
             <section class="landing-screen">
-                <h2>Where are you going?</h2>
+                <h2>Choose your next destination</h2>
                 <div class="worlds-grid" id="worldsGrid">
                     <!-- Worlds will be loaded dynamically -->
                     <div class="world-card loading">Loading worlds...</div>
+                </div>
+                
+                <div class="landing-message">
+                    <div class="message-content" id="landingMessage">
+                        Welcome to the Nexus!😍 This little space is for playing and immersing yourself in different fictional universes - some even accompanied by original game systems! Nexus supports different modes for use: Play, Read, and Build. 
+                        After selecting a world, choosing your mode will give you the necessary tools to do what you want to. Kinda cool, right? Enjoy! Love you, say it back!😡
+                    </div>
                 </div>
             </section>
 

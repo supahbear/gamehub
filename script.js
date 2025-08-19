@@ -116,7 +116,8 @@ class TTRPGHub {
           name: world.name || world.world_name || 'Unnamed World',
           description: world.description || world.world_description || 'No description available',
           system: world.system || world.dice_set || world.game_system || 'Unknown System',
-          video_url: world.video_url || null // New field for video
+          video_url: world.video_url || null,
+          message: world.message || null // Add message field
         }));
         
         Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
@@ -130,14 +131,15 @@ class TTRPGHub {
   }
 
   useFallbackWorlds() {
-    // Enhanced fallback data with video URLs
+    // Enhanced fallback data with video URLs and landing message
     this.worlds = [
       {
         id: 'breach',
         name: 'The Breach',
         description: 'A D&D 5e campaign where reality itself has been torn asunder.',
         system: 'D&D 5e',
-        video_url: 'assets/videos/breach-loop.mp4'
+        video_url: 'assets/videos/breach-loop.mp4',
+        landing_message: null
       },
       {
         id: 'laguna',
@@ -189,6 +191,29 @@ class TTRPGHub {
     Config.log(`Rendered ${this.worlds.length} worlds`);
   }
 
+  updateLandingMessage() {
+    // Debug: log all worlds and their message fields
+    console.log('All worlds:', this.worlds);
+    this.worlds.forEach((world, index) => {
+      console.log(`World ${index}:`, world.id, 'message:', world.message);
+    });
+    
+    // Use message from first world that has one, or fallback to default
+    const worldWithMessage = this.worlds.find(w => w.message && w.message.trim());
+    console.log('World with message found:', worldWithMessage);
+    
+    const messageEl = document.getElementById('landingMessage');
+    
+    if (messageEl && worldWithMessage) {
+      // Simple markdown-to-HTML conversion for the landing message
+      const htmlContent = this.markdownToHtml(worldWithMessage.message);
+      messageEl.innerHTML = htmlContent;
+      Config.log('Updated landing message from sheet data');
+    } else {
+      console.log('No world with message found or no message element');
+    }
+  }
+
   setupVideoHoverEvents() {
     const worldCards = document.querySelectorAll('.world-card');
     
@@ -227,8 +252,8 @@ class TTRPGHub {
     return `
       <div class="world-card" data-world-id="${world.id}">
         ${videoElement}
+        <div class="world-name">${world.name}</div>
         <div class="world-overlay">
-          <div class="world-name">${world.name}</div>
           <div class="world-description">${world.description}</div>
           <div class="world-system">System: ${world.system}</div>
         </div>
@@ -267,9 +292,23 @@ class TTRPGHub {
     this.currentWorld = this.worlds.find(w => w.id === worldId);
     if (this.currentWorld) {
       Config.log('Selected world:', this.currentWorld.name);
-      // Apply world theme when entering a world
+      
+      // Start quick content fade
+      const container = document.querySelector('.container');
+      container.classList.add('transitioning');
+      
+      // Apply theme immediately (background will cross-fade slowly)
       this.applyWorldTheme(worldId);
-      this.showModeSelection();
+      
+      // Wait for content fade out, then switch content
+      setTimeout(() => {
+        this.showModeSelection();
+        
+        // Small delay before content fade back in
+        setTimeout(() => {
+          container.classList.remove('transitioning');
+        }, 100);
+      }, 500);
     }
   }
 

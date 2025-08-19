@@ -1,14 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster&family=Cinzel:wght@400;600;900&family=Fjalla+One&display=swap');
+
 :root {
-    /* Boring default values - will be overridden by theme */
-    --primary-bg: #f0f0f0;
-    --secondary-bg: #e0e0e0;
+    /* More interesting background gradient */
+    --primary-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --secondary-bg: rgba(255, 255, 255, 0.7);
     --card-bg: #ffffff;
-    --text-color: #000000;
-    --text-secondary: #666666;
-    --text-accent: #333333;
-    --border-color: #cccccc;
-    --button-bg: #dddddd;
-    --button-hover: #bbbbbb;
+    --text-color: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --text-accent: #34495e;
+    --border-color: rgba(52, 73, 94, 0.2);
+    --button-bg: rgba(255, 255, 255, 0.8);
+    --button-hover: rgba(255, 255, 255, 0.9);
     --font-family: Arial, sans-serif;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
@@ -44,12 +46,18 @@ body {
     background: var(--primary-bg);
     color: var(--text-color);
     min-height: 100vh;
+    transition: background 1.5s ease;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    transition: opacity 0.5s ease;
+}
+
+.container.transitioning {
+    opacity: 0;
 }
 
 header {
@@ -63,6 +71,12 @@ header {
     justify-content: center;
     align-items: center;
     margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.logo-container:hover {
+    transform: scale(1.05);
 }
 
 .logo {
@@ -192,13 +206,35 @@ h1 {
 }
 
 .world-name {
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-heavy);
-    font-size: 1.8rem;
-    margin-bottom: 8px;
+    position: absolute;
+    top: calc(50% - 1.1rem);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 40px);
+    text-align: center;
+    font-weight: 900;
+    font-size: 2.2rem;
     color: #ffffff;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    line-height: 1.2;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+    line-height: 1.1;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* World-specific fonts for titles */
+.world-card[data-world-id="meridian"] .world-name {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+}
+
+.world-card[data-world-id="laguna"] .world-name {
+    font-family: 'Lobster', cursive;
+    font-weight: 400;
+}
+
+.world-card[data-world-id="breach"] .world-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
 }
 
 .world-description {
@@ -214,9 +250,33 @@ h1 {
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
     font-size: 0.8rem;
-    color: var(--text-accent);
     text-transform: uppercase;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* World-specific system colors and hover glows */
+.world-card[data-world-id="meridian"] .world-system {
+    color: #ff6b35;
+}
+
+.world-card[data-world-id="meridian"]:hover {
+    box-shadow: 0 12px 35px rgba(255, 107, 53, 0.4);
+}
+
+.world-card[data-world-id="laguna"] .world-system {
+    color: #00bcd4;
+}
+
+.world-card[data-world-id="laguna"]:hover {
+    box-shadow: 0 12px 35px rgba(0, 188, 212, 0.4);
+}
+
+.world-card[data-world-id="breach"] .world-system {
+    color: #9c27b0;
+}
+
+.world-card[data-world-id="breach"]:hover {
+    box-shadow: 0 12px 35px rgba(156, 39, 176, 0.4);
 }
 
 .mode-buttons {
@@ -307,11 +367,14 @@ h1 {
 }
 
 h2 {
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-bold);
-    font-size: 2rem;
-    margin-bottom: 20px;
+    font-family: 'Fjalla One', sans-serif;
+    font-weight: 400;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
     text-align: center;
+    color: var(--text-accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* ========== ARTICLE VIEWER STYLES ========== */
@@ -382,10 +445,63 @@ h2 {
     background: var(--button-hover);
 }
 
+.landing-message {
+    max-width: 800px;
+    margin: 40px auto 0;
+    padding: 25px 30px;
+    background: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.message-content {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-weight: var(--font-weight-normal);
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.message-content p {
+    margin-bottom: 15px;
+}
+
 .articles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+}
+
+.landing-message {
+    max-width: 800px;
+    margin: 40px auto 0;
+    padding: 25px 30px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.message-content {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-weight: var(--font-weight-normal);
+}
+
+.message-content p {
+    margin-bottom: 15px;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
 }
 
 /* ========== ARTICLE CARD SYSTEM ========== */
@@ -716,7 +832,7 @@ body.modal-active .container {
     }
 
     .world-name {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
     }
 
     .article-filters {

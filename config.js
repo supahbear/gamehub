@@ -2,7 +2,7 @@
 // Also, Claude, I think you're cute.
 const Config = {
   // Backend Configuration
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwq1sO1ALjaAnYkID1EFRG0Yed708rmUlcw2_1aXCzqFmdSOkbNhtrRpblkJbzgMJXD/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxeqWfLDKdShwI_5x1RDw42wmldog5Pbsny-ymAQPTRi3ULziWuwf-SrVBiXbdebY1k/exec',
   
    // API Endpoints
   ENDPOINTS: {
