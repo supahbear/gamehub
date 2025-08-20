@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster&family=Cinzel:wght@400;600;900&family=Fjalla+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster:wght@400&family=Cinzel:wght@400;600;900&family=Fjalla+One:wght@400&display=swap');
 
 :root {
     /* More interesting background gradient */
@@ -409,7 +409,7 @@ body.world-breach .current-mode:hover {
 }
 
 h2 {
-    font-family: 'Fjalla One', sans-serif;
+    font-family: 'Fjalla One', sans-serif !important; 
     font-weight: 400;
     font-size: 2.5rem;
     margin-bottom: 30px;
@@ -491,11 +491,6 @@ h2 {
     max-width: 800px;
     margin: 40px auto 0;
     padding: 25px 30px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .message-content {
