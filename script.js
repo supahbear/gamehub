@@ -144,8 +144,8 @@ class TTRPGHub {
       {
         id: 'laguna',
         name: 'Laguna', 
-        description: 'A Pokémon adventure in tropical paradise with hidden mysteries.',
-        system: 'Pokémon',
+        description: 'A PokÃ©mon adventure in tropical paradise with hidden mysteries.',
+        system: 'PokÃ©mon',
         video_url: 'assets/videos/laguna-loop.mp4'
       },
       {
@@ -297,11 +297,10 @@ class TTRPGHub {
       const container = document.querySelector('.container');
       container.classList.add('transitioning');
       
-      // Apply theme immediately (background will cross-fade slowly)
-      this.applyWorldTheme(worldId);
-      
-      // Wait for content fade out, then switch content
+      // Wait for content fade out, then apply theme and switch content
       setTimeout(() => {
+        // Apply theme after content is hidden
+        this.applyWorldTheme(worldId);
         this.showModeSelection();
         
         // Small delay before content fade back in
@@ -533,6 +532,21 @@ class TTRPGHub {
       Config.error('Failed to load categories:', error);
       return [];
     }
+  }
+
+  markdownToHtml(markdown) {
+    if (!markdown) return 'No content available';
+    
+    // Basic markdown conversion
+    return markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^(.*)/, '<p>$1</p>');
   }
 }
 
