@@ -28,8 +28,8 @@
                 
                 <div class="landing-message">
                     <div class="message-content" id="landingMessage">
-                        Welcome to the Nexus!😍 This little space is for playing and immersing yourself in different fictional universes - some even accompanied by original game systems! Nexus supports different modes for use: Play, Read, and Build. 
-                        After selecting a world, choosing your mode will give you the necessary tools to do what you want to. Kinda cool, right? Enjoy! Love you, say it back!😡
+                        Welcome to the Nexus! 😄 This little space is for playing and immersing yourself in different fictional universes - some even accompanied by original game systems! Nexus supports different modes for use: Explore and Play. 
+                        After selecting a world, choosing your mode will give you the necessary tools to do what you want to. Kinda cool, right? Enjoy! Love you, say it back! 😡
                     </div>
                 </div>
             </section>
@@ -37,20 +37,15 @@
             <section class="mode-selection" id="modeSelection" style="display: none;">
                 <h2>What do you want to do?</h2>
                 <div class="mode-buttons">
+                    <button class="mode-btn explore-btn" data-mode="explore">
+                        <span class="mode-icon">🗺️</span>
+                        <span class="mode-text">Explore</span>
+                        <small>Take guided tours or search the database</small>
+                    </button>
                     <button class="mode-btn play-btn" data-mode="play">
                         <span class="mode-icon">🎲</span>
                         <span class="mode-text">Play</span>
                         <small>Join sessions, roll dice, track characters</small>
-                    </button>
-                    <button class="mode-btn read-btn" data-mode="read">
-                        <span class="mode-icon">📖</span>
-                        <span class="mode-text">Read</span>
-                        <small>Browse lore, rules, and stories</small>
-                    </button>
-                    <button class="mode-btn build-btn" data-mode="build">
-                        <span class="mode-icon">🔨</span>
-                        <span class="mode-text">Build</span>
-                        <small>Create content, edit worlds</small>
                     </button>
                 </div>
                 <button class="back-btn" id="backBtn">← Back to Worlds</button>
@@ -60,7 +55,7 @@
                 <div class="hub-header">
                     <h2 id="currentWorldName">World Name</h2>
                 </div>
-                <span class="current-mode" id="currentMode">Mode: Play</span>
+                <span class="current-mode" id="currentMode">Mode: Explore</span>
                 <div class="hub-content" id="hubContent">
                     <!-- Dynamic content based on world and mode -->
                 </div>
@@ -72,6 +67,7 @@
     <script src="config.js"></script>
     <script src="script.js"></script>
     <script src="article_viewer.js"></script>
+    <script src="tour_viewer.js"></script>
 
 </body>
 </html>

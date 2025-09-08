@@ -1,4 +1,4 @@
-// Clean TTRPG Hub - Refactored for maintainability
+// Clean TTRPG Hub - Refactored for maintainability with Tour System
 class TTRPGHub {
   constructor() {
     this.currentWorld = null;
@@ -144,8 +144,8 @@ class TTRPGHub {
       {
         id: 'laguna',
         name: 'Laguna', 
-        description: 'A PokÃ©mon adventure in tropical paradise with hidden mysteries.',
-        system: 'PokÃ©mon',
+        description: 'A Pokémon adventure in tropical paradise with hidden mysteries.',
+        system: 'Pokémon',
         video_url: 'assets/videos/laguna-loop.mp4'
       },
       {
@@ -357,7 +357,10 @@ class TTRPGHub {
       worldNameEl.textContent = this.currentWorld.name;
     }
     if (modeEl && this.currentMode) {
-      modeEl.textContent = `Mode: ${this.currentMode.charAt(0).toUpperCase() + this.currentMode.slice(1)}`;
+      const modeDisplayName = this.currentMode === 'explore' ? 'Explore' : 
+                             this.currentMode === 'play' ? 'Play' : 
+                             this.currentMode === 'read' ? 'Database' : this.currentMode;
+      modeEl.textContent = `Mode: ${modeDisplayName}`;
     }
   }
 
@@ -368,7 +371,8 @@ class TTRPGHub {
 
     const contentMap = {
       play: () => this.getPlayModeContent(),
-      read: () => this.getReadModeContent(), 
+      explore: () => this.getExploreModeContent(),
+      read: () => this.getReadModeContent(), // Database mode
       build: () => this.getBuildModeContent()
     };
 
@@ -379,7 +383,10 @@ class TTRPGHub {
         const content = await contentFunction();
         hubContent.innerHTML = content;
         
-        if (this.currentMode === 'read' && this.articleViewer) {
+        // Setup event listeners based on mode
+        if (this.currentMode === 'explore' && this.tourViewer) {
+          this.tourViewer.setupEventListeners();
+        } else if (this.currentMode === 'read' && this.articleViewer) {
           this.articleViewer.setupEventListeners();
         }
       } catch (error) {
@@ -398,6 +405,16 @@ class TTRPGHub {
       { title: 'Session Notes', desc: 'Track your adventure', action: 'Session notes coming soon!' },
       { title: 'Maps & Tokens', desc: 'Visual battle maps', action: 'Maps coming soon!' }
     ], '#4CAF50');
+  }
+
+  async getExploreModeContent() {
+    // Skip intermediate screen - go directly to tour selection interface
+    if (!this.tourViewer) {
+      this.tourViewer = new TourViewer(this);
+      window.tourViewer = this.tourViewer;
+    }
+    
+    return await this.tourViewer.renderTourSelection(this.currentWorld.id);
   }
 
   async getReadModeContent() {
@@ -457,6 +474,45 @@ class TTRPGHub {
         }
       </style>
     `;
+  }
+
+  // ========== Tour/Database Navigation ==========
+  async startTourSelection() {
+    if (!this.tourViewer) {
+      this.tourViewer = new TourViewer(this);
+      window.tourViewer = this.tourViewer;
+    }
+    
+    const hubContent = document.getElementById('hubContent');
+    if (hubContent) {
+      hubContent.innerHTML = '<div class="loading">Loading tours...</div>';
+      const tourContent = await this.tourViewer.renderTourSelection(this.currentWorld.id);
+      hubContent.innerHTML = tourContent;
+      this.tourViewer.setupEventListeners();
+    }
+  }
+
+  // ========== Tour Data Loading ==========
+  async loadTours(worldId) {
+    try {
+      const url = Config.getUrl(Config.ENDPOINTS.TOURS, { world_id: worldId });
+      const data = await this.jsonp(url);
+      return data.success ? data.data : [];
+    } catch (error) {
+      Config.error('Failed to load tours:', error);
+      return [];
+    }
+  }
+
+  async loadTourSlides(tourId) {
+    try {
+      const url = Config.getUrl(Config.ENDPOINTS.TOUR_SLIDES, { tour_id: tourId });
+      const data = await this.jsonp(url);
+      return data.success ? data.data : [];
+    } catch (error) {
+      Config.error('Failed to load tour slides:', error);
+      return [];
+    }
   }
 
   // ========== Debug Tools ==========
@@ -552,5 +608,5 @@ class TTRPGHub {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  new TTRPGHub();
+  window.hub = new TTRPGHub();
 });
