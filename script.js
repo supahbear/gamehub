@@ -1,8 +1,9 @@
-// Clean TTRPG Hub - Refactored for maintainability with Tour System
+// Clean TTRPG Hub - Refactored for maintainability with unified explore mode
 class TTRPGHub {
   constructor() {
     this.currentWorld = null;
     this.currentMode = null;
+    this.currentExploreSubmode = 'tours'; // Track tours vs database
     this.worlds = [];
     
     this.init();
@@ -321,6 +322,7 @@ class TTRPGHub {
     this.setPageVisibility('landing');
     this.currentWorld = null;
     this.currentMode = null;
+    this.currentExploreSubmode = 'tours';
     // Clear world theme when returning to hub
     this.clearWorldTheme();
   }
@@ -331,6 +333,12 @@ class TTRPGHub {
 
   showWorldHub() {
     this.setPageVisibility('hub');
+    
+    // Reset explore submode when entering hub
+    if (this.currentMode === 'explore') {
+      this.currentExploreSubmode = 'tours';
+    }
+    
     this.updateHubHeader();
     this.loadHubContent();
   }
@@ -352,15 +360,46 @@ class TTRPGHub {
   updateHubHeader() {
     const worldNameEl = document.getElementById('currentWorldName');
     const modeEl = document.getElementById('currentMode');
+    const worldHub = document.getElementById('worldHub');
 
-    if (worldNameEl && this.currentWorld) {
-      worldNameEl.textContent = this.currentWorld.name;
+    // Set data-mode attribute for CSS targeting
+    if (worldHub) {
+      worldHub.setAttribute('data-mode', this.currentMode || '');
     }
-    if (modeEl && this.currentMode) {
-      const modeDisplayName = this.currentMode === 'explore' ? 'Explore' : 
-                             this.currentMode === 'play' ? 'Play' : 
-                             this.currentMode === 'read' ? 'Database' : this.currentMode;
-      modeEl.textContent = `Mode: ${modeDisplayName}`;
+
+    if (this.currentMode === 'explore') {
+      // For explore mode, replace the header with toggle
+      const hubHeader = document.querySelector('.hub-header');
+      if (hubHeader) {
+        hubHeader.innerHTML = `
+          <div class="explore-toggle-bar">
+            <button class="explore-tab ${this.currentExploreSubmode === 'tours' ? 'active' : ''}" data-submode="tours">
+              🗺️ Take a Tour
+            </button>
+            <button class="explore-tab ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
+              🔍 Search Database
+            </button>
+          </div>
+        `;
+      }
+      
+      // Hide the mode indicator for explore mode
+      if (modeEl) {
+        modeEl.style.display = 'none';
+      }
+    } else {
+      // For other modes, keep the traditional header
+      if (worldNameEl && this.currentWorld) {
+        worldNameEl.textContent = this.currentWorld.name;
+      }
+      
+      if (modeEl) {
+        modeEl.style.display = 'block';
+        const modeDisplayName = this.currentMode === 'play' ? 'Play' : 
+                               this.currentMode === 'read' ? 'Database' : 
+                               this.currentMode === 'build' ? 'Build' : this.currentMode;
+        modeEl.textContent = `Mode: ${modeDisplayName}`;
+      }
     }
   }
 
@@ -372,7 +411,6 @@ class TTRPGHub {
     const contentMap = {
       play: () => this.getPlayModeContent(),
       explore: () => this.getExploreModeContent(),
-      read: () => this.getReadModeContent(), // Database mode
       build: () => this.getBuildModeContent()
     };
 
@@ -383,11 +421,11 @@ class TTRPGHub {
         const content = await contentFunction();
         hubContent.innerHTML = content;
         
-        // Setup event listeners based on mode
-        if (this.currentMode === 'explore' && this.tourViewer) {
-          this.tourViewer.setupEventListeners();
-        } else if (this.currentMode === 'read' && this.articleViewer) {
-          this.articleViewer.setupEventListeners();
+        // Setup mode-specific listeners
+        if (this.currentMode === 'explore') {
+          this.setupExploreToggleListeners();
+          // Load initial submode content
+          await this.loadExploreSubmode(this.currentExploreSubmode);
         }
       } catch (error) {
         hubContent.innerHTML = `<div class="error">Error loading ${this.currentMode} mode: ${error.message}</div>`;
@@ -408,22 +446,14 @@ class TTRPGHub {
   }
 
   async getExploreModeContent() {
-    // Skip intermediate screen - go directly to tour selection interface
-    if (!this.tourViewer) {
-      this.tourViewer = new TourViewer(this);
-      window.tourViewer = this.tourViewer;
-    }
-    
-    return await this.tourViewer.renderTourSelection(this.currentWorld.id);
-  }
-
-  async getReadModeContent() {
-    if (!this.articleViewer) {
-      this.articleViewer = new ArticleViewer(this);
-      window.articleViewer = this.articleViewer;
-    }
-    
-    return await this.articleViewer.renderReadMode(this.currentWorld.id);
+    // Return the container that will hold both submodes
+    return `
+      <div class="explore-content">
+        <div class="explore-submode-content" id="exploreModeContent">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    `;
   }
 
   getBuildModeContent() {
@@ -433,6 +463,58 @@ class TTRPGHub {
       { title: 'Location Builder', desc: 'Create places', action: 'Location builder coming soon!' },
       { title: 'Content Manager', desc: 'Organize all content', action: 'Content manager coming soon!' }
     ], '#FF9800');
+  }
+
+  // ========== Explore Submode Management ==========
+  setupExploreToggleListeners() {
+    document.querySelectorAll('.explore-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const submode = e.target.dataset.submode;
+        this.switchExploreSubmode(submode);
+      });
+    });
+  }
+
+  switchExploreSubmode(submode) {
+    this.currentExploreSubmode = submode;
+    
+    // Update tab states
+    document.querySelectorAll('.explore-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.submode === submode);
+    });
+    
+    // Load new content
+    this.loadExploreSubmode(submode);
+  }
+
+  async loadExploreSubmode(submode) {
+    const contentEl = document.getElementById('exploreModeContent');
+    if (!contentEl) return;
+    
+    try {
+      contentEl.innerHTML = '<div class="loading">Loading...</div>';
+      
+      if (submode === 'tours') {
+        if (!this.tourViewer) {
+          this.tourViewer = new TourViewer(this);
+          window.tourViewer = this.tourViewer;
+        }
+        const content = await this.tourViewer.renderTourContentOnly(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.tourViewer.setupTourCardListeners();
+      } else if (submode === 'database') {
+        if (!this.articleViewer) {
+          this.articleViewer = new ArticleViewer(this);
+          window.articleViewer = this.articleViewer;
+        }
+        const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.articleViewer.setupEventListeners();
+      }
+    } catch (error) {
+      contentEl.innerHTML = `<div class="error">Error loading ${submode}: ${error.message}</div>`;
+      Config.error('Error loading explore submode:', error);
+    }
   }
 
   createModeContent(title, tools, color) {
@@ -476,22 +558,6 @@ class TTRPGHub {
     `;
   }
 
-  // ========== Tour/Database Navigation ==========
-  async startTourSelection() {
-    if (!this.tourViewer) {
-      this.tourViewer = new TourViewer(this);
-      window.tourViewer = this.tourViewer;
-    }
-    
-    const hubContent = document.getElementById('hubContent');
-    if (hubContent) {
-      hubContent.innerHTML = '<div class="loading">Loading tours...</div>';
-      const tourContent = await this.tourViewer.renderTourSelection(this.currentWorld.id);
-      hubContent.innerHTML = tourContent;
-      this.tourViewer.setupEventListeners();
-    }
-  }
-
   // ========== Tour Data Loading ==========
   async loadTours(worldId) {
     try {
@@ -511,6 +577,29 @@ class TTRPGHub {
       return data.success ? data.data : [];
     } catch (error) {
       Config.error('Failed to load tour slides:', error);
+      return [];
+    }
+  }
+
+  // ========== Article Data Loading ==========
+  async loadArticles(worldId) {
+    try {
+      const url = Config.getUrl(Config.ENDPOINTS.ARTICLES, { world_id: worldId });
+      const data = await this.jsonp(url);
+      return data.success ? data.data : [];
+    } catch (error) {
+      Config.error('Failed to load articles:', error);
+      return [];
+    }
+  }
+
+  async loadCategories(worldId) {
+    try {
+      const url = Config.getUrl(Config.ENDPOINTS.CATEGORIES, { world_id: worldId });
+      const data = await this.jsonp(url);
+      return data.success ? data.data : [];
+    } catch (error) {
+      Config.error('Failed to load categories:', error);
       return [];
     }
   }
@@ -567,29 +656,7 @@ class TTRPGHub {
     }
   }
 
-  // ========== Additional API Methods ==========
-  async loadArticles(worldId) {
-    try {
-      const url = Config.getUrl(Config.ENDPOINTS.ARTICLES, { world_id: worldId });
-      const data = await this.jsonp(url);
-      return data.success ? data.data : [];
-    } catch (error) {
-      Config.error('Failed to load articles:', error);
-      return [];
-    }
-  }
-
-  async loadCategories(worldId) {
-    try {
-      const url = Config.getUrl(Config.ENDPOINTS.CATEGORIES, { world_id: worldId });
-      const data = await this.jsonp(url);
-      return data.success ? data.data : [];
-    } catch (error) {
-      Config.error('Failed to load categories:', error);
-      return [];
-    }
-  }
-
+  // ========== Utility Methods ==========
   markdownToHtml(markdown) {
     if (!markdown) return 'No content available';
     

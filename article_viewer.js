@@ -1,4 +1,4 @@
-// article-viewer.js - Redesigned for overlay card system
+// article-viewer.js - Redesigned for overlay card system with unified explore mode safety
 class ArticleViewer {
   constructor(hub) {
     this.hub = hub;
@@ -36,7 +36,7 @@ class ArticleViewer {
       return this.renderEmptyState();
     }
 
-    // Inject modal at body level, outside .container
+    // Inject modal at body level, outside .container (with improved safety)
     this.injectModalAtBodyLevel();
 
     return `
@@ -48,23 +48,27 @@ class ArticleViewer {
   }
 
   injectModalAtBodyLevel() {
-    // Remove any existing modal
+    // Improved modal injection with better cleanup
     const existingOverlay = document.getElementById('modalOverlay');
     const existingModal = document.getElementById('articleModal');
-    if (existingOverlay) existingOverlay.remove();
-    if (existingModal) existingModal.remove();
-
-    // Create modal HTML and inject at body level
-    const modalHTML = this.renderArticleModal();
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Only inject if modal doesn't already exist
+    if (!existingOverlay && !existingModal) {
+      const modalHTML = this.renderArticleModal();
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    } else if (existingOverlay && existingModal) {
+      // Modal exists, just ensure it's properly reset
+      this.closeModal();
+    }
   }
 
   renderEmptyState() {
     return `
       <div class="empty-state">
-        <h3>📚 No Articles Yet</h3>
+        <div class="empty-icon">📚</div>
+        <h3>No Articles Yet</h3>
         <p>This world doesn't have any published articles yet.</p>
-        <p>Switch to Build mode to start creating content!</p>
+        <p>Switch to Tours to explore guided content instead.</p>
       </div>
     `;
   }
@@ -144,7 +148,7 @@ class ArticleViewer {
       return `
         <div class="no-results">
           <p>No articles match your current filters.</p>
-          <button onclick="window.articleViewer.clearFilters()">Clear Filters</button>
+          <button onclick="window.articleViewer && window.articleViewer.clearFilters()">Clear Filters</button>
         </div>
       `;
     }

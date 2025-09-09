@@ -21,6 +21,22 @@ class TourViewer {
     }
   }
 
+  // New method for unified explore mode - returns just tour content without header/toggle
+  async renderTourContentOnly(worldId) {
+    await this.loadTourData(worldId);
+
+    if (this.currentTours.length === 0) {
+      return this.renderEmptyState();
+    }
+
+    // Group tours by category for better organization
+    const toursByCategory = this.groupToursByCategory();
+
+    // Return just the tour categories, no header or toggle
+    return this.renderTourCategories(toursByCategory);
+  }
+
+  // Legacy method for backward compatibility (kept but not used in unified mode)
   async renderTourSelection(worldId) {
     await this.loadTourData(worldId);
 
@@ -72,22 +88,26 @@ class TourViewer {
     const categories = Object.keys(toursByCategory);
     
     if (categories.length === 0) {
-      return '<div class="no-tours">No tours available</div>';
+      return '<div class="no-tours">No tours available for this world</div>';
     }
 
-    return categories.map(category => {
-      const tours = toursByCategory[category];
-      const tourCards = tours.map(tour => this.renderTourCard(tour)).join('');
-      
-      return `
-        <div class="tour-category">
-          <h4 class="category-title">${category}</h4>
-          <div class="tour-cards">
-            ${tourCards}
-          </div>
-        </div>
-      `;
-    }).join('');
+    return `
+      <div class="tour-categories">
+        ${categories.map(category => {
+          const tours = toursByCategory[category];
+          const tourCards = tours.map(tour => this.renderTourCard(tour)).join('');
+          
+          return `
+            <div class="tour-category">
+              <h4 class="category-title">${category}</h4>
+              <div class="tour-cards">
+                ${tourCards}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   renderTourCard(tour) {
@@ -114,9 +134,10 @@ class TourViewer {
   renderEmptyState() {
     return `
       <div class="empty-state">
-        <h3>🗺️ No Tours Available</h3>
+        <div class="empty-icon">🗺️</div>
+        <h3>No Tours Available</h3>
         <p>This world doesn't have any tours set up yet.</p>
-        <button onclick="window.tourViewer.switchToDatabase()">Browse Database Instead</button>
+        <p>Switch to Database mode to browse articles instead.</p>
       </div>
     `;
   }
@@ -251,6 +272,47 @@ class TourViewer {
     ).join('');
   }
 
+  renderSlideContent(slide) {
+    const hasMedia = slide.media_url && slide.media_url.trim();
+    const mediaElement = hasMedia ? this.renderSlideMedia(slide) : '';
+    
+    return `
+      <div class="slide-content">
+        ${mediaElement}
+        <div class="slide-text">
+          <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
+          <div class="slide-body">
+            ${this.hub.markdownToHtml(slide.content || 'No content available')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderSlideMedia(slide) {
+    const mediaUrl = slide.media_url;
+    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+    const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    
+    if (isVideo) {
+      return `
+        <div class="slide-media slide-video">
+          <video autoplay muted loop playsinline>
+            <source src="${mediaUrl}" type="video/mp4">
+          </video>
+        </div>
+      `;
+    } else if (isImage || true) { // Default to image
+      return `
+        <div class="slide-media slide-image">
+          <img src="${mediaUrl}" alt="${slide.title}" loading="lazy">
+        </div>
+      `;
+    }
+    
+    return '';
+  }
+
   setupTourEventListeners() {
     // Navigation buttons
     const prevBtn = document.getElementById('prevSlide');
@@ -303,7 +365,19 @@ class TourViewer {
     if (index >= 0 && index < this.slides.length) {
       this.currentSlideIndex = index;
       this.updateSlideDisplay();
-      this.scrollToCurrentSlide();
+      
+      // Scroll to the slide smoothly
+      const targetSlide = document.getElementById(`slide-${index}`);
+      if (targetSlide) {
+        const container = document.getElementById('tourSlidesContainer');
+        if (container) {
+          // Use smooth scrolling to move to the target slide
+          container.scrollTo({
+            top: targetSlide.offsetTop,
+            behavior: 'smooth'
+          });
+        }
+      }
     }
   }
 
@@ -338,45 +412,105 @@ class TourViewer {
     }
   }
 
+  setupScrollBasedNavigation() {
+    const container = document.getElementById('tourSlidesContainer');
+    if (!container) return;
+
+    let scrollTimeout;
+    let isWheelScrolling = false;
+    
+    // Mouse wheel event for discrete slide navigation
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault(); // Prevent default scroll behavior
+      
+      if (isWheelScrolling) return; // Prevent rapid wheel events
+      
+      isWheelScrolling = true;
+      
+      if (e.deltaY > 0) {
+        // Scrolling down - next slide
+        this.nextSlide();
+      } else {
+        // Scrolling up - previous slide
+        this.previousSlide();
+      }
+      
+      // Reset wheel scrolling flag after animation
+      setTimeout(() => {
+        isWheelScrolling = false;
+      }, 600); // Slightly longer than smooth scroll duration
+    });
+    
+    // Keep the existing scroll position detection for manual scrollbar use
+    container.addEventListener('scroll', (e) => {
+      // Only process if not currently wheel scrolling
+      if (isWheelScrolling) return;
+      
+      // Debounce scroll events to avoid excessive processing
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const scrollTop = e.target.scrollTop;
+        
+        // Calculate which slide should be active based on scroll position
+        let newSlideIndex = 0;
+        let minDistance = Infinity;
+        
+        // Find the slide closest to the top of the viewport
+        this.slides.forEach((_, index) => {
+          const slide = document.getElementById(`slide-${index}`);
+          if (slide) {
+            const slideTop = slide.offsetTop;
+            const distance = Math.abs(scrollTop - slideTop);
+            
+            if (distance < minDistance) {
+              minDistance = distance;
+              newSlideIndex = index;
+            }
+          }
+        });
+        
+        // Only update if we've moved to a different slide
+        if (newSlideIndex !== this.currentSlideIndex) {
+          this.currentSlideIndex = newSlideIndex;
+          this.updateSlideDisplay();
+        }
+      }, 100); // 100ms debounce
+    });
+
+    // Smooth scroll to slide boundaries when user stops scrolling manually
+    let isScrolling = false;
+    container.addEventListener('scroll', () => {
+      if (isWheelScrolling) return; // Don't interfere with wheel navigation
+      
+      isScrolling = true;
+      clearTimeout(scrollTimeout);
+      
+      scrollTimeout = setTimeout(() => {
+        if (isScrolling) {
+          isScrolling = false;
+          // Snap to the current active slide
+          this.scrollToCurrentSlide();
+        }
+      }, 150);
+    });
+  }
+
   exitTour() {
     this.activeTour = null;
     this.slides = [];
     this.currentSlideIndex = 0;
     
-    // Return to tour selection
+    // Re-enable body scroll when exiting tour
+    document.body.style.overflow = 'auto';
+    
+    // Return to explore mode instead of calling showWorldHub directly
+    // The hub will handle reloading the correct explore submode
+    this.hub.currentMode = 'explore';
+    this.hub.currentExploreSubmode = 'tours';
     this.hub.showWorldHub();
   }
 
-  switchToDatabase() {
-    // Switch to database mode (existing article viewer)
-    this.hub.currentMode = 'read';
-    this.hub.showWorldHub();
-  }
-
-  setupModeEventListeners() {
-    document.querySelectorAll('.tour-mode-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const mode = e.target.dataset.mode;
-        
-        // Update button states
-        document.querySelectorAll('.tour-mode-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        if (mode === 'database') {
-          this.switchToDatabase();
-        } else {
-          // Already showing tours, maybe refresh the view
-          const tourContent = document.getElementById('tourContent');
-          if (tourContent) {
-            const toursByCategory = this.groupToursByCategory();
-            tourContent.innerHTML = this.renderTourCategories(toursByCategory);
-            this.setupTourCardListeners();
-          }
-        }
-      });
-    });
-  }
-
+  // Only setup tour card listeners now - hub handles mode switching
   setupTourCardListeners() {
     document.querySelectorAll('.tour-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -386,8 +520,8 @@ class TourViewer {
     });
   }
 
+  // Simplified event listener setup - only handles tour cards
   setupEventListeners() {
-    this.setupModeEventListeners();
     this.setupTourCardListeners();
   }
 }

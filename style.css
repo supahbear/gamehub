@@ -363,6 +363,171 @@ h1 {
     border-radius: 10px;
 }
 
+/* ========== UNIFIED EXPLORE MODE TOGGLE ========== */
+
+.explore-toggle-bar {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 8px;
+    gap: 8px;
+    margin-bottom: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.explore-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--font-family);
+    white-space: nowrap;
+}
+
+.explore-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.explore-tab.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.explore-tab.active:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Content container for explore submodes */
+.explore-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.explore-submode-content {
+    min-height: 400px;
+}
+
+/* Tour categories styling improvements for unified mode */
+.tour-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.tour-category {
+    animation: slideInUp 0.4s ease-out;
+}
+
+.tour-categories .category-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.tour-categories .tour-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* Empty state improvements */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: #ffffff;
+}
+
+.empty-state p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+/* Hide the old mode indicator for explore mode */
+.world-hub[data-mode="explore"] .current-mode {
+    display: none !important;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure smooth transitions between submodes */
+.explore-submode-content > * {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading state styling */
+.explore-submode-content .loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+}
+
+/* Error state styling */
+.explore-submode-content .error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 8px;
+    margin: 20px;
+}
+
+/* ========== END UNIFIED EXPLORE MODE ========== */
+
 .current-mode {
     position: fixed;
     top: 20px;
@@ -986,8 +1151,15 @@ h2 {
 
 .tour-slides-container {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll;
     scroll-behavior: smooth;
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.tour-slides-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/WebKit */
 }
 
 .tour-slide {
@@ -1136,7 +1308,7 @@ h2 {
 
 /* ========== MODAL STYLES ========== */
 
-#modalOverlay {
+#modalOverlay, #tourModalOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -1150,12 +1322,12 @@ h2 {
     transition: opacity 0.3s ease;
 }
 
-#modalOverlay.show {
+#modalOverlay.show, #tourModalOverlay.show {
     opacity: 1;
     pointer-events: auto;
 }
 
-.article-modal {
+.article-modal, .tour-modal {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -1166,7 +1338,7 @@ h2 {
     transition: opacity 0.3s ease;
 }
 
-.article-modal.show {
+.article-modal.show, .tour-modal.show {
     opacity: 1;
     pointer-events: auto;
 }
@@ -1184,6 +1356,13 @@ h2 {
     z-index: 10000;
 }
 
+/* Tour modal specific sizing - match article modal exactly */
+.tour-modal .modal-content {
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1191,6 +1370,31 @@ h2 {
     padding: 20px;
     border-bottom: 1px solid var(--border-color);
     background: var(--secondary-bg);
+}
+
+/* Tour modal header with progress */
+.tour-modal .modal-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 20px;
+}
+
+.tour-modal .modal-header h2 {
+    justify-self: start;
+    margin: 0;
+}
+
+.tour-modal-progress {
+    justify-self: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.tour-modal .close-btn {
+    justify-self: end;
 }
 
 .modal-header h2 {
@@ -1229,6 +1433,15 @@ h2 {
     font-weight: var(--font-weight-normal);
 }
 
+/* Tour modal body - no padding, full height management */
+.tour-modal .modal-body {
+    padding: 0;
+    max-height: calc(95vh - 140px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 .modal-body h1, .modal-body h2, .modal-body h3 {
     color: var(--text-accent);
     margin-top: 20px;
@@ -1253,6 +1466,160 @@ h2 {
     margin-bottom: 20px;
     display: block;
 }
+
+/* ========== TOUR MODAL SPECIFIC STYLES ========== */
+
+.tour-slide-container {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: var(--tour-slide-bg);
+}
+
+.tour-modal-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tour-modal-slide.active {
+    opacity: 1;
+}
+
+.tour-modal-slide .slide-content {
+    max-width: 1000px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+}
+
+.tour-modal-slide .slide-media {
+    width: 100%;
+    height: 350px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--secondary-bg);
+}
+
+.tour-modal-slide .slide-media img,
+.tour-modal-slide .slide-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tour-modal-slide .slide-text {
+    padding: 0;
+}
+
+.tour-modal-slide .slide-title {
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    color: var(--tour-accent);
+    line-height: 1.2;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-heavy);
+}
+
+.tour-modal-slide .slide-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.tour-modal-slide .slide-body h1, 
+.tour-modal-slide .slide-body h2, 
+.tour-modal-slide .slide-body h3 {
+    color: var(--tour-accent);
+    margin: 20px 0 10px 0;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+}
+
+.tour-modal-slide .slide-body p {
+    margin-bottom: 15px;
+}
+
+/* Single column layout for intro slides */
+.tour-modal-slide.slide-type-intro .slide-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    max-width: 800px;
+}
+
+.tour-modal-slide.slide-type-intro .slide-media {
+    height: 250px;
+    margin-bottom: 30px;
+}
+
+.tour-modal-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--secondary-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.tour-modal-navigation .tour-nav-btn {
+    padding: 10px 20px;
+    background: var(--tour-nav-bg);
+    color: var(--tour-nav-text);
+    border: none;
+    border-radius: 6px;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-family);
+}
+
+.tour-modal-navigation .tour-nav-btn:hover:not(:disabled) {
+    background: var(--text-accent);
+    transform: translateY(-2px);
+}
+
+.tour-modal-navigation .tour-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tour-modal-navigation .tour-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.tour-modal-navigation .tour-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--tour-dot-inactive);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tour-modal-navigation .tour-dot.active {
+    background: var(--tour-accent);
+    transform: scale(1.2);
+}
+
+.tour-modal-navigation .tour-dot:hover {
+    background: var(--text-secondary);
+}
+
+/* ========== END TOUR MODAL STYLES ========== */
 
 .modal-body::-webkit-scrollbar {
     width: 8px;
@@ -1393,5 +1760,26 @@ body.modal-active .container {
         flex-direction: column;
         gap: 10px;
         text-align: center;
+    }
+
+    /* Responsive explore toggle */
+    .explore-toggle-bar {
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+    }
+    
+    .explore-tab {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+    
+    .tour-categories .tour-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .tour-categories .category-title {
+        font-size: 16px;
     }
 }
