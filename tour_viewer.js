@@ -155,8 +155,8 @@ class TourViewer {
 
       Config.log(`Starting tour: ${this.activeTour.title} with ${this.slides.length} slides`);
       
-      // Switch to tour view
-      this.renderTourSlideshow();
+      // Use the HTML modal instead of replacing hub content
+      this.openTourModal();
       
     } catch (error) {
       Config.error('Failed to start tour:', error);
@@ -164,6 +164,245 @@ class TourViewer {
     }
   }
 
+  // New modal-based tour system
+  openTourModal() {
+    const tourModal = document.getElementById('tourModal');
+    const tourModalOverlay = document.getElementById('tourModalOverlay');
+    const tourModalTitle = document.getElementById('tourModalTitle');
+    const tourSlideContainer = document.getElementById('tourSlideContainer');
+
+    if (!tourModal || !tourModalOverlay) {
+      Config.error('Tour modal elements not found');
+      return;
+    }
+
+    // Set modal title
+    if (tourModalTitle) {
+      tourModalTitle.textContent = this.activeTour.title;
+    }
+
+    // Clear and populate slide container
+    if (tourSlideContainer) {
+      tourSlideContainer.innerHTML = this.renderAllModalSlides();
+    }
+
+    // Update progress and navigation
+    this.updateTourModalProgress();
+    this.updateTourModalNavigation();
+
+    // Show modal
+    tourModalOverlay.classList.add('show');
+    tourModal.classList.add('show');
+    document.body.classList.add('modal-active');
+    document.body.style.overflow = 'hidden';
+
+    // Setup modal event listeners
+    this.setupTourModalListeners();
+
+    Config.log('Tour modal opened');
+  }
+
+  closeTourModal() {
+    const tourModal = document.getElementById('tourModal');
+    const tourModalOverlay = document.getElementById('tourModalOverlay');
+    
+    if (tourModal && tourModalOverlay) {
+      tourModalOverlay.classList.remove('show');
+      tourModal.classList.remove('show');
+      document.body.classList.remove('modal-active');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Reset tour state
+    this.activeTour = null;
+    this.slides = [];
+    this.currentSlideIndex = 0;
+
+    Config.log('Tour modal closed');
+  }
+
+  renderAllModalSlides() {
+    return this.slides.map((slide, index) => 
+      this.renderModalSlide(slide, index)
+    ).join('');
+  }
+
+  renderModalSlide(slide, index) {
+    const isActive = index === this.currentSlideIndex;
+    const slideTypeClass = `slide-type-${slide.slide_type || 'default'}`;
+    
+    const content = this.renderSlideContent(slide);
+    
+    return `
+      <div class="tour-modal-slide ${slideTypeClass} ${isActive ? 'active' : ''}" 
+           data-slide-index="${index}"
+           id="tour-slide-${index}">
+        ${content}
+      </div>
+    `;
+  }
+
+  renderSlideContent(slide) {
+    const hasMedia = slide.media_url && slide.media_url.trim();
+    const mediaElement = hasMedia ? this.renderSlideMedia(slide) : '';
+    
+    return `
+      <div class="slide-content">
+        ${mediaElement}
+        <div class="slide-text">
+          <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
+          <div class="slide-body">
+            ${this.hub.markdownToHtml(slide.content || 'No content available')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderSlideMedia(slide) {
+    const mediaUrl = slide.media_url;
+    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+    const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    
+    if (isVideo) {
+      return `
+        <div class="slide-media slide-video">
+          <video autoplay muted loop playsinline>
+            <source src="${mediaUrl}" type="video/mp4">
+          </video>
+        </div>
+      `;
+    } else if (isImage || true) { // Default to image
+      return `
+        <div class="slide-media slide-image">
+          <img src="${mediaUrl}" alt="${slide.title}" loading="lazy">
+        </div>
+      `;
+    }
+    
+    return '';
+  }
+
+  setupTourModalListeners() {
+    // Close button
+    const closeBtn = document.getElementById('closeTourModalBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeTourModal());
+    }
+
+    // Navigation buttons
+    const prevBtn = document.getElementById('tourModalPrevBtn');
+    const nextBtn = document.getElementById('tourModalNextBtn');
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => this.previousSlide());
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => this.nextSlide());
+    }
+
+    // Progress dots
+    document.querySelectorAll('#tourModalDots .tour-dot').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        const slideIndex = parseInt(e.target.dataset.slide);
+        this.goToSlide(slideIndex);
+      });
+    });
+
+    // Modal background click
+    const tourModalOverlay = document.getElementById('tourModalOverlay');
+    if (tourModalOverlay) {
+      tourModalOverlay.addEventListener('click', () => this.closeTourModal());
+    }
+
+    // Prevent closing when clicking modal content
+    const tourModal = document.getElementById('tourModal');
+    if (tourModal) {
+      tourModal.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (this.activeTour && document.body.classList.contains('modal-active')) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.previousSlide();
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.nextSlide();
+        } else if (e.key === 'Escape') {
+          this.closeTourModal();
+        }
+      }
+    });
+  }
+
+  nextSlide() {
+    if (this.currentSlideIndex < this.slides.length - 1) {
+      this.goToSlide(this.currentSlideIndex + 1);
+    }
+  }
+
+  previousSlide() {
+    if (this.currentSlideIndex > 0) {
+      this.goToSlide(this.currentSlideIndex - 1);
+    }
+  }
+
+  goToSlide(index) {
+    if (index >= 0 && index < this.slides.length) {
+      this.currentSlideIndex = index;
+      this.updateTourModalDisplay();
+    }
+  }
+
+  updateTourModalDisplay() {
+    // Update active slide
+    document.querySelectorAll('.tour-modal-slide').forEach((slide, index) => {
+      slide.classList.toggle('active', index === this.currentSlideIndex);
+    });
+
+    // Update progress and navigation
+    this.updateTourModalProgress();
+    this.updateTourModalNavigation();
+  }
+
+  updateTourModalProgress() {
+    const progressEl = document.getElementById('tourModalProgress');
+    if (progressEl) {
+      progressEl.textContent = `Slide ${this.currentSlideIndex + 1} of ${this.slides.length}`;
+    }
+  }
+
+  updateTourModalNavigation() {
+    // Update navigation buttons
+    const prevBtn = document.getElementById('tourModalPrevBtn');
+    const nextBtn = document.getElementById('tourModalNextBtn');
+    
+    if (prevBtn) prevBtn.disabled = this.currentSlideIndex === 0;
+    if (nextBtn) nextBtn.disabled = this.currentSlideIndex === this.slides.length - 1;
+
+    // Update progress dots
+    const dotsContainer = document.getElementById('tourModalDots');
+    if (dotsContainer) {
+      dotsContainer.innerHTML = this.slides.map((_, index) => 
+        `<button class="tour-dot ${index === this.currentSlideIndex ? 'active' : ''}" 
+                data-slide="${index}"></button>`
+      ).join('');
+
+      // Re-attach dot listeners
+      dotsContainer.querySelectorAll('.tour-dot').forEach(dot => {
+        dot.addEventListener('click', (e) => {
+          const slideIndex = parseInt(e.target.dataset.slide);
+          this.goToSlide(slideIndex);
+        });
+      });
+    }
+  }
+
+  // Legacy slideshow methods kept for backward compatibility
   renderTourSlideshow() {
     const hubContent = document.getElementById('hubContent');
     if (!hubContent) return;
@@ -212,7 +451,6 @@ class TourViewer {
     const isActive = index === this.currentSlideIndex;
     const slideTypeClass = `slide-type-${slide.slide_type || 'default'}`;
     
-    // Handle different slide types with different layouts
     const content = this.renderSlideContent(slide);
     
     return `
@@ -224,93 +462,11 @@ class TourViewer {
     `;
   }
 
-  renderSlideContent(slide) {
-    const hasMedia = slide.media_url && slide.media_url.trim();
-    const mediaElement = hasMedia ? this.renderSlideMedia(slide) : '';
-    
-    return `
-      <div class="slide-content">
-        ${mediaElement}
-        <div class="slide-text">
-          <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
-          <div class="slide-body">
-            ${this.hub.markdownToHtml(slide.content || 'No content available')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderSlideMedia(slide) {
-    const mediaUrl = slide.media_url;
-    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
-    const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-    
-    if (isVideo) {
-      return `
-        <div class="slide-media slide-video">
-          <video autoplay muted loop playsinline>
-            <source src="${mediaUrl}" type="video/mp4">
-          </video>
-        </div>
-      `;
-    } else if (isImage || true) { // Default to image
-      return `
-        <div class="slide-media slide-image">
-          <img src="${mediaUrl}" alt="${slide.title}" loading="lazy">
-        </div>
-      `;
-    }
-    
-    return '';
-  }
-
   renderProgressDots() {
     return this.slides.map((_, index) => 
       `<button class="tour-dot ${index === this.currentSlideIndex ? 'active' : ''}" 
               data-slide="${index}"></button>`
     ).join('');
-  }
-
-  renderSlideContent(slide) {
-    const hasMedia = slide.media_url && slide.media_url.trim();
-    const mediaElement = hasMedia ? this.renderSlideMedia(slide) : '';
-    
-    return `
-      <div class="slide-content">
-        ${mediaElement}
-        <div class="slide-text">
-          <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
-          <div class="slide-body">
-            ${this.hub.markdownToHtml(slide.content || 'No content available')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderSlideMedia(slide) {
-    const mediaUrl = slide.media_url;
-    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
-    const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-    
-    if (isVideo) {
-      return `
-        <div class="slide-media slide-video">
-          <video autoplay muted loop playsinline>
-            <source src="${mediaUrl}" type="video/mp4">
-          </video>
-        </div>
-      `;
-    } else if (isImage || true) { // Default to image
-      return `
-        <div class="slide-media slide-image">
-          <img src="${mediaUrl}" alt="${slide.title}" loading="lazy">
-        </div>
-      `;
-    }
-    
-    return '';
   }
 
   setupTourEventListeners() {
@@ -349,38 +505,6 @@ class TourViewer {
     });
   }
 
-  nextSlide() {
-    if (this.currentSlideIndex < this.slides.length - 1) {
-      this.goToSlide(this.currentSlideIndex + 1);
-    }
-  }
-
-  previousSlide() {
-    if (this.currentSlideIndex > 0) {
-      this.goToSlide(this.currentSlideIndex - 1);
-    }
-  }
-
-  goToSlide(index) {
-    if (index >= 0 && index < this.slides.length) {
-      this.currentSlideIndex = index;
-      this.updateSlideDisplay();
-      
-      // Scroll to the slide smoothly
-      const targetSlide = document.getElementById(`slide-${index}`);
-      if (targetSlide) {
-        const container = document.getElementById('tourSlidesContainer');
-        if (container) {
-          // Use smooth scrolling to move to the target slide
-          container.scrollTo({
-            top: targetSlide.offsetTop,
-            behavior: 'smooth'
-          });
-        }
-      }
-    }
-  }
-
   updateSlideDisplay() {
     // Update active slide
     document.querySelectorAll('.tour-slide').forEach((slide, index) => {
@@ -412,89 +536,6 @@ class TourViewer {
     }
   }
 
-  setupScrollBasedNavigation() {
-    const container = document.getElementById('tourSlidesContainer');
-    if (!container) return;
-
-    let scrollTimeout;
-    let isWheelScrolling = false;
-    
-    // Mouse wheel event for discrete slide navigation
-    container.addEventListener('wheel', (e) => {
-      e.preventDefault(); // Prevent default scroll behavior
-      
-      if (isWheelScrolling) return; // Prevent rapid wheel events
-      
-      isWheelScrolling = true;
-      
-      if (e.deltaY > 0) {
-        // Scrolling down - next slide
-        this.nextSlide();
-      } else {
-        // Scrolling up - previous slide
-        this.previousSlide();
-      }
-      
-      // Reset wheel scrolling flag after animation
-      setTimeout(() => {
-        isWheelScrolling = false;
-      }, 600); // Slightly longer than smooth scroll duration
-    });
-    
-    // Keep the existing scroll position detection for manual scrollbar use
-    container.addEventListener('scroll', (e) => {
-      // Only process if not currently wheel scrolling
-      if (isWheelScrolling) return;
-      
-      // Debounce scroll events to avoid excessive processing
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const scrollTop = e.target.scrollTop;
-        
-        // Calculate which slide should be active based on scroll position
-        let newSlideIndex = 0;
-        let minDistance = Infinity;
-        
-        // Find the slide closest to the top of the viewport
-        this.slides.forEach((_, index) => {
-          const slide = document.getElementById(`slide-${index}`);
-          if (slide) {
-            const slideTop = slide.offsetTop;
-            const distance = Math.abs(scrollTop - slideTop);
-            
-            if (distance < minDistance) {
-              minDistance = distance;
-              newSlideIndex = index;
-            }
-          }
-        });
-        
-        // Only update if we've moved to a different slide
-        if (newSlideIndex !== this.currentSlideIndex) {
-          this.currentSlideIndex = newSlideIndex;
-          this.updateSlideDisplay();
-        }
-      }, 100); // 100ms debounce
-    });
-
-    // Smooth scroll to slide boundaries when user stops scrolling manually
-    let isScrolling = false;
-    container.addEventListener('scroll', () => {
-      if (isWheelScrolling) return; // Don't interfere with wheel navigation
-      
-      isScrolling = true;
-      clearTimeout(scrollTimeout);
-      
-      scrollTimeout = setTimeout(() => {
-        if (isScrolling) {
-          isScrolling = false;
-          // Snap to the current active slide
-          this.scrollToCurrentSlide();
-        }
-      }, 150);
-    });
-  }
-
   exitTour() {
     this.activeTour = null;
     this.slides = [];
@@ -504,13 +545,12 @@ class TourViewer {
     document.body.style.overflow = 'auto';
     
     // Return to explore mode instead of calling showWorldHub directly
-    // The hub will handle reloading the correct explore submode
     this.hub.currentMode = 'explore';
     this.hub.currentExploreSubmode = 'tours';
     this.hub.showWorldHub();
   }
 
-  // Only setup tour card listeners now - hub handles mode switching
+  // Setup tour card listeners - used by unified explore mode
   setupTourCardListeners() {
     document.querySelectorAll('.tour-card').forEach(card => {
       card.addEventListener('click', (e) => {

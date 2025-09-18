@@ -1,0 +1,543 @@
+/*
+ * FEATURES.CSS
+ * Content browsing systems: article viewer interface and tour system
+ * Contains article filters/search, tour selection interface, and tour slideshow functionality
+ * Depends on: base.css variables
+ */
+
+/* ========== ARTICLE SYSTEM ========== */
+.landing-message {
+    max-width: 800px;
+    margin: 40px auto 0;
+    padding: 25px 30px;
+}
+
+.message-content {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-weight: var(--font-weight-normal);
+}
+
+.message-content p {
+    margin-bottom: 15px;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.article-viewer {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.article-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 20px;
+    background: var(--secondary-bg);
+    border-radius: 10px;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group input, .filter-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.filter-group input::placeholder {
+    color: var(--text-secondary);
+}
+
+.filter-group select option {
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 8px;
+}
+
+.clear-btn {
+    padding: 10px 20px;
+    background: var(--button-bg);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+}
+
+.clear-btn:hover {
+    background: var(--button-hover);
+}
+
+/* ========== TOUR SYSTEM ========== */
+.explore-mode-selection {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.explore-mode-selection h3 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-heavy);
+}
+
+.explore-mode-selection p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.explore-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.explore-option-btn {
+    background: var(--button-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
+    padding: 40px 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-color);
+    text-align: center;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.explore-option-btn:hover {
+    transform: translateY(-5px);
+    background: var(--button-hover);
+    border-color: var(--tour-accent);
+}
+
+.explore-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.explore-text {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+    font-size: 1.5rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.explore-option-btn small {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-normal);
+    line-height: 1.4;
+}
+
+.tour-selection {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.tour-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.tour-header h3 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-heavy);
+}
+
+.tour-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.tour-mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.tour-mode-btn {
+    padding: 12px 24px;
+    background: var(--button-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+}
+
+.tour-mode-btn:hover {
+    background: var(--button-hover);
+    border-color: var(--text-accent);
+    transform: translateY(-2px);
+}
+
+.tour-mode-btn.active {
+    background: var(--tour-accent);
+    border-color: var(--tour-accent);
+    color: var(--tour-bg);
+}
+
+.tour-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.tour-category {
+    margin-bottom: 40px;
+    animation: slideInUp 0.4s ease-out;
+}
+
+.category-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--tour-accent);
+    padding-bottom: 8px;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+}
+
+.tour-categories .category-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.tour-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.tour-categories .tour-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.tour-card {
+    position: relative;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--tour-card-bg);
+    border: 1px solid var(--border-color);
+}
+
+.tour-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-color: var(--tour-accent);
+}
+
+.tour-card-bg,
+.tour-card-bg-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.tour-card:hover .tour-card-bg {
+    transform: scale(1.05);
+}
+
+.tour-card-bg-placeholder {
+    background: var(--secondary-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--text-secondary);
+}
+
+.tour-card-bg-placeholder::before {
+    content: "🗺️";
+}
+
+.tour-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, 
+        rgba(0, 0, 0, 0.9) 0%, 
+        rgba(0, 0, 0, 0.6) 50%, 
+        transparent 100%
+    );
+    padding: 20px;
+    color: white;
+}
+
+.tour-title {
+    font-size: 1.2rem;
+    font-weight: var(--font-weight-bold);
+    margin-bottom: 8px;
+    color: var(--tour-accent);
+    font-family: var(--font-family);
+}
+
+.tour-description {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    opacity: 0.9;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.tour-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+/* ========== TOUR SLIDESHOW ========== */
+.tour-slideshow {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--tour-slide-bg);
+    color: var(--text-color);
+}
+
+.tour-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.tour-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.tour-info .tour-title {
+    font-size: 1.2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-color);
+    font-family: var(--font-family);
+}
+
+.tour-progress {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    color: var(--text-secondary);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.tour-slides-container {
+    flex: 1;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tour-slides-container::-webkit-scrollbar {
+    display: none;
+}
+
+.tour-slide {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0.3;
+    transition: opacity 0.5s ease;
+}
+
+.tour-slide.active {
+    opacity: 1;
+}
+
+.slide-content {
+    max-width: 1200px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+}
+
+.slide-media {
+    width: 100%;
+    height: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.slide-media img,
+.slide-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide-text {
+    padding: 20px;
+}
+
+.slide-title {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: var(--tour-accent);
+    line-height: 1.2;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-heavy);
+}
+
+.slide-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+}
+
+.slide-body h1, .slide-body h2, .slide-body h3 {
+    color: var(--tour-accent);
+    margin: 20px 0 10px 0;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+}
+
+.slide-body p {
+    margin-bottom: 15px;
+}
+
+.slide-type-intro .slide-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    max-width: 800px;
+}
+
+.slide-type-intro .slide-media {
+    height: 300px;
+    margin-bottom: 30px;
+}
+
+.tour-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--secondary-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.tour-nav-btn {
+    padding: 10px 20px;
+    background: var(--tour-nav-bg);
+    color: var(--tour-nav-text);
+    border: none;
+    border-radius: 6px;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-family);
+}
+
+.tour-nav-btn:hover:not(:disabled) {
+    background: var(--text-accent);
+    transform: translateY(-2px);
+}
+
+.tour-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tour-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.tour-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--tour-dot-inactive);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tour-dot.active {
+    background: var(--tour-accent);
+    transform: scale(1.2);
+}
+
+.tour-dot:hover {
+    background: var(--text-secondary);
+}
+
+/* ========== ANIMATION APPLICATIONS ========== */
+.explore-submode-content > * {
+    animation: fadeIn 0.3s ease-out;
+}

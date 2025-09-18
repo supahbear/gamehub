@@ -36,8 +36,10 @@ class ArticleViewer {
       return this.renderEmptyState();
     }
 
-    // Inject modal at body level, outside .container (with improved safety)
-    this.injectModalAtBodyLevel();
+    // Check if HTML modals exist - no need to inject if already there
+    if (!this.checkModalExists()) {
+      Config.warn('Article modal not found in HTML - functionality may be limited');
+    }
 
     return `
       <div class="article-viewer">
@@ -47,19 +49,10 @@ class ArticleViewer {
     `;
   }
 
-  injectModalAtBodyLevel() {
-    // Improved modal injection with better cleanup
-    const existingOverlay = document.getElementById('modalOverlay');
-    const existingModal = document.getElementById('articleModal');
-    
-    // Only inject if modal doesn't already exist
-    if (!existingOverlay && !existingModal) {
-      const modalHTML = this.renderArticleModal();
-      document.body.insertAdjacentHTML('beforeend', modalHTML);
-    } else if (existingOverlay && existingModal) {
-      // Modal exists, just ensure it's properly reset
-      this.closeModal();
-    }
+  checkModalExists() {
+    const overlay = document.getElementById('modalOverlay');
+    const modal = document.getElementById('articleModal');
+    return !!(overlay && modal);
   }
 
   renderEmptyState() {
@@ -191,23 +184,6 @@ class ArticleViewer {
     }
   }
 
-  renderArticleModal() {
-    return `
-      <div id="modalOverlay"></div>
-      <div id="articleModal" class="article-modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 id="modalTitle">Article Title</h2>
-            <button class="close-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div id="modalContent">Loading...</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   filterArticles() {
     return this.currentArticles.filter(article => {
       // Category filter is exclusive - if set, only show that category
@@ -283,33 +259,28 @@ class ArticleViewer {
       });
     });
 
-    // Modal close handlers
+    // Modal close handlers - use existing HTML modals
     this.setupModalEventListeners();
   }
 
   setupModalEventListeners() {
-    // X button
-    const closeBtn = document.querySelector('.close-btn');
+    // X button - look for the close button in article modal
+    const closeBtn = document.getElementById('closeModalBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.closeModal());
     }
 
     // Modal background click handling
-    const modal = document.getElementById('articleModal');
     const overlay = document.getElementById('modalOverlay');
-    
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        // Only close if clicking the modal itself, not the content
-        if (e.target === modal) {
-          this.closeModal();
-        }
-      });
+    if (overlay) {
+      overlay.addEventListener('click', () => this.closeModal());
     }
 
-    if (overlay) {
-      overlay.addEventListener('click', () => {
-        this.closeModal();
+    // Prevent closing when clicking modal content
+    const modal = document.getElementById('articleModal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        e.stopPropagation();
       });
     }
 
@@ -327,7 +298,7 @@ class ArticleViewer {
       gridContainer.outerHTML = this.renderArticleGrid();
       this.setupEventListeners();
     } else {
-      console.error('articles-grid container not found for refresh');
+      Config.error('articles-grid container not found for refresh');
       // Try to find the parent and inject the grid
       const articleViewer = document.querySelector('.article-viewer');
       if (articleViewer) {
@@ -359,14 +330,20 @@ class ArticleViewer {
     const article = this.currentArticles.find(a => a.id == articleId);
     if (!article) return;
 
+    // Use the HTML modal structure
     const modal = document.getElementById('articleModal');
     const overlay = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
-    const content = document.getElementById('modalContent');
+    const content = document.getElementById('modalBody');
+
+    if (!modal || !overlay) {
+      Config.error('Article modal elements not found in HTML');
+      return;
+    }
 
     if (title) title.textContent = article.title;
     if (content) {
-      // Simple markdown-to-HTML conversion (basic)
+      // Convert markdown to HTML
       const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
       
       // Add image to modal if it exists
@@ -380,12 +357,13 @@ class ArticleViewer {
       }
     }
 
-    if (modal && overlay) {
-      overlay.classList.add('show');
-      modal.classList.add('show');
-      document.body.classList.add('modal-active');
-      document.body.style.overflow = 'hidden';
-    }
+    // Show modal using the HTML structure
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('modal-active');
+    document.body.style.overflow = 'hidden';
+
+    Config.log('Article modal opened:', article.title);
   }
 
   closeModal() {
@@ -397,6 +375,8 @@ class ArticleViewer {
       modal.classList.remove('show');
       document.body.classList.remove('modal-active');
       document.body.style.overflow = 'auto';
+      
+      Config.log('Article modal closed');
     }
   }
 

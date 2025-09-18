@@ -1,0 +1,156 @@
+/*
+ * RESPONSIVE.CSS
+ * Mobile and tablet breakpoints for all components
+ * Contains responsive overrides for typography, layout, cards, navigation, and modals
+ * Depends on: base.css variables and all component files
+ * Load this last to override everything else
+ */
+
+/* ========== MOBILE BREAKPOINT ========== */
+@media (max-width: 768px) {
+    /* Base typography adjustments */
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .logo {
+        height: 60px;
+    }
+    
+    /* Component adjustments */
+    .mode-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .hub-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .current-mode {
+        top: 15px;
+        right: 15px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* World cards mobile layout */
+    .worlds-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .world-card {
+        height: 300px;
+    }
+
+    .world-name {
+        font-size: 1.8rem;
+    }
+
+    /* Article system mobile layout */
+    .article-filters {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .articles-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .article-card {
+        height: 280px;
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+    }
+
+    .card-overlay {
+        padding: 10px 14px;
+        min-height: 100px;
+    }
+
+    .card-summary {
+        font-size: 0.75rem;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    /* Modal adjustments */
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.4rem;
+    }
+    
+    .modal-body {
+        max-height: calc(95vh - 100px);
+    }
+
+    /* Tour system mobile layout */
+    .explore-options {
+        grid-template-columns: 1fr;
+    }
+
+    .tour-mode-selector {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .tour-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .slide-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .slide-title {
+        font-size: 2rem;
+    }
+    
+    .tour-navigation {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .tour-slide {
+        padding: 20px;
+    }
+
+    .tour-header-bar {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    /* Explore toggle mobile layout */
+    .explore-toggle-bar {
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+    }
+    
+    .explore-tab {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+    
+    .tour-categories .tour-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .tour-categories .category-title {
+        font-size: 16px;
+    }
+}

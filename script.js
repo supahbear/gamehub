@@ -117,8 +117,7 @@ class TTRPGHub {
           name: world.name || world.world_name || 'Unnamed World',
           description: world.description || world.world_description || 'No description available',
           system: world.system || world.dice_set || world.game_system || 'Unknown System',
-          video_url: world.video_url || null,
-          message: world.message || null // Add message field
+          video_url: world.video_url || null
         }));
         
         Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
@@ -132,15 +131,14 @@ class TTRPGHub {
   }
 
   useFallbackWorlds() {
-    // Enhanced fallback data with video URLs and landing message
+    // Enhanced fallback data with video URLs
     this.worlds = [
       {
         id: 'breach',
         name: 'The Breach',
         description: 'A D&D 5e campaign where reality itself has been torn asunder.',
         system: 'D&D 5e',
-        video_url: 'assets/videos/breach-loop.mp4',
-        landing_message: null
+        video_url: 'assets/videos/breach-loop.mp4'
       },
       {
         id: 'laguna',
@@ -192,28 +190,7 @@ class TTRPGHub {
     Config.log(`Rendered ${this.worlds.length} worlds`);
   }
 
-  updateLandingMessage() {
-    // Debug: log all worlds and their message fields
-    console.log('All worlds:', this.worlds);
-    this.worlds.forEach((world, index) => {
-      console.log(`World ${index}:`, world.id, 'message:', world.message);
-    });
-    
-    // Use message from first world that has one, or fallback to default
-    const worldWithMessage = this.worlds.find(w => w.message && w.message.trim());
-    console.log('World with message found:', worldWithMessage);
-    
-    const messageEl = document.getElementById('landingMessage');
-    
-    if (messageEl && worldWithMessage) {
-      // Simple markdown-to-HTML conversion for the landing message
-      const htmlContent = this.markdownToHtml(worldWithMessage.message);
-      messageEl.innerHTML = htmlContent;
-      Config.log('Updated landing message from sheet data');
-    } else {
-      console.log('No world with message found or no message element');
-    }
-  }
+
 
   setupVideoHoverEvents() {
     const worldCards = document.querySelectorAll('.world-card');
