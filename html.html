@@ -39,26 +39,9 @@
                 <div class="landing-message">
                     <div class="message-content" id="landingMessage">
                         Welcome to the Nexus! This little space is for playing and immersing yourself in different fictional universes - some even accompanied by original game systems! Nexus supports different modes for use: Explore and Play. 
-                        After selecting a world, choosing your mode will give you the necessary tools to do what you want to. Kinda cool, right? Enjoy! Love you, say it back!
+                        After selecting a world, you will be taken directly to Explore mode for guided tours and database search. Enjoy!
                     </div>
                 </div>
-            </section>
-
-            <section class="mode-selection" id="modeSelection" style="display: none;">
-                <h2>What do you want to do?</h2>
-                <div class="mode-buttons">
-                    <button class="mode-btn explore-btn" data-mode="explore">
-                        <span class="mode-icon">🗺️</span>
-                        <span class="mode-text">Explore</span>
-                        <small>Take guided tours or search the database</small>
-                    </button>
-                    <button class="mode-btn play-btn" data-mode="play">
-                        <span class="mode-icon">🎲</span>
-                        <span class="mode-text">Play</span>
-                        <small>Join sessions, roll dice, track characters</small>
-                    </button>
-                </div>
-                <button class="back-btn" id="backBtn">← Back to Worlds</button>
             </section>
 
             <section class="world-hub" id="worldHub" style="display: none;">
@@ -69,7 +52,7 @@
                 <div class="hub-content" id="hubContent">
                     <!-- Dynamic content based on world and mode -->
                 </div>
-                <button class="back-btn" id="hubBackBtn">← Back to Mode Selection</button>
+                <button class="back-btn" id="hubBackBtn">← Back to Worlds</button>
             </section>
         </main>
 
@@ -92,24 +75,14 @@
         <div id="tourModalOverlay" class="modal-overlay">
             <div class="tour-modal" id="tourModal">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 id="tourModalTitle">Tour Title</h2>
-                        <span class="tour-modal-progress" id="tourModalProgress">Slide 1 of 5</span>
-                        <button class="close-btn" id="closeTourModalBtn">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="tour-slide-container" id="tourSlideContainer">
-                            <!-- Tour slides will be loaded here -->
-                        </div>
-                        <div class="tour-modal-navigation">
-                            <button class="tour-nav-btn" id="tourModalPrevBtn">Previous</button>
-                            <div class="tour-dots" id="tourModalDots">
-                                <!-- Dots will be generated dynamically -->
-                            </div>
-                            <button class="tour-nav-btn" id="tourModalNextBtn">Next</button>
-                        </div>
-                    </div>
+                    <div class="tour-slide-container" id="tourSlideContainer"></div>
                 </div>
+                <div class="tour-modal-navigation">
+                    <button class="tour-nav-btn" id="tourModalPrevBtn">Previous</button>
+                    <div class="tour-dots" id="tourModalDots"></div>
+                    <button class="tour-nav-btn" id="tourModalNextBtn">Next</button>
+                </div>
+                <button id="closeTourModalBtn" class="close-btn">&times;</button>
             </div>
         </div>
     </div>

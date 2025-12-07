@@ -2,8 +2,8 @@
 class TTRPGHub {
   constructor() {
     this.currentWorld = null;
-    this.currentMode = null;
-    this.currentExploreSubmode = 'tours'; // Track tours vs database
+    this.currentMode = 'explore'; // Always explore mode
+    this.currentExploreSubmode = 'tours';
     this.worlds = [];
     
     this.init();
@@ -17,24 +17,12 @@ class TTRPGHub {
 
   // ========== Event Listeners ==========
   setupEventListeners() {
-    // Back buttons
-    const backBtn = document.getElementById('backBtn');
-    const hubBackBtn = document.getElementById('hubBackBtn');
-    
+    // Only back to worlds button needed
+    const backBtn = document.getElementById('hubBackBtn');
     if (backBtn) {
       backBtn.addEventListener('click', () => this.showWorldSelection());
     }
-    if (hubBackBtn) {
-      hubBackBtn.addEventListener('click', () => this.showModeSelection());
-    }
-
-    // Mode buttons
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const mode = e.currentTarget.dataset.mode;
-        this.selectMode(mode);
-      });
-    });
+    // Remove mode selection event listeners
   }
 
   // ========== Data Loading ==========
@@ -279,7 +267,7 @@ class TTRPGHub {
       setTimeout(() => {
         // Apply theme after content is hidden
         this.applyWorldTheme(worldId);
-        this.showModeSelection();
+        this.showWorldHub();
         
         // Small delay before content fade back in
         setTimeout(() => {
@@ -289,32 +277,21 @@ class TTRPGHub {
     }
   }
 
-  selectMode(mode) {
-    this.currentMode = mode;
-    Config.log('Selected mode:', mode);
-    this.showWorldHub();
-  }
-
   showWorldSelection() {
     this.setPageVisibility('landing');
     this.currentWorld = null;
-    this.currentMode = null;
+    this.currentMode = 'explore';
     this.currentExploreSubmode = 'tours';
     // Clear world theme when returning to hub
     this.clearWorldTheme();
   }
 
-  showModeSelection() {
-    this.setPageVisibility('mode');
-  }
-
   showWorldHub() {
     this.setPageVisibility('hub');
     
-    // Reset explore submode when entering hub
-    if (this.currentMode === 'explore') {
-      this.currentExploreSubmode = 'tours';
-    }
+    // Always explore mode
+    this.currentMode = 'explore';
+    this.currentExploreSubmode = this.currentExploreSubmode || 'tours';
     
     this.updateHubHeader();
     this.loadHubContent();
@@ -323,7 +300,6 @@ class TTRPGHub {
   setPageVisibility(activePage) {
     const pages = {
       landing: document.querySelector('.landing-screen'),
-      mode: document.getElementById('modeSelection'),
       hub: document.getElementById('worldHub')
     };
 
@@ -341,42 +317,27 @@ class TTRPGHub {
 
     // Set data-mode attribute for CSS targeting
     if (worldHub) {
-      worldHub.setAttribute('data-mode', this.currentMode || '');
+      worldHub.setAttribute('data-mode', 'explore');
     }
 
-    if (this.currentMode === 'explore') {
-      // For explore mode, replace the header with toggle
-      const hubHeader = document.querySelector('.hub-header');
-      if (hubHeader) {
-        hubHeader.innerHTML = `
-          <div class="explore-toggle-bar">
-            <button class="explore-tab ${this.currentExploreSubmode === 'tours' ? 'active' : ''}" data-submode="tours">
-              🗺️ Take a Tour
-            </button>
-            <button class="explore-tab ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
-              🔍 Search Database
-            </button>
-          </div>
-        `;
-      }
-      
-      // Hide the mode indicator for explore mode
-      if (modeEl) {
-        modeEl.style.display = 'none';
-      }
-    } else {
-      // For other modes, keep the traditional header
-      if (worldNameEl && this.currentWorld) {
-        worldNameEl.textContent = this.currentWorld.name;
-      }
-      
-      if (modeEl) {
-        modeEl.style.display = 'block';
-        const modeDisplayName = this.currentMode === 'play' ? 'Play' : 
-                               this.currentMode === 'read' ? 'Database' : 
-                               this.currentMode === 'build' ? 'Build' : this.currentMode;
-        modeEl.textContent = `Mode: ${modeDisplayName}`;
-      }
+    // Show two large, separate buttons (no container box)
+    const hubHeader = document.querySelector('.hub-header');
+    if (hubHeader) {
+      hubHeader.innerHTML = `
+        <div class="explore-toggle-row">
+          <button class="explore-primary-btn ${this.currentExploreSubmode === 'tours' ? 'active' : ''}" data-submode="tours">
+            🗺️ <span>Take a Tour</span>
+          </button>
+          <button class="explore-primary-btn ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
+            🔍 <span>Search Database</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // Hide the mode indicator for explore mode
+    if (modeEl) {
+      modeEl.style.display = 'none';
     }
   }
 
@@ -386,7 +347,6 @@ class TTRPGHub {
     if (!hubContent) return;
 
     const contentMap = {
-      play: () => this.getPlayModeContent(),
       explore: () => this.getExploreModeContent(),
       build: () => this.getBuildModeContent()
     };
@@ -444,9 +404,10 @@ class TTRPGHub {
 
   // ========== Explore Submode Management ==========
   setupExploreToggleListeners() {
-    document.querySelectorAll('.explore-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        const submode = e.target.dataset.submode;
+    // Target the new large buttons
+    document.querySelectorAll('.explore-primary-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const submode = e.currentTarget.dataset.submode;
         this.switchExploreSubmode(submode);
       });
     });
@@ -454,12 +415,12 @@ class TTRPGHub {
 
   switchExploreSubmode(submode) {
     this.currentExploreSubmode = submode;
-    
-    // Update tab states
-    document.querySelectorAll('.explore-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.submode === submode);
+
+    // Update active state on new buttons
+    document.querySelectorAll('.explore-primary-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.submode === submode);
     });
-    
+
     // Load new content
     this.loadExploreSubmode(submode);
   }
@@ -583,18 +544,7 @@ class TTRPGHub {
 
   // ========== Debug Tools ==========
   addDebugControls() {
-    if (!Config.DEBUG_MODE) return;
-
-    const debugButton = document.createElement('button');
-    debugButton.textContent = '🔧 Test Apps Script';
-    debugButton.style.cssText = `
-      position: fixed; top: 10px; right: 10px; z-index: 1000;
-      padding: 10px; background: #ff6b35; color: white;
-      border: none; border-radius: 5px; cursor: pointer;
-    `;
-    
-    debugButton.addEventListener('click', () => this.testAppsScript());
-    document.body.appendChild(debugButton);
+    // Remove debug button creation and insertion
   }
 
   async testAppsScript() {

@@ -111,16 +111,18 @@ body.world-breach .current-mode:hover {
     align-items: center;
     margin-bottom: 30px;
     padding: 20px;
-    background: var(--secondary-bg);
+    background: none;
     border-radius: 10px;
+    border: none;
 }
 
 .hub-content {
     min-height: 400px;
     padding: 20px;
-    background: var(--secondary-bg);
+    background: none;
     border-radius: 10px;
     margin-bottom: 20px;
+    border: none;
 }
 
 /* Hide mode indicator in explore mode */
@@ -184,4 +186,56 @@ body.world-breach .current-mode:hover {
 
 .explore-submode-content {
     min-height: 400px;
+}
+
+/* ========== EXPLORE MODE TOGGLE (new separated buttons) ========== */
+.explore-toggle-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 16px;
+    max-width: 720px;
+    margin: 0 auto 12px;
+}
+
+.explore-primary-btn {
+    padding: 16px 24px;
+    background: var(--button-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-size: 1.05rem;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.explore-primary-btn:hover {
+    background: var(--button-hover);
+    border-color: var(--text-accent);
+    transform: translateY(-2px);
+}
+
+.explore-primary-btn.active {
+    background: var(--tour-accent);
+    border-color: var(--tour-accent);
+    color: var(--tour-bg);
+}
+
+/* Breach edit: bigger font size on buttons, bold */
+body.world-breach .explore-primary-btn {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-heavy);
+}
+
+/* Responsive: stack buttons on small screens */
+@media (max-width: 520px) {
+    .explore-toggle-row {
+        grid-template-columns: 1fr;
+    }
 }

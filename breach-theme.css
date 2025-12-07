@@ -1,128 +1,195 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Crimson+Text:wght@400;600;700&display=swap');
 
 body.world-breach {
-    /* Breach High Fantasy Theme Variables */
-    --primary-bg: linear-gradient(135deg, #2c1810, #4a2c2a, #8b0000, #2c1810);
-    --secondary-bg: rgba(139, 69, 19, 0.3);
-    --card-bg: rgba(160, 82, 45, 0.2);
-    --text-color: #f4e4bc;
-    --text-secondary: #d4af37;
-    --text-accent: #ffd700;
-    --border-color: rgba(212, 175, 55, 0.5);
-    --button-bg: rgba(139, 69, 19, 0.4);
-    --button-hover: rgba(139, 69, 19, 0.6);
+    /* Breach Rustic Fantasy Theme Variables */
+    --primary-bg: linear-gradient(135deg, #e7d7b1, #bfa77a, #8b6f4a, #e7d7b1);
+    --secondary-bg: rgba(191, 167, 122, 0.25);
+    --card-bg: rgba(231, 215, 177, 0.7);
+    --text-color: #4a2c2a;
+    --text-secondary: #8b6f4a;
+    --text-accent: #bfa77a;
+    --border-color: rgba(139, 111, 74, 0.5);
+    --button-bg: rgba(191, 167, 122, 0.4);
+    --button-hover: rgba(139, 111, 74, 0.6);
     --font-family: 'Crimson Text', 'Georgia', serif;
     --font-weight-normal: 400;
     --font-weight-bold: 600;
     --font-weight-heavy: 700;
-    
-    /* Fantasy Card Effects */
-    --card-border-operator: #8b4513;
-    --card-glow-operator: #cd853f;
-    --card-border-handler: #32cd32;
-    --card-glow-handler: #228b22;
-    --card-border-broker: #8a2be2;
-    --card-glow-broker: #9932cc;
-    --card-border-default: rgba(212, 175, 55, 0.5);
-    --card-glow-default: rgba(205, 133, 63, 0.3);
-    
-    /* Fantasy Overlay Gradient */
-    --card-overlay-gradient: linear-gradient(to top, rgba(44, 24, 16, 0.95) 0%, rgba(44, 24, 16, 0.8) 30%, rgba(44, 24, 16, 0.5) 60%, rgba(44, 24, 16, 0.2) 80%, transparent 100%);
-    
+
+    /* Rustic Card Effects */
+    --card-border-operator: #8b6f4a;
+    --card-glow-operator: #bfa77a;
+    --card-border-handler: #6b8e23;
+    --card-glow-handler: #bfa77a;
+    --card-border-broker: #a0522d;
+    --card-glow-broker: #bfa77a;
+    --card-border-default: rgba(139, 111, 74, 0.5);
+    --card-glow-default: rgba(191, 167, 122, 0.2);
+
+    /* Rustic Overlay Gradient */
+    --card-overlay-gradient: linear-gradient(to top, rgba(231, 215, 177, 0.95) 0%, rgba(191, 167, 122, 0.8) 30%, rgba(191, 167, 122, 0.5) 60%, rgba(191, 167, 122, 0.2) 80%, transparent 100%);
+
     /* Modal Theme */
-    --modal-bg: #2c1810;
-    --modal-border: #8b4513;
-    --modal-overlay: rgba(44, 24, 16, 0.85);
+    --modal-bg: #e7d7b1;
+    --modal-border: #8b6f4a;
+    --modal-overlay: rgba(231, 215, 177, 0.85);
 }
 
 /* Breach-specific styling */
 
 body.world-breach h1 {
     font-family: 'Cinzel', serif;
-    background: linear-gradient(45deg, #ffd700, #daa520, #b8860b);
+    background: linear-gradient(45deg, #bfa77a, #8b6f4a, #e7d7b1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
-    filter: drop-shadow(2px 2px 4px rgba(218, 165, 32, 0.3));
+    text-shadow: 2px 2px 4px rgba(139, 111, 74, 0.3);
+    filter: none;
 }
 
 body.world-breach .world-card:hover {
-    border-color: #ffd700;
-    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+    border-color: #bfa77a;
+    box-shadow: 0 4px 12px rgba(191, 167, 122, 0.2);
 }
 
 body.world-breach .play-btn:hover {
-    border-color: #32cd32;
-    box-shadow: 0 10px 25px rgba(50, 205, 50, 0.4);
+    border-color: #6b8e23;
+    box-shadow: 0 4px 12px rgba(107, 142, 35, 0.2);
 }
 
 body.world-breach .read-btn:hover {
-    border-color: #4169e1;
-    box-shadow: 0 10px 25px rgba(65, 105, 225, 0.4);
+    border-color: #a0522d;
+    box-shadow: 0 4px 12px rgba(160, 82, 45, 0.2);
 }
 
 body.world-breach .build-btn:hover {
-    border-color: #dc143c;
-    box-shadow: 0 10px 25px rgba(220, 20, 60, 0.4);
+    border-color: #8b6f4a;
+    box-shadow: 0 4px 12px rgba(139, 111, 74, 0.2);
 }
 
 body.world-breach .mode-btn:hover {
-    box-shadow: 0 10px 25px rgba(139, 69, 19, 0.4);
+    box-shadow: 0 4px 12px rgba(191, 167, 122, 0.2);
 }
 
-/* Fantasy card glows */
+/* Remove lower gradient for Breach article cards */
+body.world-breach .article-card .card-overlay {
+    background: none !important;
+}
+
+/* Light text for better readability */
+body.world-breach .article-card .card-title,
+body.world-breach .article-card .card-tag,
+body.world-breach .article-card .card-summary {
+    color: #fff8f0 !important;
+    text-shadow: 1px 1px 2px #8b6f4a;
+}
+
+/* Compact header: title and tag on same line */
+body.world-breach .article-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+/* Top bar layout for tag above category, right aligned */
+body.world-breach .article-card .card-top-bar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    left: auto;
+    display: flex;
+    flex-direction: column; /* Category above tag */
+    gap: 3px;
+    z-index: 3;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+/* Category badge - right aligned, no extra margin */
+body.world-breach .article-card .card-category-badge {
+    font-size: 0.68rem !important;
+    padding: 1px 6px !important;
+    border-radius: 8px !important;
+    background: rgba(231, 215, 177, 0.9);
+    color: #8b6f4a;
+    border: 1px solid #bfa77a;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    margin: 0 !important;
+    box-shadow: none;
+    text-align: right;
+}
+
+/* Tag badge - right aligned, no margin-left */
+body.world-breach .article-card .card-tag {
+    font-size: 0.68rem !important;
+    padding: 1px 6px !important;
+    border-radius: 8px !important;
+    background: #bfa77a;
+    color: #4a2c2a !important;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    text-transform: capitalize;
+    margin: 0 !important;
+    box-shadow: none;
+    text-align: right;
+    position: relative;
+    top: -3px; /* Raise tag badge by 3px */
+}
+
+/* Reduce fantasy glows for article cards */
 body.world-breach .article-card.tag-operator {
-    box-shadow: 0 0 20px var(--card-glow-operator), 0 10px 30px rgba(205, 133, 63, 0.4);
+    box-shadow: 0 0 8px var(--card-glow-operator), 0 4px 12px rgba(191, 167, 122, 0.15);
 }
 
 body.world-breach .article-card.tag-operator:hover {
-    box-shadow: 0 0 30px var(--card-glow-operator), 0 15px 40px rgba(205, 133, 63, 0.6);
+    box-shadow: 0 0 12px var(--card-glow-operator), 0 8px 16px rgba(191, 167, 122, 0.2);
 }
 
 body.world-breach .article-card.tag-handler {
-    box-shadow: 0 0 20px var(--card-glow-handler), 0 10px 30px rgba(34, 139, 34, 0.4);
+    box-shadow: 0 0 8px var(--card-glow-handler), 0 4px 12px rgba(191, 167, 122, 0.15);
 }
 
 body.world-breach .article-card.tag-handler:hover {
-    box-shadow: 0 0 30px var(--card-glow-handler), 0 15px 40px rgba(34, 139, 34, 0.6);
+    box-shadow: 0 0 12px var(--card-glow-handler), 0 8px 16px rgba(191, 167, 122, 0.2);
 }
 
 body.world-breach .article-card.tag-broker {
-    box-shadow: 0 0 20px var(--card-glow-broker), 0 10px 30px rgba(153, 50, 204, 0.4);
+    box-shadow: 0 0 8px var(--card-glow-broker), 0 4px 12px rgba(191, 167, 122, 0.15);
 }
 
 body.world-breach .article-card.tag-broker:hover {
-    box-shadow: 0 0 30px var(--card-glow-broker), 0 15px 40px rgba(153, 50, 204, 0.6);
+    box-shadow: 0 0 12px var(--card-glow-broker), 0 8px 16px rgba(191, 167, 122, 0.2);
 }
 
 body.world-breach .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
-    box-shadow: 0 0 20px var(--card-glow-default), 0 10px 30px rgba(139, 69, 19, 0.3);
+    box-shadow: 0 0 8px var(--card-glow-default), 0 4px 12px rgba(191, 167, 122, 0.12);
 }
 
 body.world-breach .card-background-placeholder {
-    background: linear-gradient(135deg, #8b4513, #a0522d);
+    background: linear-gradient(135deg, #e7d7b1, #bfa77a);
 }
 
 body.world-breach .card-category-badge {
-    background: rgba(44, 24, 16, 0.9);
-    color: #ffd700;
-    border: 2px solid #8b4513;
+    background: rgba(231, 215, 177, 0.9);
+    color: #8b6f4a;
+    border: 2px solid #bfa77a;
     font-family: 'Cinzel', serif;
 }
 
 body.world-breach .clear-btn {
-    background: #8b0000;
+    background: #bfa77a;
     font-family: 'Cinzel', serif;
 }
 
 body.world-breach .clear-btn:hover {
-    background: #a52a2a;
+    background: #8b6f4a;
 }
 
 body.world-breach .current-mode {
-    background: #ffd700;
-    color: #2c1810;
+    background: #e7d7b1;
+    color: #4a2c2a;
     font-family: 'Cinzel', serif;
     font-weight: 600;
 }
@@ -132,56 +199,65 @@ body.world-breach h2,
 body.world-breach h3,
 body.world-breach h4 {
     font-family: 'Cinzel', serif;
+    color: #8b6f4a;
 }
 
 body.world-breach .card-title {
     font-family: 'Cinzel', serif;
+    color: #8b6f4a;
 }
 
 body.world-breach .card-tag {
     font-family: 'Cinzel', serif;
     text-transform: capitalize;
+    color: #bfa77a;
 }
 
 /* Dropdown option styling */
 body.world-breach .filter-group select option {
-    background: #2c1810;
-    color: #f4e4bc;
+    background: #e7d7b1;
+    color: #4a2c2a;
     padding: 8px;
 }
 
 /* Modal styling */
 body.world-breach .modal-body::-webkit-scrollbar-thumb {
-    background: #8b4513;
+    background: #bfa77a;
 }
 
 body.world-breach .modal-body::-webkit-scrollbar-track {
-    background: #1a0f08;
+    background: #e7d7b1;
 }
 
 body.world-breach .modal-header {
-    background: rgba(139, 69, 19, 0.2);
-    border-bottom: 2px solid #8b4513;
+    background: rgba(191, 167, 122, 0.2);
+    border-bottom: 2px solid #bfa77a;
 }
 
 body.world-breach .modal-header h2 {
-    color: #ffd700;
+    color: #8b6f4a;
     font-family: 'Cinzel', serif;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow: 1px 1px 2px rgba(139, 111, 74, 0.2);
 }
 
 body.world-breach .close-btn:hover {
-    color: #ffd700;
+    color: #8b6f4a;
 }
 
 body.world-breach .modal-body h1, 
 body.world-breach .modal-body h2, 
 body.world-breach .modal-body h3 {
-    color: #ffd700;
+    color: #8b6f4a;
     font-family: 'Cinzel', serif;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    text-shadow: 1px 1px 2px rgba(139, 111, 74, 0.2);
 }
 
 body.world-breach .modal-body p {
-    color: #f4e4bc;
+    color: #4a2c2a;
+}
+
+/* Breach: remove borders on article preview cards only in this theme */
+body.world-breach .article-card {
+    border: none !important;
+    border-radius: 0 !important;
 }

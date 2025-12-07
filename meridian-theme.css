@@ -1,53 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
 body.world-meridian {
-    /* Meridian Cyberpunk Theme Variables - Deeper Background */
-    --primary-bg: linear-gradient(135deg, #0a0a1a, #0f1228, #1a1a3a);
-    --secondary-bg: rgba(255, 255, 255, 0.1);
-    --card-bg: rgba(255, 255, 255, 0.1);
-    --text-color: #ffffff;
-    --text-secondary: #a0a0a0;
-    --text-accent: #56f8ff;
-    --border-color: rgba(255, 255, 255, 0.3);
-    --button-bg: rgba(255, 255, 255, 0.1);
-    --button-hover: rgba(255, 255, 255, 0.2);
+    /* Meridian Cyberpunk Theme Variables - Orange Neon */
+    --primary-bg: linear-gradient(135deg, #1a0a00, #2e1400, #ff6b35, #ff9800);
+    --secondary-bg: rgba(255, 107, 53, 0.12);
+    --card-bg: rgba(255, 152, 0, 0.08);
+    --text-color: #fff8f0;
+    --text-secondary: #ffb347;
+    --text-accent: #ff6b35;
+    --border-color: rgba(255, 107, 53, 0.3);
+    --button-bg: rgba(255, 107, 53, 0.13);
+    --button-hover: rgba(255, 152, 0, 0.18);
     --font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
     --font-weight-heavy: 900;
-    
-    /* Cyberpunk Card Effects */
-    --card-border-operator: #d4edef;
-    --card-glow-operator: #56f8ff;
-    --card-border-handler: #f4e5a3;
+
+    /* Cyberpunk Card Effects - Orange Neon */
+    --card-border-operator: #ffb347;
+    --card-glow-operator: #ff9800;
+    --card-border-handler: #ff6b35;
     --card-glow-handler: #ffb347;
-    --card-border-broker: #d4a5d4;
-    --card-glow-broker: #8b0051;
-    --card-border-default: rgba(255, 255, 255, 0.3);
-    --card-glow-default: rgba(255, 255, 255, 0.2);
-    
-    /* Cyberpunk Overlay Gradient */
-    --card-overlay-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.2) 80%, rgba(0, 0, 0, 0.1) 90%, transparent 100%);
-    
+    --card-border-broker: #ff9800;
+    --card-glow-broker: #ff6b35;
+    --card-border-default: rgba(255, 152, 0, 0.3);
+    --card-glow-default: rgba(255, 107, 53, 0.18);
+
+    /* Cyberpunk Overlay Gradient - Orange Neon */
+    --card-overlay-gradient: linear-gradient(to top, rgba(26, 10, 0, 0.9) 0%, rgba(26, 10, 0, 0.8) 20%, rgba(26, 10, 0, 0.6) 40%, rgba(255, 107, 53, 0.2) 80%, transparent 100%);
+
     /* Modal Theme */
-    --modal-bg: #0a0a1a;
-    --modal-border: #8c5523;
-    --modal-overlay: rgba(8, 8, 8, 0.8);
-    
+    --modal-bg: #1a0a00;
+    --modal-border: #ff6b35;
+    --modal-overlay: rgba(26, 10, 0, 0.85);
+
     /* Tour System Cyberpunk Colors */
-    --tour-accent: #56f8ff;
-    --tour-bg: rgba(10, 10, 26, 0.95);
-    --tour-card-bg: rgba(255, 255, 255, 0.05);
-    --tour-nav-bg: #ff6b35;
-    --tour-nav-text: #0a0a1a;
-    --tour-dot-inactive: rgba(86, 248, 255, 0.2);
-    --tour-slide-bg: #0a0a1a;
+    --tour-accent: #ff6b35;
+    --tour-bg: rgba(26, 10, 0, 0.97);
+    --tour-card-bg: rgba(255, 152, 0, 0.07);
+    --tour-nav-bg: #ff9800;
+    --tour-nav-text: #1a0a00;
+    --tour-dot-inactive: rgba(255, 152, 0, 0.2);
+    --tour-slide-bg: #1a0a00;
 }
 
 /* Meridian-specific styling that can't be done with just variables */
 
 body.world-meridian h1 {
-    background: linear-gradient(45deg, #56f8ff, #ff6b35);
+    background: linear-gradient(45deg, #ff9800, #ff6b35);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -55,43 +55,43 @@ body.world-meridian h1 {
 
 body.world-meridian h2 {
     font-family: 'Orbitron', sans-serif;
-    color: #56f8ff;
+    color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 2px;
 }
 
 body.world-meridian .world-card:hover {
-    border-color: #56f8ff;
-    box-shadow: 0 10px 25px rgba(86, 248, 255, 0.3);
+    border-color: #ff9800;
+    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.3);
 }
 
 body.world-meridian .play-btn:hover,
 body.world-meridian .explore-btn:hover {
-    border-color: #56f8ff;
-    box-shadow: 0 10px 25px rgba(86, 248, 255, 0.4);
+    border-color: #ff9800;
+    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.4);
 }
 
 body.world-meridian .read-btn:hover {
-    border-color: #2196F3;
-    box-shadow: 0 10px 25px rgba(33, 150, 243, 0.3);
+    border-color: #ff6b35;
+    box-shadow: 0 10px 25px rgba(255, 107, 53, 0.3);
 }
 
 body.world-meridian .build-btn:hover {
-    border-color: #FF9800;
-    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.3);
+    border-color: #ffb347;
+    box-shadow: 0 10px 25px rgba(255, 179, 71, 0.3);
 }
 
 body.world-meridian .mode-btn:hover {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.3);
 }
 
 /* Enhanced card glows with updated shadows for smaller cards */
 body.world-meridian .article-card.tag-operator {
-    box-shadow: 0 0 15px var(--card-glow-operator), 0 8px 25px rgba(86, 248, 255, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-operator), 0 8px 25px rgba(255, 152, 0, 0.3);
 }
 
 body.world-meridian .article-card.tag-operator:hover {
-    box-shadow: 0 0 25px var(--card-glow-operator), 0 12px 35px rgba(86, 248, 255, 0.5);
+    box-shadow: 0 0 25px var(--card-glow-operator), 0 12px 35px rgba(255, 152, 0, 0.5);
 }
 
 body.world-meridian .article-card.tag-handler {
@@ -103,15 +103,15 @@ body.world-meridian .article-card.tag-handler:hover {
 }
 
 body.world-meridian .article-card.tag-broker {
-    box-shadow: 0 0 15px var(--card-glow-broker), 0 8px 25px rgba(139, 0, 81, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-broker), 0 8px 25px rgba(255, 107, 53, 0.3);
 }
 
 body.world-meridian .article-card.tag-broker:hover {
-    box-shadow: 0 0 25px var(--card-glow-broker), 0 12px 35px rgba(139, 0, 81, 0.5);
+    box-shadow: 0 0 25px var(--card-glow-broker), 0 12px 35px rgba(255, 107, 53, 0.5);
 }
 
 body.world-meridian .article-card:not(.tag-operator):not(.tag-handler):not(.tag-broker) {
-    box-shadow: 0 0 15px var(--card-glow-default), 0 8px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 15px var(--card-glow-default), 0 8px 25px rgba(255, 152, 0, 0.18);
 }
 
 /* Ensure card summaries display properly in Meridian theme */
@@ -123,31 +123,31 @@ body.world-meridian .card-summary {
 }
 
 body.world-meridian .card-background-placeholder {
-    background: linear-gradient(135deg, #1a1a2e, #0a0a1a);
+    background: linear-gradient(135deg, #ff9800, #1a0a00);
 }
 
 body.world-meridian .card-category-badge {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(255, 152, 0, 0.8);
 }
 
 body.world-meridian .clear-btn {
-    background: #ff6b35;
+    background: #ff9800;
 }
 
 body.world-meridian .clear-btn:hover {
-    background: #ff5722;
+    background: #ff6b35;
 }
 
 body.world-meridian .current-mode {
-    background: #56f8ff;
-    color: #0a0a1a;
+    background: #ff9800;
+    color: #1a0a00;
 }
 
 /* ========== TOUR SYSTEM CYBERPUNK STYLING ========== */
 
 /* Explore Mode Selection */
 body.world-meridian .explore-mode-selection h3 {
-    background: linear-gradient(45deg, #56f8ff, #ff6b35);
+    background: linear-gradient(45deg, #ff9800, #ff6b35);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -157,102 +157,102 @@ body.world-meridian .explore-mode-selection h3 {
 
 body.world-meridian .explore-option-btn {
     background: rgba(26, 26, 46, 0.7);
-    border-color: rgba(86, 248, 255, 0.2);
+    border-color: rgba(255, 152, 0, 0.2);
     backdrop-filter: blur(10px);
 }
 
 body.world-meridian .explore-option-btn:hover {
-    border-color: #56f8ff;
-    box-shadow: 0 10px 25px rgba(86, 248, 255, 0.3);
-    background: rgba(86, 248, 255, 0.1);
+    border-color: #ff9800;
+    box-shadow: 0 10px 25px rgba(255, 152, 0, 0.3);
+    background: rgba(255, 152, 0, 0.1);
 }
 
 body.world-meridian .explore-text {
-    color: #56f8ff;
+    color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 /* Tour Selection Interface */
 body.world-meridian .tour-mode-btn.active {
-    background: #56f8ff;
-    border-color: #56f8ff;
-    color: #0a0a1a;
-    box-shadow: 0 0 20px rgba(86, 248, 255, 0.3);
+    background: #ff9800;
+    border-color: #ff9800;
+    color: #1a0a00;
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.3);
 }
 
 body.world-meridian .tour-mode-btn:hover {
-    border-color: #56f8ff;
-    box-shadow: 0 0 15px rgba(86, 248, 255, 0.2);
+    border-color: #ff9800;
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.2);
 }
 
 body.world-meridian .category-title {
-    color: #56f8ff;
-    border-bottom-color: #56f8ff;
+    color: #ff9800;
+    border-bottom-color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 /* Tour Cards with Cyberpunk Glow */
 body.world-meridian .tour-card {
-    background: rgba(26, 26, 46, 0.7);
-    border: 1px solid rgba(86, 248, 255, 0.2);
+    background: rgba(255, 152, 0, 0.07);
+    border: 1px solid rgba(255, 152, 0, 0.2);
     backdrop-filter: blur(10px);
 }
 
 body.world-meridian .tour-card:hover {
-    border-color: #56f8ff;
-    box-shadow: 0 10px 30px rgba(86, 248, 255, 0.3);
+    border-color: #ff9800;
+    box-shadow: 0 10px 30px rgba(255, 152, 0, 0.3);
     transform: translateY(-8px);
 }
 
 body.world-meridian .tour-card-bg-placeholder {
-    background: linear-gradient(135deg, #1a1a2e, #0f1228);
+    background: linear-gradient(135deg, #ff9800, #2e1400);
 }
 
 body.world-meridian .tour-card-bg-placeholder::before {
-    content: "🌆";
-    color: #56f8ff;
+    content: "🧡";
+    color: #ff9800;
 }
 
 body.world-meridian .tour-title {
-    color: #56f8ff;
+    color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 /* Tour Slideshow */
 body.world-meridian .tour-slideshow {
-    background: #0a0a1a;
+    background: #1a0a00;
 }
 
 body.world-meridian .tour-header-bar {
-    background: rgba(10, 10, 26, 0.95);
-    border-bottom: 1px solid rgba(86, 248, 255, 0.2);
+    background: rgba(26, 10, 0, 0.97);
+    border-bottom: 1px solid rgba(255, 152, 0, 0.2);
     backdrop-filter: blur(15px);
 }
 
 body.world-meridian .tour-back-btn {
-    background: rgba(86, 248, 255, 0.1);
-    border-color: rgba(86, 248, 255, 0.3);
-    color: #56f8ff;
+    background: rgba(255, 152, 0, 0.1);
+    border-color: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
 }
 
 body.world-meridian .tour-back-btn:hover {
-    background: rgba(86, 248, 255, 0.2);
-    border-color: #56f8ff;
-    box-shadow: 0 0 15px rgba(86, 248, 255, 0.2);
+    background: rgba(255, 152, 0, 0.2);
+    border-color: #ff9800;
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.2);
 }
 
 body.world-meridian .tour-info .tour-title {
-    color: #56f8ff;
+    color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 /* Slide Styling */
 body.world-meridian .slide-title {
-    background: linear-gradient(45deg, #56f8ff, #ff6b35);
+    background: linear-gradient(45deg, #ff9800, #ff6b35);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -263,55 +263,55 @@ body.world-meridian .slide-title {
 body.world-meridian .slide-body h1,
 body.world-meridian .slide-body h2,
 body.world-meridian .slide-body h3 {
-    color: #56f8ff;
+    color: #ff9800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 body.world-meridian .slide-media {
-    border: 1px solid rgba(86, 248, 255, 0.2);
-    box-shadow: 0 0 20px rgba(86, 248, 255, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.2);
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.1);
 }
 
 /* Navigation */
 body.world-meridian .tour-navigation {
-    background: rgba(10, 10, 26, 0.95);
-    border-top: 1px solid rgba(86, 248, 255, 0.2);
+    background: rgba(26, 10, 0, 0.97);
+    border-top: 1px solid rgba(255, 152, 0, 0.2);
     backdrop-filter: blur(15px);
 }
 
 body.world-meridian .tour-nav-btn {
-    background: #ff6b35;
-    color: #0a0a1a;
+    background: #ff9800;
+    color: #1a0a00;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 700;
 }
 
 body.world-meridian .tour-nav-btn:hover:not(:disabled) {
-    background: #ff5722;
+    background: #ff6b35;
     box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
 }
 
 body.world-meridian .tour-dot {
-    background: rgba(86, 248, 255, 0.2);
-    border: 1px solid rgba(86, 248, 255, 0.1);
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid rgba(255, 152, 0, 0.1);
 }
 
 body.world-meridian .tour-dot.active {
-    background: #56f8ff;
-    border-color: #56f8ff;
-    box-shadow: 0 0 10px rgba(86, 248, 255, 0.4);
+    background: #ff9800;
+    border-color: #ff9800;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.4);
 }
 
 body.world-meridian .tour-dot:hover {
-    background: rgba(86, 248, 255, 0.4);
-    border-color: rgba(86, 248, 255, 0.3);
+    background: rgba(255, 152, 0, 0.4);
+    border-color: rgba(255, 152, 0, 0.3);
 }
 
 /* Cyberpunk Text Effects */
 body.world-meridian .tour-header h3 {
-    background: linear-gradient(45deg, #56f8ff, #ff6b35);
+    background: linear-gradient(45deg, #ff9800, #ff6b35);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -322,54 +322,54 @@ body.world-meridian .tour-header h3 {
 /* Enhanced Empty States */
 body.world-meridian .empty-state button,
 body.world-meridian .no-tours {
-    color: #56f8ff;
+    color: #ff9800;
 }
 
 body.world-meridian .empty-state button {
-    background: rgba(86, 248, 255, 0.1);
-    border: 1px solid rgba(86, 248, 255, 0.3);
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
 }
 
 body.world-meridian .empty-state button:hover {
-    background: rgba(86, 248, 255, 0.2);
-    border-color: #56f8ff;
-    box-shadow: 0 0 15px rgba(86, 248, 255, 0.2);
+    background: rgba(255, 152, 0, 0.2);
+    border-color: #ff9800;
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.2);
 }
 
 /* Modal scrollbar styling */
 body.world-meridian .modal-body::-webkit-scrollbar-thumb {
-    background: #8c5523;
+    background: #ff9800;
 }
 
 body.world-meridian .modal-body::-webkit-scrollbar-track {
-    background: #111;
+    background: #2e1400;
 }
 
 body.world-meridian .modal-header {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 152, 0, 0.05);
 }
 
 body.world-meridian .modal-header h2 {
-    color: #56f8ff;
+    color: #ff9800;
 }
 
 body.world-meridian .close-btn:hover {
-    color: #56f8ff;
+    color: #ff9800;
 }
 
 body.world-meridian .modal-body h1, 
 body.world-meridian .modal-body h2, 
 body.world-meridian .modal-body h3 {
-    color: #56f8ff;
+    color: #ff9800;
 }
 
 body.world-meridian .modal-body p {
-    color: #c0c0c0;
+    color: #fff8f0;
 }
 
 /* Dropdown option styling fix */
 body.world-meridian .filter-group select option {
-    background: #1a1a2e;
-    color: white;
+    background: #2e1400;
+    color: #fff8f0;
     padding: 8px;
 }

@@ -9,6 +9,9 @@ class ArticleViewer {
       tag: '',
       search: ''
     };
+    // Prevent duplicate bindings on re-render
+    this._filtersBound = false;
+    this._modalBound = false;
   }
 
   async loadArticleData(worldId) {
@@ -20,6 +23,18 @@ class ArticleViewer {
       
       this.currentArticles = articles;
       this.currentCategories = categories;
+
+      // Default to 'Characters' category when no category filter is set
+      if (!this.currentFilters.category && Array.isArray(categories)) {
+        const defaultCat = categories.find(cat => {
+          const name = String(cat.name || '').trim().toLowerCase();
+          const slug = String(cat.slug || '').trim().toLowerCase();
+          return name === 'characters' || slug === 'characters';
+        });
+        if (defaultCat && defaultCat.id !== undefined && defaultCat.id !== null && defaultCat.id !== '') {
+          this.currentFilters.category = String(defaultCat.id);
+        }
+      }
       
       Config.log(`Loaded ${articles.length} articles, ${categories.length} categories`);
       return { articles, categories };
@@ -33,7 +48,15 @@ class ArticleViewer {
     await this.loadArticleData(worldId);
 
     if (this.currentArticles.length === 0) {
-      return this.renderEmptyState();
+      // Still render wrapper so refresh logic stays stable
+      return `
+        <div class="article-viewer">
+          ${this.renderFilters()}
+          <div id="articlesGridContainer">
+            ${this.renderEmptyState()}
+          </div>
+        </div>
+      `;
     }
 
     // Check if HTML modals exist - no need to inject if already there
@@ -44,7 +67,9 @@ class ArticleViewer {
     return `
       <div class="article-viewer">
         ${this.renderFilters()}
-        ${this.renderArticleGrid()}
+        <div id="articlesGridContainer">
+          ${this.renderArticleGrid()}
+        </div>
       </div>
     `;
   }
@@ -68,7 +93,7 @@ class ArticleViewer {
 
   renderFilters() {
     const categoryOptions = this.currentCategories
-      .map(cat => `<option value="${cat.id}">${cat.name}</option>`)
+      .map(cat => `<option value="${cat.id}" ${String(this.currentFilters.category) == String(cat.id) ? 'selected' : ''}>${cat.name}</option>`)
       .join('');
 
     const allTags = [...new Set(
@@ -111,23 +136,25 @@ class ArticleViewer {
     const category = this.currentCategories.find(cat => cat.id == article.category_id);
     const tags = (article.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
     const primaryTag = tags[0] || 'default';
-    
-    // Clean tag for CSS class (remove spaces, special chars)
     const cssTag = primaryTag.toLowerCase().replace(/[^a-z0-9]/g, '');
-    
-    // Fallback image for cards without images
     const hasImage = article.image_url && article.image_url.trim();
     const backgroundImage = hasImage ? 
       `<img src="${article.image_url}" class="card-background" alt="${article.title}" loading="lazy">` :
       `<div class="card-background-placeholder"></div>`;
 
+    // Top-right stacked badges
+    const topBar = `
+      <div class="card-top-bar">
+        ${category ? `<div class="card-category-badge">${category.name}</div>` : ''}
+        <span class="card-tag">${primaryTag}</span>
+      </div>
+    `;
     return `
       <div class="article-card tag-${cssTag}" data-article-id="${article.id}">
         ${backgroundImage}
-        ${category ? `<div class="card-category-badge">${category.name}</div>` : ''}
+        ${topBar}
         <div class="card-overlay">
           <h4 class="card-title">${article.title}</h4>
-          <div class="card-tag">${primaryTag}</div>
           <p class="card-summary">${article.summary || 'No summary available'}</p>
         </div>
       </div>
@@ -138,6 +165,7 @@ class ArticleViewer {
     const filteredArticles = this.filterArticles();
     
     if (filteredArticles.length === 0) {
+      // Keep empty-state compact; wrapper remains stable
       return `
         <div class="no-results">
           <p>No articles match your current filters.</p>
@@ -215,99 +243,77 @@ class ArticleViewer {
   }
 
   setupEventListeners() {
-    // Search input
-    const searchInput = document.getElementById('articleSearch');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.currentFilters.search = e.target.value;
-        this.refreshArticleGrid();
-      });
+    // Bind filter controls once
+    if (!this._filtersBound) {
+      // Search input
+      const searchInput = document.getElementById('articleSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          this.currentFilters.search = e.target.value;
+          this.refreshArticleGrid();
+        });
+      }
+
+      // Category filter
+      const categoryFilter = document.getElementById('categoryFilter');
+      if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+          this.currentFilters.category = e.target.value;
+          this.refreshArticleGrid();
+        });
+      }
+
+      // Tag filter
+      const tagFilter = document.getElementById('tagFilter');
+      if (tagFilter) {
+        tagFilter.addEventListener('change', (e) => {
+          this.currentFilters.tag = e.target.value;
+          this.refreshArticleGrid();
+        });
+      }
+
+      // Clear filters
+      const clearFilters = document.getElementById('clearFilters');
+      if (clearFilters) {
+        clearFilters.addEventListener('click', () => this.clearFilters());
+      }
+
+      this._filtersBound = true;
     }
 
-    // Category filter
-    const categoryFilter = document.getElementById('categoryFilter');
-    if (categoryFilter) {
-      categoryFilter.addEventListener('change', (e) => {
-        this.currentFilters.category = e.target.value;
-        this.refreshArticleGrid();
-      });
-    }
+    // Bind article cards each refresh
+    this.bindArticleCardClicks();
 
-    // Tag filter
-    const tagFilter = document.getElementById('tagFilter');
-    if (tagFilter) {
-      tagFilter.addEventListener('change', (e) => {
-        this.currentFilters.tag = e.target.value;
-        this.refreshArticleGrid();
-      });
+    // Modal close handlers - bind once
+    if (!this._modalBound) {
+      this.setupModalEventListeners();
+      this._modalBound = true;
     }
+  }
 
-    // Clear filters
-    const clearFilters = document.getElementById('clearFilters');
-    if (clearFilters) {
-      clearFilters.addEventListener('click', () => this.clearFilters());
-    }
-
-    // Article cards - bind click events
+  bindArticleCardClicks() {
     document.querySelectorAll('.article-card').forEach(card => {
+      // Avoid duplicate handlers
+      if (card._boundClick) return;
       card.addEventListener('click', (e) => {
-        // Only open if body doesn't have modal-active class
         if (!document.body.classList.contains('modal-active')) {
           const articleId = e.currentTarget.dataset.articleId;
           this.openArticle(articleId);
         }
       });
-    });
-
-    // Modal close handlers - use existing HTML modals
-    this.setupModalEventListeners();
-  }
-
-  setupModalEventListeners() {
-    // X button - look for the close button in article modal
-    const closeBtn = document.getElementById('closeModalBtn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.closeModal());
-    }
-
-    // Modal background click handling
-    const overlay = document.getElementById('modalOverlay');
-    if (overlay) {
-      overlay.addEventListener('click', () => this.closeModal());
-    }
-
-    // Prevent closing when clicking modal content
-    const modal = document.getElementById('articleModal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    }
-
-    // ESC key to close modal
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
-        this.closeModal();
-      }
+      card._boundClick = true;
     });
   }
 
   refreshArticleGrid() {
-    const gridContainer = document.querySelector('.articles-grid');
-    if (gridContainer) {
-      gridContainer.outerHTML = this.renderArticleGrid();
-      this.setupEventListeners();
+    const container = document.getElementById('articlesGridContainer');
+    if (container) {
+      // Replace inner content only (keeps a stable mount point)
+      container.innerHTML = this.renderArticleGrid();
+      // Rebind only what depends on grid content
+      this.bindArticleCardClicks();
     } else {
-      Config.error('articles-grid container not found for refresh');
-      // Try to find the parent and inject the grid
-      const articleViewer = document.querySelector('.article-viewer');
-      if (articleViewer) {
-        const filterDiv = articleViewer.querySelector('.article-filters');
-        if (filterDiv) {
-          filterDiv.insertAdjacentHTML('afterend', this.renderArticleGrid());
-          this.setupEventListeners();
-        }
-      }
+      Config.error('articlesGridContainer not found for refresh');
     }
   }
 
@@ -346,14 +352,27 @@ class ArticleViewer {
       // Convert markdown to HTML
       const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
       
-      // Add image to modal if it exists
+      // Two-column layout: image left, text right
       if (article.image_url) {
         content.innerHTML = `
-          <img src="${article.image_url}" class="article-image" alt="${article.title}" loading="lazy">
-          ${htmlContent}
+          <div class="article-modal-columns">
+            <div class="article-modal-image-col">
+              <img src="${article.image_url}" class="article-image" alt="${article.title}" loading="lazy">
+            </div>
+            <div class="article-modal-text-col">
+              ${htmlContent}
+            </div>
+          </div>
         `;
       } else {
-        content.innerHTML = htmlContent;
+        content.innerHTML = `
+          <div class="article-modal-columns">
+            <div class="article-modal-image-col"></div>
+            <div class="article-modal-text-col">
+              ${htmlContent}
+            </div>
+          </div>
+        `;
       }
     }
 
@@ -377,6 +396,37 @@ class ArticleViewer {
       document.body.style.overflow = 'auto';
       
       Config.log('Article modal closed');
+    }
+  }
+
+  // Add modal listeners (close button, overlay click, ESC)
+  setupModalEventListeners() {
+    const closeBtn = document.getElementById('closeModalBtn');
+    if (closeBtn && !closeBtn._boundArticleClose) {
+      closeBtn.addEventListener('click', () => this.closeModal());
+      closeBtn._boundArticleClose = true;
+    }
+
+    const overlay = document.getElementById('modalOverlay');
+    if (overlay && !overlay._boundArticleOverlay) {
+      overlay.addEventListener('click', () => this.closeModal());
+      overlay._boundArticleOverlay = true;
+    }
+
+    const modal = document.getElementById('articleModal');
+    if (modal && !modal._boundArticleModal) {
+      modal.addEventListener('click', (e) => e.stopPropagation());
+      modal._boundArticleModal = true;
+    }
+
+    if (!this._escListenerBound) {
+      this._escListener = (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
+          this.closeModal();
+        }
+      };
+      document.addEventListener('keydown', this._escListener);
+      this._escListenerBound = true;
     }
   }
 

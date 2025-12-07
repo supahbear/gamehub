@@ -29,19 +29,21 @@
 }
 
 .article-viewer {
-    max-width: 1200px;
+    max-width: 1680px; /* was 1400px - allow up to 6 columns */
     margin: 0 auto;
+    margin-top: 0 !important; /* Remove any extra top margin */
 }
 
 .article-filters {
     display: flex;
     gap: 15px;
-    margin-bottom: 30px;
+    margin-bottom: 18px !important; /* was 30px */
     flex-wrap: wrap;
     align-items: center;
-    padding: 20px;
-    background: var(--secondary-bg);
+    padding: 14px !important;       /* was 20px */
     border-radius: 10px;
+    background: none;
+    border: none;
 }
 
 .filter-group {
@@ -93,6 +95,8 @@
     margin: 0 auto;
     padding: 40px 20px;
     text-align: center;
+    background: none;
+    border: none;
 }
 
 .explore-mode-selection h3 {
@@ -165,11 +169,15 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    background: none;
+    border: none;
 }
 
 .tour-header {
     text-align: center;
     margin-bottom: 30px;
+    background: none;
+    border: none;
 }
 
 .tour-header h3 {
@@ -223,11 +231,11 @@
 .tour-categories {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 18px; /* Reduced from 32px */
 }
 
 .tour-category {
-    margin-bottom: 40px;
+    margin-bottom: 20px; /* Reduced from 40px */
     animation: slideInUp 0.4s ease-out;
 }
 
@@ -253,13 +261,15 @@
 .tour-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 10px; /* Reduced from 20px */
+    grid-template-columns: repeat(3, 1fr); /* Limit to 3 columns on wider screens */
 }
 
 .tour-categories .tour-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
+    gap: 8px; /* Reduced from 16px */
+    grid-template-columns: repeat(3, 1fr); /* Limit to 3 columns on wider screens */
 }
 
 .tour-card {
@@ -325,7 +335,8 @@
     font-size: 1.2rem;
     font-weight: var(--font-weight-bold);
     margin-bottom: 8px;
-    color: var(--tour-accent);
+    color: #ffffff;            /* was var(--tour-accent) */
+    text-transform: uppercase; /* make header all caps */
     font-family: var(--font-family);
 }
 
@@ -347,6 +358,24 @@
     font-weight: var(--font-weight-normal);
 }
 
+.articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* was 220px */
+    gap: 12px;
+}
+
+/* Let the grid expand to the container width (removes 1600px cap from cards.css) */
+.article-viewer .articles-grid {
+    max-width: none;
+}
+
+/* On large screens, enforce exactly 6 columns */
+@media (min-width: 1500px) {
+    .article-viewer .articles-grid {
+        grid-template-columns: repeat(6, minmax(210px, 1fr)); /* was 190px */
+    }
+}
+
 /* ========== TOUR SLIDESHOW ========== */
 .tour-slideshow {
     height: 100vh;
@@ -356,33 +385,33 @@
     color: var(--text-color);
 }
 
-.tour-header-bar {
+.tour-slideshow .tour-header-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: var(--secondary-bg);
-    border-bottom: 1px solid var(--border-color);
+    background: none;
+    border-bottom: none;
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
-.tour-info {
+.tour-slideshow .tour-info {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
 }
 
-.tour-info .tour-title {
+.tour-slideshow .tour-info .tour-title {
     font-size: 1.2rem;
     font-weight: var(--font-weight-bold);
     color: var(--text-color);
     font-family: var(--font-family);
 }
 
-.tour-progress {
+.tour-slideshow .tour-progress {
     font-size: 0.9rem;
     opacity: 0.7;
     color: var(--text-secondary);
@@ -390,7 +419,7 @@
     font-weight: var(--font-weight-normal);
 }
 
-.tour-slides-container {
+.tour-slideshow .tour-slides-container {
     flex: 1;
     overflow-y: scroll;
     scroll-behavior: smooth;
@@ -398,11 +427,11 @@
     -ms-overflow-style: none;
 }
 
-.tour-slides-container::-webkit-scrollbar {
+.tour-slideshow .tour-slides-container::-webkit-scrollbar {
     display: none;
 }
 
-.tour-slide {
+.tour-slideshow .tour-slide {
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -412,11 +441,11 @@
     transition: opacity 0.5s ease;
 }
 
-.tour-slide.active {
+.tour-slideshow .tour-slide.active {
     opacity: 1;
 }
 
-.slide-content {
+.tour-slideshow .slide-content {
     max-width: 1200px;
     width: 100%;
     display: grid;
@@ -425,25 +454,25 @@
     align-items: center;
 }
 
-.slide-media {
+.tour-slideshow .slide-media {
     width: 100%;
     height: 400px;
     border-radius: 12px;
     overflow: hidden;
 }
 
-.slide-media img,
-.slide-media video {
+.tour-slideshow .slide-media img,
+.tour-slideshow .slide-media video {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.slide-text {
+.tour-slideshow .slide-text {
     padding: 20px;
 }
 
-.slide-title {
+.tour-slideshow .slide-title {
     font-size: 2.5rem;
     margin-bottom: 20px;
     color: var(--tour-accent);
@@ -452,7 +481,7 @@
     font-weight: var(--font-weight-heavy);
 }
 
-.slide-body {
+.tour-slideshow .slide-body {
     font-size: 1.1rem;
     line-height: 1.6;
     color: var(--text-color);
@@ -460,29 +489,31 @@
     font-weight: var(--font-weight-normal);
 }
 
-.slide-body h1, .slide-body h2, .slide-body h3 {
+.tour-slideshow .slide-body h1, 
+.tour-slideshow .slide-body h2, 
+.tour-slideshow .slide-body h3 {
     color: var(--tour-accent);
     margin: 20px 0 10px 0;
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
 }
 
-.slide-body p {
+.tour-slideshow .slide-body p {
     margin-bottom: 15px;
 }
 
-.slide-type-intro .slide-content {
+.tour-slideshow .slide-type-intro .slide-content {
     grid-template-columns: 1fr;
     text-align: center;
     max-width: 800px;
 }
 
-.slide-type-intro .slide-media {
+.tour-slideshow .slide-type-intro .slide-media {
     height: 300px;
     margin-bottom: 30px;
 }
 
-.tour-navigation {
+.tour-slideshow .tour-navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -491,7 +522,7 @@
     border-top: 1px solid var(--border-color);
 }
 
-.tour-nav-btn {
+.tour-slideshow .tour-nav-btn {
     padding: 10px 20px;
     background: var(--tour-nav-bg);
     color: var(--tour-nav-text);
@@ -503,22 +534,22 @@
     font-family: var(--font-family);
 }
 
-.tour-nav-btn:hover:not(:disabled) {
+.tour-slideshow .tour-nav-btn:hover:not(:disabled) {
     background: var(--text-accent);
     transform: translateY(-2px);
 }
 
-.tour-nav-btn:disabled {
+.tour-slideshow .tour-nav-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
 }
 
-.tour-dots {
+.tour-slideshow .tour-dots {
     display: flex;
     gap: 8px;
 }
 
-.tour-dot {
+.tour-slideshow .tour-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -528,16 +559,22 @@
     transition: all 0.3s ease;
 }
 
-.tour-dot.active {
+.tour-slideshow .tour-dot.active {
     background: var(--tour-accent);
     transform: scale(1.2);
 }
 
-.tour-dot:hover {
+.tour-slideshow .tour-dot:hover {
     background: var(--text-secondary);
 }
 
 /* ========== ANIMATION APPLICATIONS ========== */
 .explore-submode-content > * {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* Reduce margin below explore toggle bar (hub-header) */
+.hub-header {
+    margin-bottom: 10px !important; /* was 30px */
+    padding: 12px !important;       /* was 20px */
 }

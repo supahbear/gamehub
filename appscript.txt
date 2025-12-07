@@ -1,0 +1,302 @@
+/** CONFIG **/
+// Replace with your actual Google Sheet ID
+const SHEET_ID = '1OgP23bKqIM8Sk2CEsgCuI2z1b74182SflFrR2hOmWzw';
+
+const SHEETS = {
+  WORLDS: 'Worlds',
+  CATEGORIES: 'Categories', 
+  ARTICLES: 'Articles',
+  DICESETS: 'DiceSets',
+  SCRIBE: 'Scribe',
+  SESSIONS: 'Sessions',
+  USERS: 'Users',
+  TOURS: 'Tours',
+  TOUR_SLIDES: 'TourSlides'
+};
+
+/** Entry points **/
+function doOptions(e){
+  // Handle preflight requests - try without setHeader
+  const output = ContentService.createTextOutput('');
+  output.setMimeType(ContentService.MimeType.TEXT);
+  return output;
+}
+function doGet(e){ return route('GET', e); }
+function doPost(e){ return route('POST', e); }
+
+function route(method, e){
+  try {
+    let path = (e.parameter.path || '').replace(/^\+|\/+$/g,'');
+    const url = path.split('/');
+
+    // Default empty path to worlds so base URL works
+    if (!path) path = 'worlds';
+
+    console.log('Received request - Method:', method, 'Path:', path, 'Parameters:', e.parameter);
+
+    // Check for JSONP callback
+    const callback = e.parameter.callback;
+
+    if (method==='GET' && path==='worlds') {
+      const data = { success: true, data: listWorlds() };
+      if (callback) {
+        // JSONP response
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+    
+    if (method==='GET' && url[0]==='articles') {
+      const data = { success: true, data: listArticles(e.parameter) };
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+    
+    if (method==='GET' && path==='categories') {
+      const data = { success: true, data: listCategories(e.parameter) };
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+    
+    if (method==='GET' && path==='tours') {
+      const data = { success: true, data: listTours(e.parameter) };
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+    
+    if (method==='GET' && path==='tour_slides') {
+      const data = { success: true, data: listTourSlides(e.parameter) };
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+    
+    if (method==='GET' && path==='dice/config') {
+      const data = { success: true, data: getDiceConfig(e.parameter.world_id) };
+      if (callback) {
+        return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ');')
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+      return _json(200, data);
+    }
+
+    // Handle POST requests (no JSONP for these)
+    if (method==='POST' && path==='articles') {
+      const postData = JSON.parse(e.postData.contents || '{}');
+      return _json(200, { success: true, data: createArticle(postData) });
+    }
+    if (method==='POST' && path==='scribe') {
+      const postData = JSON.parse(e.postData.contents || '{}');
+      return _json(200, { success: true, data: appendScribe(postData, 'dev@example.com') });
+    }
+
+    return _json(404, { error:'not_found', path, message: 'Available paths: worlds, articles, categories, tours, tour_slides, dice/config' });
+    
+  } catch(err){ 
+    console.error('Error in route:', err);
+    return _json(400, { error: 'server_error', message: String(err) }); 
+  }
+}
+
+function getUser(){
+  // Simplified for testing - remove authentication requirement
+  return { email: 'dev@example.com', role: 'admin' };
+}
+
+/** Worlds **/
+function listWorlds(){ 
+  try {
+    console.log('=== DEBUG: Starting listWorlds ===');
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sh = spreadsheet.getSheetByName(SHEETS.WORLDS);
+    
+    if (!sh) {
+      console.error('Sheet not found:', SHEETS.WORLDS);
+      return [];
+    }
+    
+    const range = sh.getDataRange();
+    console.log('Data range:', range.getA1Notation());
+    console.log('Number of rows:', range.getNumRows());
+    console.log('Number of columns:', range.getNumColumns());
+    
+    if (range.getNumRows() < 2) {
+      console.log('Sheet has no data rows:', SHEETS.WORLDS);
+      return [];
+    }
+    
+    const [header, ...rows] = range.getValues();
+    console.log('Headers found:', header);
+    console.log('Number of headers:', header.length);
+    
+    // Check for the message column specifically
+    const messageIndex = header.findIndex(h => String(h).trim().toLowerCase() === 'message');
+    console.log('Message column index:', messageIndex);
+    if (messageIndex >= 0) {
+      console.log('Message column header:', header[messageIndex]);
+      console.log('First row message value:', rows[0] ? rows[0][messageIndex] : 'No data rows');
+    }
+    
+    const result = rows.filter(r=>r.some(c=>String(c).length)).map(r=>Object.fromEntries(header.map((h,i)=>[String(h).trim(), r[i]])));
+    console.log('First processed world:', JSON.stringify(result[0], null, 2));
+    console.log('=== DEBUG: End listWorlds ===');
+    
+    return result;
+  } catch (error) {
+    console.error('Error loading worlds:', error);
+    return [];
+  }
+}
+
+/** Articles **/
+function listArticles(p){
+  try {
+    const rows = readTable(SHEETS.ARTICLES).filter(r=>String(r.is_published).toUpperCase()!=='FALSE');
+    return rows.filter(r=> (!p.world_id || r.world_id==p.world_id)
+      && (!p.category_id || r.category_id==p.category_id)
+      && (!p.tag || (String(r.tags_csv||'').toLowerCase().split(',').map(s=>s.trim()).includes(String(p.tag).toLowerCase())))
+      && (!p.q || JSON.stringify(r).toLowerCase().includes(String(p.q).toLowerCase())));
+  } catch (error) {
+    console.error('Error loading articles:', error);
+    return [];
+  }
+}
+
+function createArticle(body){
+  body.updated_at = new Date().toISOString();
+  writeRow(SHEETS.ARTICLES, body);
+  return body;
+}
+
+/** Categories **/
+function listCategories(p) {
+  try {
+    const rows = readTable(SHEETS.CATEGORIES);
+    return rows.filter(r=> (!p.world_id || r.world_id==p.world_id));
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    return [];
+  }
+}
+
+/** Tours **/
+function listTours(p) {
+  try {
+    const rows = readTable(SHEETS.TOURS);
+    return rows.filter(r=> (!p.world_id || r.world_id==p.world_id));
+  } catch (error) {
+    console.error('Error loading tours:', error);
+    return [];
+  }
+}
+
+/** Tour Slides **/
+function listTourSlides(p) {
+  try {
+    const rows = readTable(SHEETS.TOUR_SLIDES);
+    return rows.filter(r=> (!p.tour_id || r.tour_id==p.tour_id))
+               .sort((a,b) => (a.slide_order || 0) - (b.slide_order || 0));
+  } catch (error) {
+    console.error('Error loading tour slides:', error);
+    return [];
+  }
+}
+
+/** Scribe **/
+function appendScribe(body, email){
+  writeRow(SHEETS.SCRIBE, { id:Utilities.getUuid(), user_email:email, timestamp_utc:new Date().toISOString(), ...body });
+  return { ok:true };
+}
+function listScribe(p){
+  const rows = readTable(SHEETS.SCRIBE);
+  return rows.filter(r=> (!p.world_id || r.world_id==p.world_id) && (!p.session_id || r.session_id==p.session_id))
+             .sort((a,b)=>a.timestamp_utc.localeCompare(b.timestamp_utc));
+}
+
+/** Dice **/
+function getDiceConfig(world_id){
+  const rows = readTable(SHEETS.DICESETS).filter(r=>r.world_id==world_id);
+  return rows[0] || { sides_csv:'4,6,8,10,12,20', macros_json:'[]' };
+}
+
+/** Sheets helpers **/
+function readTable(name){
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sh = spreadsheet.getSheetByName(name);
+    
+    if (!sh) {
+      console.error('Sheet not found:', name);
+      return [];
+    }
+    
+    const range = sh.getDataRange();
+    if (range.getNumRows() < 2) {
+      console.log('Sheet has no data rows:', name);
+      return [];
+    }
+    
+    const [header, ...rows] = range.getValues();
+    return rows.filter(r=>r.some(c=>String(c).length)).map(r=>Object.fromEntries(header.map((h,i)=>[String(h).trim(), r[i]])));
+  } catch (error) {
+    console.error('Error reading table:', name, error);
+    return [];
+  }
+}
+
+function writeRow(name, obj){
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sh = spreadsheet.getSheetByName(name);
+    const header = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+    const row = header.map(h=> obj[h]!==undefined ? obj[h] : '');
+    sh.appendRow(row);
+  } catch (error) {
+    console.error('Error writing row to:', name, error);
+    throw error;
+  }
+}
+
+/** Response helpers with CORS - MODERN APPS SCRIPT APPROACH **/
+function _json(status, data) {
+  const callback = 'callback'; // for JSONP if needed
+  const output = ContentService.createTextOutput(JSON.stringify(data));
+  output.setMimeType(ContentService.MimeType.JSON);
+  
+  // Try different CORS approaches
+  try {
+    output.setHeader('Access-Control-Allow-Origin', '*');
+  } catch(e) {
+    // setHeader not available, try alternative
+    console.log('setHeader not available, using plain JSON');
+  }
+  
+  return output;
+}
+
+function _cors(status) {
+  const output = ContentService.createTextOutput('OK');
+  output.setMimeType(ContentService.MimeType.TEXT);
+  
+  try {
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  } catch(e) {
+    console.log('CORS headers not available');
+  }
+  
+  return output;
+}

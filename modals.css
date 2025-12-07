@@ -25,6 +25,7 @@
     pointer-events: auto;
 }
 
+/* Ensure modals properly hide when closed */
 .article-modal, .tour-modal {
     position: fixed;
     top: 50%;
@@ -34,24 +35,41 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    visibility: hidden;  /* Add visibility property */
 }
 
 .article-modal.show, .tour-modal.show {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;  /* Show when active */
 }
 
+/* General modal-content (for article modals) */
 .modal-content {
     background: var(--modal-bg);
     border: 2px solid var(--modal-border);
     border-radius: 15px;
-    max-width: 900px;
-    width: 90%;
+    max-width: 1100px; /* was 900px */
+    width: 96%;        /* was 90% */
     max-height: 90vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     position: relative;
     z-index: 10000;
+}
+
+/* Override for tour modal to make it landscape and fill parent */
+.tour-modal .modal-content {
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
 }
 
 .modal-header {
@@ -138,14 +156,16 @@
 }
 
 /* Background blur when modal is active */
+body.modal-active {
+    overflow: hidden;
+}
+
 body.modal-active main {
     filter: blur(5px);
     pointer-events: none;
 }
 
-/* Ensure modals stay sharp */
-body.modal-active .article-modal,
-body.modal-active .tour-modal {
+body:not(.modal-active) main {
     filter: none;
     pointer-events: auto;
 }
@@ -172,150 +192,196 @@ body.modal-active .tour-modal {
 }
 
 .tour-modal .close-btn {
-    justify-self: end;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    color: white;
+    font-size: 24px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.tour-modal .close-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+}
+
+/* Fix tour modal positioning and visibility */
+.tour-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    height: 70vh;
+    max-width: 1200px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.tour-modal .modal-content {
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+    z-index: 1; /* Set a base z-index */
+}
+
+.tour-modal .modal-header {
+    padding: 15px 20px; /* Reduced vertical padding */
 }
 
 .tour-modal .modal-body {
+    flex: 1;
+    position: relative;
     padding: 0;
-    max-height: calc(95vh - 140px);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
 .tour-slide-container {
     position: relative;
-    flex: 1;
+    width: 100%;
+    height: 100%;
+    /* border-radius: 15px; */ /* Removed from here */
     overflow: hidden;
-    background: var(--tour-slide-bg);
 }
 
 .tour-modal-slide {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     opacity: 0;
-    transition: opacity 0.4s ease-in-out;
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: opacity 0.3s ease;
 }
 
 .tour-modal-slide.active {
     opacity: 1;
 }
 
-.tour-modal-slide .slide-content {
-    max-width: 1000px;
+.slide-media {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    align-items: center;
+    height: 100%;
 }
 
-.tour-modal-slide .slide-media {
-    width: 100%;
-    height: 350px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--secondary-bg);
-}
-
-.tour-modal-slide .slide-media img,
-.tour-modal-slide .slide-media video {
+.slide-media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.tour-modal-slide .slide-text {
-    padding: 0;
+.slide-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.2),
+        rgba(0, 0, 0, 0.8)
+    );
 }
 
-.tour-modal-slide .slide-title {
-    font-size: 2.2rem;
-    margin-bottom: 20px;
-    color: var(--tour-accent);
-    line-height: 1.2;
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-heavy);
-}
-
-.tour-modal-slide .slide-body {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: var(--text-color);
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-normal);
-}
-
-.tour-modal-slide .slide-body h1, 
-.tour-modal-slide .slide-body h2, 
-.tour-modal-slide .slide-body h3 {
-    color: var(--tour-accent);
-    margin: 20px 0 10px 0;
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-bold);
-}
-
-.tour-modal-slide .slide-body p {
-    margin-bottom: 15px;
-}
-
-.tour-modal-slide.slide-type-intro .slide-content {
-    grid-template-columns: 1fr;
+.slide-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+    color: white;
+    z-index: 2;
     text-align: center;
-    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
 
-.tour-modal-slide.slide-type-intro .slide-media {
-    height: 250px;
+.slide-title {
+    margin-top: 0;
     margin-bottom: 30px;
+    font-size: 3rem;
+    color: white;
+    width: 100%;
+    text-align: center;
+    /* Optionally set min-height for consistent spacing */
+    min-height: 3.5em;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.slide-body {
+    font-size: 1.2rem;
+    max-width: 700px;
+    margin: 0 auto;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-align: justify;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-start;
 }
 
 .tour-modal-navigation {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 20px;
-    background: var(--secondary-bg);
-    border-top: 1px solid var(--border-color);
+    gap: 9px; /* Reduced from 18px */
+    padding: 0 10px; /* Reduced horizontal padding */
+    width: auto;
+    min-height: 32px; /* Reduced from 48px */
 }
 
-.tour-modal-navigation .tour-nav-btn {
-    padding: 10px 20px;
-    background: var(--tour-nav-bg);
-    color: var(--tour-nav-text);
-    border: none;
-    border-radius: 6px;
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
+.tour-nav-btn {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 9px; /* Reduced from 8px 18px */
+    border-radius: 10px; /* Reduced from 20px */
+    font-size: 0.7rem; /* Reduced from 1rem */
+    min-width: 35px; /* Reduced from 70px */
     transition: all 0.3s ease;
-    font-family: var(--font-family);
-}
-
-.tour-modal-navigation .tour-nav-btn:hover:not(:disabled) {
-    background: var(--text-accent);
-    transform: translateY(-2px);
-}
-
-.tour-modal-navigation .tour-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.tour-modal-navigation .tour-dots {
+    height: 20px; /* Reduced from 40px */
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
 }
 
-.tour-modal-navigation .tour-dot {
-    width: 12px;
-    height: 12px;
+.tour-nav-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.tour-dots {
+    display: flex;
+    gap: 6px; /* Reduced from 12px */
+    align-items: center;
+}
+
+.tour-dot {
+    width: 9px;   /* Reduced from 18px */
+    height: 9px;  /* Reduced from 18px */
     border-radius: 50%;
     background: var(--tour-dot-inactive);
     border: none;
@@ -323,11 +389,68 @@ body.modal-active .tour-modal {
     transition: all 0.3s ease;
 }
 
-.tour-modal-navigation .tour-dot.active {
+.tour-dot.active {
     background: var(--tour-accent);
-    transform: scale(1.2);
+    transform: scale(1.1); /* Slightly reduced scale */
 }
 
-.tour-modal-navigation .tour-dot:hover {
+.tour-dot:hover {
     background: var(--text-secondary);
+}
+
+/* ========== ARTICLE MODAL TWO-COLUMN LAYOUT ========== */
+.article-modal-columns {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr;
+    gap: 40px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.article-modal-image-col {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    min-width: 0;
+    height: 520px; /* Increased from previous value for taller portraits */
+}
+
+.article-modal-image-col .article-image {
+    width: 100%;
+    height: 100%;
+    max-width: 380px;
+    max-height: 520px; /* Match container height */
+    object-fit: cover;
+    object-position: center center;
+    border-radius: 8px;
+    margin-bottom: 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    display: block;
+}
+
+.article-modal-text-col {
+    width: 100%;
+    min-width: 0;
+    /* Use modal-body styles for text */
+}
+
+@media (max-width: 900px) {
+    .modal-content {
+        max-width: 98vw;
+        width: 99%;
+    }
+    .article-modal-columns {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .article-modal-image-col {
+        justify-content: center;
+        margin-bottom: 16px;
+        height: 320px; /* Taller for mobile as well */
+    }
+    .article-modal-image-col .article-image {
+        max-width: 100%;
+        max-height: 320px;
+        height: 100%;
+    }
 }

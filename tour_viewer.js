@@ -6,6 +6,9 @@ class TourViewer {
     this.activeTour = null;
     this.currentSlideIndex = 0;
     this.slides = [];
+
+    // Bind the handleKeydown method to the instance
+    this.handleKeydown = this.handleKeydown.bind(this);
   }
 
   async loadTourData(worldId) {
@@ -122,10 +125,8 @@ class TourViewer {
         <div class="tour-card-overlay">
           <h5 class="tour-title">${tour.title}</h5>
           <p class="tour-description">${tour.description || 'Explore this guided experience'}</p>
-          <div class="tour-meta">
-            <span class="tour-duration">${tour.estimated_duration || '5 min'}</span>
-            <span class="tour-slides">${tour.slide_count || '?'} slides</span>
-          </div>
+          <!-- Removed: slide/time counter preview -->
+          <!-- <div class="tour-meta">...</div> -->
         </div>
       </div>
     `;
@@ -144,51 +145,53 @@ class TourViewer {
 
   async startTour(tourId) {
     try {
-      // Load slides for this specific tour
-      this.slides = await this.hub.loadTourSlides(tourId);
-      this.activeTour = this.currentTours.find(t => t.id === tourId);
-      this.currentSlideIndex = 0;
+        // Show modal with loading state immediately
+        this.openTourModal(true); // true = loading state
+        
+        // Load slides in background
+        this.slides = await this.hub.loadTourSlides(tourId);
+        this.activeTour = this.currentTours.find(t => t.id === tourId);
+        this.currentSlideIndex = 0;
 
-      if (this.slides.length === 0) {
-        throw new Error('No slides found for this tour');
-      }
+        if (this.slides.length === 0) {
+            throw new Error('No slides found for this tour');
+        }
 
-      Config.log(`Starting tour: ${this.activeTour.title} with ${this.slides.length} slides`);
-      
-      // Use the HTML modal instead of replacing hub content
-      this.openTourModal();
-      
+        // Update modal with content
+        this.populateModal();
+        
+        Config.log(`Tour loaded: ${this.activeTour.title} with ${this.slides.length} slides`);
     } catch (error) {
-      Config.error('Failed to start tour:', error);
-      alert('Could not load this tour. Please try again.');
+        Config.error('Failed to start tour:', error);
+        this.closeTourModal();
+        alert('Could not load this tour. Please try again.');
     }
   }
 
   // New modal-based tour system
-  openTourModal() {
+  openTourModal(loading = false) {
     const tourModal = document.getElementById('tourModal');
     const tourModalOverlay = document.getElementById('tourModalOverlay');
     const tourModalTitle = document.getElementById('tourModalTitle');
     const tourSlideContainer = document.getElementById('tourSlideContainer');
 
     if (!tourModal || !tourModalOverlay) {
-      Config.error('Tour modal elements not found');
-      return;
+        Config.error('Tour modal template not found in DOM');
+        return;
     }
 
-    // Set modal title
-    if (tourModalTitle) {
-      tourModalTitle.textContent = this.activeTour.title;
+    // Show loading state or empty containers
+    if (loading) {
+        if (tourModalTitle) tourModalTitle.textContent = 'Loading Tour...';
+        if (tourSlideContainer) {
+            tourSlideContainer.innerHTML = `
+                <div class="tour-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading tour content...</p>
+                </div>
+            `;
+        }
     }
-
-    // Clear and populate slide container
-    if (tourSlideContainer) {
-      tourSlideContainer.innerHTML = this.renderAllModalSlides();
-    }
-
-    // Update progress and navigation
-    this.updateTourModalProgress();
-    this.updateTourModalNavigation();
 
     // Show modal
     tourModalOverlay.classList.add('show');
@@ -196,10 +199,31 @@ class TourViewer {
     document.body.classList.add('modal-active');
     document.body.style.overflow = 'hidden';
 
-    // Setup modal event listeners
-    this.setupTourModalListeners();
+    // Only setup listeners if not in loading state
+    if (!loading) {
+        this.setupTourModalListeners();
+    }
+  }
 
-    Config.log('Tour modal opened');
+  populateModal() {
+    const tourModalTitle = document.getElementById('tourModalTitle');
+    const tourSlideContainer = document.getElementById('tourSlideContainer');
+
+    // Update title and content
+    if (tourModalTitle) {
+        tourModalTitle.textContent = this.activeTour.title;
+    }
+
+    if (tourSlideContainer) {
+        tourSlideContainer.innerHTML = this.renderAllModalSlides();
+    }
+
+    // Update progress and navigation
+    this.updateTourModalProgress();
+    this.updateTourModalNavigation();
+    
+    // Setup event listeners now that content is loaded
+    this.setupTourModalListeners();
   }
 
   closeTourModal() {
@@ -207,16 +231,34 @@ class TourViewer {
     const tourModalOverlay = document.getElementById('tourModalOverlay');
     
     if (tourModal && tourModalOverlay) {
-      tourModalOverlay.classList.remove('show');
-      tourModal.classList.remove('show');
-      document.body.classList.remove('modal-active');
-      document.body.style.overflow = 'auto';
+        // Remove show classes
+        tourModal.classList.remove('show');
+        tourModalOverlay.classList.remove('show');
+        
+        // Remove modal-active from body immediately
+        document.body.classList.remove('modal-active');
+        document.body.style.overflow = '';  // Reset to default instead of 'auto'
+        
+        // Clean up event listeners
+        const closeBtn = document.getElementById('closeTourModalBtn');
+        if (closeBtn) {
+            closeBtn.removeEventListener('click', () => this.closeTourModal());
+        }
+        
+        // Remove keyboard event listener
+        document.removeEventListener('keydown', this.handleKeydown);
     }
 
     // Reset tour state
     this.activeTour = null;
     this.slides = [];
     this.currentSlideIndex = 0;
+    
+    // Clear slide container
+    const slideContainer = document.getElementById('tourSlideContainer');
+    if (slideContainer) {
+        slideContainer.innerHTML = '';
+    }
 
     Config.log('Tour modal closed');
   }
@@ -231,56 +273,36 @@ class TourViewer {
     const isActive = index === this.currentSlideIndex;
     const slideTypeClass = `slide-type-${slide.slide_type || 'default'}`;
     
-    const content = this.renderSlideContent(slide);
-    
     return `
-      <div class="tour-modal-slide ${slideTypeClass} ${isActive ? 'active' : ''}" 
-           data-slide-index="${index}"
-           id="tour-slide-${index}">
-        ${content}
-      </div>
-    `;
-  }
-
-  renderSlideContent(slide) {
-    const hasMedia = slide.media_url && slide.media_url.trim();
-    const mediaElement = hasMedia ? this.renderSlideMedia(slide) : '';
-    
-    return `
-      <div class="slide-content">
-        ${mediaElement}
-        <div class="slide-text">
-          <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
-          <div class="slide-body">
-            ${this.hub.markdownToHtml(slide.content || 'No content available')}
-          </div>
+        <div class="tour-modal-slide ${slideTypeClass} ${isActive ? 'active' : ''}" 
+             data-slide-index="${index}"
+             id="tour-slide-${index}">
+            <div class="slide-media">
+                ${this.renderSlideMedia(slide)}
+            </div>
+            <div class="slide-content">
+                <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
+                <div class="slide-body">
+                    ${this.hub.markdownToHtml(slide.content || 'No content available')}
+                </div>
+            </div>
         </div>
-      </div>
     `;
   }
 
   renderSlideMedia(slide) {
     const mediaUrl = slide.media_url;
     const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
-    const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
     
     if (isVideo) {
-      return `
-        <div class="slide-media slide-video">
-          <video autoplay muted loop playsinline>
-            <source src="${mediaUrl}" type="video/mp4">
-          </video>
-        </div>
-      `;
-    } else if (isImage || true) { // Default to image
-      return `
-        <div class="slide-media slide-image">
-          <img src="${mediaUrl}" alt="${slide.title}" loading="lazy">
-        </div>
-      `;
+        return `
+            <video autoplay muted loop playsinline>
+                <source src="${mediaUrl}" type="video/mp4">
+            </video>
+        `;
+    } else {
+        return `<img src="${mediaUrl}" alt="${slide.title}" loading="lazy">`;
     }
-    
-    return '';
   }
 
   setupTourModalListeners() {
@@ -323,31 +345,53 @@ class TourViewer {
       });
     }
 
-    // Keyboard navigation
+    // Keyboard navigation with bound handler
+    document.addEventListener('keydown', this.handleKeydown);
+
+    // Fix arrow key navigation to move one slide at a time
     document.addEventListener('keydown', (e) => {
-      if (this.activeTour && document.body.classList.contains('modal-active')) {
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          this.previousSlide();
-        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          this.nextSlide();
-        } else if (e.key === 'Escape') {
-          this.closeTourModal();
-        }
+      if (!document.body.classList.contains('modal-active')) return;
+      if (!this.isTourModalOpen()) return;
+
+      if (e.key === 'ArrowRight') {
+        this.goToNextSlide();
+        e.preventDefault();
+      } else if (e.key === 'ArrowLeft') {
+        this.goToPrevSlide();
+        e.preventDefault();
       }
     });
   }
 
+  handleKeydown(e) {
+    if (this.activeTour && document.body.classList.contains('modal-active')) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (this.currentSlideIndex > 0) {
+                this.goToSlide(this.currentSlideIndex - 1);
+            }
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (this.currentSlideIndex < this.slides.length - 1) {
+                this.goToSlide(this.currentSlideIndex + 1);
+            }
+        } else if (e.key === 'Escape') {
+            this.closeTourModal();
+        }
+    }
+  }
+
   nextSlide() {
-    if (this.currentSlideIndex < this.slides.length - 1) {
-      this.goToSlide(this.currentSlideIndex + 1);
+    const nextIndex = this.currentSlideIndex + 1;
+    if (nextIndex < this.slides.length) {
+        this.goToSlide(nextIndex);
     }
   }
 
   previousSlide() {
-    if (this.currentSlideIndex > 0) {
-      this.goToSlide(this.currentSlideIndex - 1);
+    const prevIndex = this.currentSlideIndex - 1;
+    if (prevIndex >= 0) {
+        this.goToSlide(prevIndex);
     }
   }
 
