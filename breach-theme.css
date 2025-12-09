@@ -275,3 +275,11 @@ body.world-breach .article-card {
     border: none !important;
     border-radius: 0 !important;
 }
+
+/* Replace Nexus logo with Breach logo when Breach world is active */
+body.world-breach .logo {
+    content: url("assets/Breach-logo.png");
+    /* Keep same dimensions as Nexus logo */
+    height: 80px;
+    width: auto;
+}

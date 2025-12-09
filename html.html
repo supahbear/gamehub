@@ -20,6 +20,19 @@
     <link href="breach-theme.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
+    <!-- Background video layer for world selection -->
+    <div id="worldBackgroundLayer" class="world-background-layer">
+        <video id="bgVideo-breach" class="world-bg-video active" autoplay muted loop playsinline>
+            <source src="assets/videos/Breach-vid.mp4" type="video/mp4">
+        </video>
+        <video id="bgVideo-meridian" class="world-bg-video" muted loop playsinline>
+            <source src="assets/videos/meridian-vid.mp4" type="video/mp4">
+        </video>
+        <video id="bgVideo-laguna" class="world-bg-video" muted loop playsinline>
+            <source src="assets/videos/laguna-vid.mp4" type="video/mp4">
+        </video>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo-container" onclick="window.location.reload()">

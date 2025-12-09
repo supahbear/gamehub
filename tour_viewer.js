@@ -9,6 +9,7 @@ class TourViewer {
 
     // Bind the handleKeydown method to the instance
     this.handleKeydown = this.handleKeydown.bind(this);
+    this._keydownAttached = false; // NEW: prevent duplicate attachment
   }
 
   async loadTourData(worldId) {
@@ -260,7 +261,10 @@ class TourViewer {
     }
     
     // Remove keyboard event listener
-    document.removeEventListener('keydown', this.handleKeydown);
+    if (this._keydownAttached) {
+      document.removeEventListener('keydown', this.handleKeydown);
+      this._keydownAttached = false;
+    }
 
     // Reset tour state
     this.activeTour = null;
@@ -358,22 +362,11 @@ class TourViewer {
       });
     }
 
-    // Keyboard navigation with bound handler
-    document.addEventListener('keydown', this.handleKeydown);
-
-    // Fix arrow key navigation to move one slide at a time
-    document.addEventListener('keydown', (e) => {
-      if (!document.body.classList.contains('modal-active')) return;
-      if (!this.isTourModalOpen()) return;
-
-      if (e.key === 'ArrowRight') {
-        this.goToNextSlide();
-        e.preventDefault();
-      } else if (e.key === 'ArrowLeft') {
-        this.goToPrevSlide();
-        e.preventDefault();
-      }
-    });
+    // Keyboard navigation with bound handler - only attach once
+    if (!this._keydownAttached) {
+      document.addEventListener('keydown', this.handleKeydown);
+      this._keydownAttached = true;
+    }
   }
 
   handleKeydown(e) {

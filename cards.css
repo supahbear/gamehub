@@ -5,6 +5,37 @@
  * Depends on: base.css variables
  */
 
+/* ========== WORLD BACKGROUND VIDEOS ========== */
+.world-background-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* behind .container but visible if body bg is transparent */
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.world-bg-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    filter: blur(2px) brightness(0.6); /* Reduced from blur(4px) */
+}
+
+.world-bg-video.active {
+    opacity: 1;
+}
+
 /* ========== WORLD CARDS ========== */
 .worlds-grid {
     display: grid;
@@ -25,6 +56,27 @@
     transition: all 0.3s ease;
     border: 4px solid var(--border-color);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    
+    /* NEW: Fade-in animation on load */
+    opacity: 0;
+    animation: cardFadeIn 0.6s ease-out forwards;
+}
+
+/* Stagger the fade-in for each card */
+.world-card:nth-child(1) { animation-delay: 0.1s; }
+.world-card:nth-child(2) { animation-delay: 0.2s; }
+.world-card:nth-child(3) { animation-delay: 0.3s; }
+.world-card:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .world-card:hover {
@@ -38,9 +90,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--secondary-bg);
-    color: var(--text-secondary);
-    border: 2px dashed var(--border-color);
+    background: transparent; /* Completely transparent */
+    color: #ffffff;
+    border: none; /* No border */
+    box-shadow: none;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.9);
+    animation: none !important; /* Keep this to disable card fade-in */
+    backdrop-filter: none; /* Removed blur completely */
+    opacity: 1; /* REMOVED !important - allows JS to override */
+    visibility: visible !important; /* Keep visibility important */
 }
 
 .world-video {
@@ -157,11 +217,11 @@
 }
 
 .world-card[data-world-id="breach"] .world-system {
-    color: #9c27b0;
+    color: #d4af37; /* Changed to golden/brass color */
 }
 
 .world-card[data-world-id="breach"]:hover {
-    box-shadow: 0 12px 35px rgba(156, 39, 176, 0.4);
+    box-shadow: 0 12px 35px rgba(191, 167, 122, 0.7); /* Strengthened glow from 0.4 to 0.7 */
 }
 
 /* ========== ARTICLE CARDS ========== */

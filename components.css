@@ -239,3 +239,27 @@ body.world-breach .explore-primary-btn {
         grid-template-columns: 1fr;
     }
 }
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    transition: opacity 0.5s ease;
+    background: transparent; /* NEW: ensure container doesn't block bg videos */
+}
+
+/* ========== LANDING PAGE STYLES ========== */
+.landing-screen {
+    /* ...existing code... */
+    background: transparent; /* NEW: let bg videos show through */
+}
+
+main {
+    /* ...existing code... */
+    background: transparent; /* NEW: let bg videos show through */
+}
+
+.landing-message {
+    /* ...existing code... */
+    /* Keep any existing background on the message box itself */
+}

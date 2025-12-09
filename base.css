@@ -54,12 +54,14 @@
 
 body {
     font-family: var(--font-family);
-    background: var(--primary-bg);
+    /* REMOVE or comment out the background gradient so videos show through */
+    /* background: var(--primary-bg); */
+    background: transparent; /* NEW: let video layer show */
     color: var(--text-color);
     min-height: 100vh;
     transition: background 1.5s ease;
-    /* Always reserve space for the scrollbar to avoid horizontal jitter */
     overflow-y: scroll;
+    position: relative; /* NEW: establish stacking context for bg videos */
 }
 
 .container {
@@ -138,9 +140,10 @@ h2 {
     font-size: 2.5rem;
     margin-bottom: 30px;
     text-align: center;
-    color: var(--text-accent);
+    color: #ffffff; /* Changed from var(--text-accent) to white */
     text-transform: uppercase;
     letter-spacing: 1px;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.9); /* NEW: strong drop shadow for readability */
 }
 
 .subtitle {

@@ -6,13 +6,20 @@ class TTRPGHub {
     this.currentExploreSubmode = 'tours';
     this.worlds = [];
     
+    this.activeBackgroundWorld = 'breach'; // Reverted to Breach default
+    this.backgroundVideos = {};
+
     this.init();
   }
 
-  init() {
+  async init() {
     this.setupEventListeners();
     this.addDebugControls();
-    this.loadWorlds();
+    
+    await this.loadWorlds();
+    this.renderWorlds();
+    
+    Config.log('TTRPG Hub initialized');
   }
 
   // ========== Event Listeners ==========
@@ -126,7 +133,7 @@ class TTRPGHub {
         name: 'The Breach',
         description: 'A D&D 5e campaign where reality itself has been torn asunder.',
         system: 'D&D 5e',
-        video_url: 'assets/videos/breach-loop.mp4'
+        video_url: 'assets/videos/breach-loopv2.mp4' // Updated to v2
       },
       {
         id: 'laguna',
@@ -156,54 +163,27 @@ class TTRPGHub {
     }
 
     if (this.worlds.length === 0) {
-      worldsGrid.innerHTML = '<div class="world-card loading">No worlds available</div>';
+      worldsGrid.innerHTML = `<div class="world-card loading">Loading worlds...</div>`;
       return;
     }
 
-    worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
-
-    // Add click listeners to world cards
-    worldsGrid.querySelectorAll('.world-card').forEach(card => {
-      if (!card.classList.contains('loading')) {
-        card.addEventListener('click', (e) => {
-          const worldId = e.currentTarget.dataset.worldId;
-          this.selectWorld(worldId);
-        });
-      }
-    });
-
-    // Setup hover-to-play for video cards
-    this.setupVideoHoverEvents();
+    // Simple fade out of loading text, then render cards
+    const loadingCard = worldsGrid.querySelector('.world-card.loading');
+    if (loadingCard) {
+      loadingCard.style.transition = 'opacity 0.3s ease-out';
+      loadingCard.style.opacity = '0';
+      
+      // Wait for fade-out to complete (350ms > 300ms transition) before replacing DOM
+      setTimeout(() => {
+        worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
+        this.setupCardListeners();
+      }, 350); // Give extra 50ms buffer after transition completes
+    } else {
+      worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
+      this.setupCardListeners();
+    }
 
     Config.log(`Rendered ${this.worlds.length} worlds`);
-  }
-
-
-
-  setupVideoHoverEvents() {
-    const worldCards = document.querySelectorAll('.world-card');
-    
-    worldCards.forEach(card => {
-      const video = card.querySelector('.world-video');
-      if (!video) return;
-      
-      // Pause video initially and show first frame
-      video.addEventListener('loadeddata', () => {
-        video.currentTime = 0;
-        video.pause();
-      });
-      
-      // Play on hover
-      card.addEventListener('mouseenter', () => {
-        video.play().catch(e => Config.log('Video play failed:', e));
-      });
-      
-      // Pause on leave and reset to first frame
-      card.addEventListener('mouseleave', () => {
-        video.pause();
-        video.currentTime = 0;
-      });
-    });
   }
 
   renderWorldCard(world) {
@@ -597,6 +577,81 @@ class TTRPGHub {
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>')
       .replace(/^(.*)/, '<p>$1</p>');
+  }
+
+  // NEW: Setup background video system
+  setupWorldBackgrounds() {
+    // Cache background video elements (no more 'default')
+    this.backgroundVideos = {
+      breach: document.getElementById('bgVideo-breach'),
+      meridian: document.getElementById('bgVideo-meridian'),
+      laguna: document.getElementById('bgVideo-laguna')
+    };
+
+    Config.log('Background videos cached:', this.backgroundVideos);
+
+    // Breach is already marked active in HTML and autoplays
+    if (this.backgroundVideos.breach) {
+      Config.log('Attempting to play Breach background video...');
+      this.backgroundVideos.breach.play()
+        .then(() => Config.log('Breach background video playing'))
+        .catch(e => Config.error('Breach bg autoplay blocked:', e));
+    } else {
+      Config.error('Breach background video element not found');
+    }
+
+    // Attach hover listeners to world cards
+    const worldCards = document.querySelectorAll('.world-card');
+    Config.log(`Found ${worldCards.length} world cards for background hover`);
+    
+    worldCards.forEach(card => {
+      const worldId = card.dataset.worldId;
+      Config.log(`Attaching hover listeners to card: ${worldId}`);
+      
+      card.addEventListener('mouseenter', () => {
+        Config.log(`Mouse entered ${worldId} card`);
+        this.activateWorldBackground(worldId);
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          const isHoveringAnyCard = document.querySelector('.world-card:hover');
+          if (!isHoveringAnyCard) {
+            Config.log('Mouse left all cards, returning to Breach');
+            this.activateWorldBackground('breach'); // Back to Breach default
+          }
+        }, 100);
+      });
+    });
+  }
+
+  // NEW: Activate a world's background video
+  activateWorldBackground(worldId) {
+    Config.log(`Activating background for: ${worldId}`);
+    
+    if (this.activeBackgroundWorld === worldId) {
+      Config.log(`${worldId} already active, skipping`);
+      return;
+    }
+    
+    // Deactivate current
+    if (this.backgroundVideos[this.activeBackgroundWorld]) {
+      Config.log(`Deactivating ${this.activeBackgroundWorld}`);
+      this.backgroundVideos[this.activeBackgroundWorld].classList.remove('active');
+    }
+    
+    // Activate new
+    if (this.backgroundVideos[worldId]) {
+      Config.log(`Activating ${worldId}, adding .active class`);
+      this.backgroundVideos[worldId].classList.add('active');
+      this.backgroundVideos[worldId].play()
+        .then(() => Config.log(`${worldId} video playing`))
+        .catch(e => Config.error(`${worldId} video play blocked:`, e));
+    } else {
+      Config.error(`No background video found for ${worldId}`);
+    }
+    
+    this.activeBackgroundWorld = worldId;
   }
 }
 
