@@ -252,12 +252,12 @@ body.world-meridian .tour-info .tour-title {
 
 /* Slide Styling */
 body.world-meridian .slide-title {
-    background: linear-gradient(45deg, #ff9800, #ff6b35);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: #fff8f0 !important;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6) !important;
 }
 
 body.world-meridian .slide-body h1,
@@ -372,4 +372,24 @@ body.world-meridian .filter-group select option {
     background: #2e1400;
     color: #fff8f0;
     padding: 8px;
+}
+
+/* Keep bronze gradient for generic slide titles outside tour modal */
+body.world-meridian .slide-title {
+    background: linear-gradient(45deg, #ff9800, #ff6b35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* OVERRIDE: dedicated tour viewer modal titles = creamy white + shadow */
+body.world-meridian .tour-modal .slide-title {
+    background: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    color: #fff8f0 !important;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }

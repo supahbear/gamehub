@@ -145,9 +145,9 @@ class TourViewer {
 
   async startTour(tourId) {
     try {
-        // Show modal with loading state immediately
-        this.openTourModal(true); // true = loading state
-        
+        // NEW: show only overlay + tiny loading box (no modal yet)
+        this.showTourLoadingOverlay();
+
         // Load slides in background
         this.slides = await this.hub.loadTourSlides(tourId);
         this.activeTour = this.currentTours.find(t => t.id === tourId);
@@ -157,7 +157,7 @@ class TourViewer {
             throw new Error('No slides found for this tour');
         }
 
-        // Update modal with content
+        // Now populate and show the modal (with fade-in)
         this.populateModal();
         
         Config.log(`Tour loaded: ${this.activeTour.title} with ${this.slides.length} slides`);
@@ -168,51 +168,57 @@ class TourViewer {
     }
   }
 
-  // New modal-based tour system
-  openTourModal(loading = false) {
+  // NEW: show overlay + centered loading box, keep modal hidden
+  showTourLoadingOverlay() {
+    const overlay = document.getElementById('tourModalOverlay');
+    const modal = document.getElementById('tourModal');
+    const loadingBox = document.getElementById('tourLoadingBox');
+
+    if (!overlay || !loadingBox) {
+      Config.error('Tour loading overlay elements not found in DOM');
+      return;
+    }
+
+    // Show dimmed background
+    overlay.classList.add('show');
+    document.body.classList.add('modal-active');
+
+    // Show small loading box
+    loadingBox.style.display = 'block';
+
+    // Ensure main modal is hidden while loading (no grey panel, no nav)
+    if (modal) {
+      modal.classList.remove('show');
+    }
+  }
+
+  // Simplified: used when we explicitly want to show an already-populated modal
+  openTourModal() {
     const tourModal = document.getElementById('tourModal');
     const tourModalOverlay = document.getElementById('tourModalOverlay');
-    const tourModalTitle = document.getElementById('tourModalTitle');
-    const tourSlideContainer = document.getElementById('tourSlideContainer');
 
     if (!tourModal || !tourModalOverlay) {
         Config.error('Tour modal template not found in DOM');
         return;
     }
 
-    // Show loading state or empty containers
-    if (loading) {
-        if (tourModalTitle) tourModalTitle.textContent = 'Loading Tour...';
-        if (tourSlideContainer) {
-            tourSlideContainer.innerHTML = `
-                <div class="tour-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading tour content...</p>
-                </div>
-            `;
-        }
-    }
-
-    // Show modal
     tourModalOverlay.classList.add('show');
     tourModal.classList.add('show');
     document.body.classList.add('modal-active');
-    document.body.style.overflow = 'hidden';
 
-    // Only setup listeners if not in loading state
-    if (!loading) {
-        this.setupTourModalListeners();
-    }
+    this.setupTourModalListeners();
   }
 
   populateModal() {
-    const tourModalTitle = document.getElementById('tourModalTitle');
     const tourSlideContainer = document.getElementById('tourSlideContainer');
+    const loadingBox = document.getElementById('tourLoadingBox');
+    const tourModal = document.getElementById('tourModal');
+    const tourModalOverlay = document.getElementById('tourModalOverlay');
 
-    // Update title and content
-    if (tourModalTitle) {
-        tourModalTitle.textContent = this.activeTour.title;
-    }
+    // Remove this broken title update - you don't have tourModalTitle element anymore
+    // if (tourModalTitle) {
+    //     tourModalTitle.textContent = this.activeTour.title;
+    // }
 
     if (tourSlideContainer) {
         tourSlideContainer.innerHTML = this.renderAllModalSlides();
@@ -222,6 +228,13 @@ class TourViewer {
     this.updateTourModalProgress();
     this.updateTourModalNavigation();
     
+    // Hide loading box
+    if (loadingBox) loadingBox.style.display = 'none';
+
+    // Fade in the modal now that content is ready
+    if (tourModalOverlay) tourModalOverlay.classList.add('show');
+    if (tourModal) tourModal.classList.add('show');
+
     // Setup event listeners now that content is loaded
     this.setupTourModalListeners();
   }
@@ -229,25 +242,25 @@ class TourViewer {
   closeTourModal() {
     const tourModal = document.getElementById('tourModal');
     const tourModalOverlay = document.getElementById('tourModalOverlay');
+    const loadingBox = document.getElementById('tourLoadingBox');
     
     if (tourModal && tourModalOverlay) {
-        // Remove show classes
         tourModal.classList.remove('show');
         tourModalOverlay.classList.remove('show');
-        
-        // Remove modal-active from body immediately
         document.body.classList.remove('modal-active');
-        document.body.style.overflow = '';  // Reset to default instead of 'auto'
-        
-        // Clean up event listeners
-        const closeBtn = document.getElementById('closeTourModalBtn');
-        if (closeBtn) {
-            closeBtn.removeEventListener('click', () => this.closeTourModal());
-        }
-        
-        // Remove keyboard event listener
-        document.removeEventListener('keydown', this.handleKeydown);
     }
+    if (loadingBox) {
+        loadingBox.style.display = 'none';
+    }
+
+    // Clean up event listeners
+    const closeBtn = document.getElementById('closeTourModalBtn');
+    if (closeBtn) {
+        closeBtn.removeEventListener('click', () => this.closeTourModal());
+    }
+    
+    // Remove keyboard event listener
+    document.removeEventListener('keydown', this.handleKeydown);
 
     // Reset tour state
     this.activeTour = null;
@@ -585,9 +598,9 @@ class TourViewer {
     this.slides = [];
     this.currentSlideIndex = 0;
     
-    // Re-enable body scroll when exiting tour
-    document.body.style.overflow = 'auto';
-    
+    // Remove inline overflow manipulation
+    document.body.style.overflow = '';
+
     // Return to explore mode instead of calling showWorldHub directly
     this.hub.currentMode = 'explore';
     this.hub.currentExploreSubmode = 'tours';

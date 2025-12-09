@@ -2,7 +2,8 @@
 
 body.world-breach {
     /* Breach Rustic Fantasy Theme Variables */
-    --primary-bg: linear-gradient(135deg, #e7d7b1, #bfa77a, #8b6f4a, #e7d7b1);
+    /* Restore parchment-style background instead of gray */
+    --primary-bg: linear-gradient(135deg, #f5edd8, #e7d7b1, #cbb38a); /* light parchment gradient */
     --secondary-bg: rgba(191, 167, 122, 0.25);
     --card-bg: rgba(231, 215, 177, 0.7);
     --text-color: #4a2c2a;
@@ -27,12 +28,25 @@ body.world-breach {
     --card-glow-default: rgba(191, 167, 122, 0.2);
 
     /* Rustic Overlay Gradient */
-    --card-overlay-gradient: linear-gradient(to top, rgba(231, 215, 177, 0.95) 0%, rgba(191, 167, 122, 0.8) 30%, rgba(191, 167, 122, 0.5) 60%, rgba(191, 167, 122, 0.2) 80%, transparent 100%);
+    --card-overlay-gradient: linear-gradient(
+        to top,
+        rgba(231, 215, 177, 0.95) 0%,
+        rgba(191, 167, 122, 0.8) 30%,
+        rgba(191, 167, 122, 0.5) 60%,
+        rgba(191, 167, 122, 0.2) 80%,
+        transparent 100%
+    );
 
     /* Modal Theme */
     --modal-bg: #e7d7b1;
     --modal-border: #8b6f4a;
     --modal-overlay: rgba(231, 215, 177, 0.85);
+}
+
+/* Remove blurred image background layer */
+body.world-breach::before {
+    /* ...remove image background... */
+    content: none;
 }
 
 /* Breach-specific styling */

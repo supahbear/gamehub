@@ -380,7 +380,8 @@ class ArticleViewer {
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('modal-active');
-    document.body.style.overflow = 'hidden';
+    // DO NOT touch body.style.overflow here
+    // document.body.style.overflow = 'hidden';
 
     Config.log('Article modal opened:', article.title);
   }
@@ -393,7 +394,8 @@ class ArticleViewer {
       overlay.classList.remove('show');
       modal.classList.remove('show');
       document.body.classList.remove('modal-active');
-      document.body.style.overflow = 'auto';
+      // Optional: drop this line; base.css handles overflow
+      document.body.style.overflow = '';
       
       Config.log('Article modal closed');
     }
