@@ -12,6 +12,7 @@ class ArticleViewer {
     // Prevent duplicate bindings on re-render
     this._filtersBound = false;
     this._modalBound = false;
+    this._hasInitialized = false; // NEW: Track if we've done initial setup
   }
 
   async loadArticleData(worldId) {
@@ -24,19 +25,24 @@ class ArticleViewer {
       this.currentArticles = articles;
       this.currentCategories = categories;
 
-      // Default to 'Characters' category when no category filter is set
-      if (!this.currentFilters.category && Array.isArray(categories)) {
+      // FIXED: Search for "Character" (singular), not "characters" (plural)
+      if (!this._hasInitialized) {
         const defaultCat = categories.find(cat => {
           const name = String(cat.name || '').trim().toLowerCase();
           const slug = String(cat.slug || '').trim().toLowerCase();
-          return name === 'characters' || slug === 'characters';
+          // FIXED: Look for both singular and plural
+          return name === 'character' || name === 'characters' || 
+                 slug === 'character' || slug === 'characters';
         });
         if (defaultCat && defaultCat.id !== undefined && defaultCat.id !== null && defaultCat.id !== '') {
           this.currentFilters.category = String(defaultCat.id);
+          Config.log('Set default category to Character:', defaultCat.id);
         }
+        this._hasInitialized = true;
       }
       
       Config.log(`Loaded ${articles.length} articles, ${categories.length} categories`);
+      Config.log('Current filters:', this.currentFilters);
       return { articles, categories };
     } catch (error) {
       Config.error('Failed to load article data:', error);
@@ -45,7 +51,26 @@ class ArticleViewer {
   }
 
   async renderReadMode(worldId) {
+    // RESET: Allow re-initialization each time we render Articles view
+    this._hasInitialized = false;
+    
+    // Load data FIRST, which sets the default category
     await this.loadArticleData(worldId);
+
+    // THEN check if we need to force the default (in case loadArticleData didn't set it)
+    if (!this.currentFilters.category && !this._hasInitialized) {
+      const defaultCat = this.currentCategories.find(cat => {
+        const name = String(cat.name || '').trim().toLowerCase();
+        const slug = String(cat.slug || '').trim().toLowerCase();
+        return name === 'character' || name === 'characters' || 
+               slug === 'character' || slug === 'characters';
+      });
+      if (defaultCat && defaultCat.id) {
+        this.currentFilters.category = String(defaultCat.id);
+        this._hasInitialized = true;
+        Config.log('Force-applied default Character category in renderReadMode:', defaultCat.id);
+      }
+    }
 
     if (this.currentArticles.length === 0) {
       // Still render wrapper so refresh logic stays stable
@@ -64,6 +89,7 @@ class ArticleViewer {
       Config.warn('Article modal not found in HTML - functionality may be limited');
     }
 
+    // NOW render with the correct filter already set
     return `
       <div class="article-viewer">
         ${this.renderFilters()}
@@ -96,8 +122,16 @@ class ArticleViewer {
       .map(cat => `<option value="${cat.id}" ${String(this.currentFilters.category) == String(cat.id) ? 'selected' : ''}>${cat.name}</option>`)
       .join('');
 
+    // UPDATED: Only get tags from articles in the current category filter
+    const articlesInCurrentCategory = this.currentFilters.category 
+      ? this.currentArticles.filter(article => {
+          const articleCategories = (article.category_id || '').split(',').map(c => c.trim());
+          return articleCategories.includes(this.currentFilters.category);
+        })
+      : this.currentArticles; // If no category selected, use all articles
+
     const allTags = [...new Set(
-      this.currentArticles
+      articlesInCurrentCategory
         .flatMap(article => (article.tags_csv || '').split(','))
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
@@ -142,19 +176,15 @@ class ArticleViewer {
       `<img src="${article.image_url}" class="card-background" alt="${article.title}" loading="lazy">` :
       `<div class="card-background-placeholder"></div>`;
 
-    // Top-right stacked badges
-    const topBar = `
-      <div class="card-top-bar">
-        ${category ? `<div class="card-category-badge">${category.name}</div>` : ''}
-        <span class="card-tag">${primaryTag}</span>
-      </div>
-    `;
     return `
       <div class="article-card tag-${cssTag}" data-article-id="${article.id}">
         ${backgroundImage}
-        ${topBar}
         <div class="card-overlay">
           <h4 class="card-title">${article.title}</h4>
+          <div class="card-badges-row">
+            ${category ? `<div class="card-category-badge">${category.name}</div>` : ''}
+            <span class="card-tag">${primaryTag}</span>
+          </div>
           <p class="card-summary">${article.summary || 'No summary available'}</p>
         </div>
       </div>
@@ -259,6 +289,8 @@ class ArticleViewer {
       if (categoryFilter) {
         categoryFilter.addEventListener('change', (e) => {
           this.currentFilters.category = e.target.value;
+          this.currentFilters.tag = ''; // UPDATED: Clear tag filter when category changes
+          this.refreshFilters(); // UPDATED: Refresh filters to update tag dropdown
           this.refreshArticleGrid();
         });
       }
@@ -305,6 +337,20 @@ class ArticleViewer {
     });
   }
 
+  refreshFilters() {
+    // NEW: Refresh the entire filter bar (to update tag dropdown based on category)
+    const filtersContainer = document.querySelector('.article-filters');
+    if (filtersContainer) {
+      const parent = filtersContainer.parentElement;
+      const newFilters = this.renderFilters();
+      filtersContainer.outerHTML = newFilters;
+      
+      // Re-bind filter listeners since we replaced the DOM
+      this._filtersBound = false;
+      this.setupEventListeners();
+    }
+  }
+
   refreshArticleGrid() {
     const container = document.getElementById('articlesGridContainer');
     if (container) {
@@ -318,7 +364,19 @@ class ArticleViewer {
   }
 
   clearFilters() {
-    this.currentFilters = { category: '', tag: '', search: '' };
+    // FIXED: Same change for clear filters
+    const defaultCat = this.currentCategories.find(cat => {
+      const name = String(cat.name || '').trim().toLowerCase();
+      const slug = String(cat.slug || '').trim().toLowerCase();
+      return name === 'character' || name === 'characters' || 
+             slug === 'character' || slug === 'characters';
+    });
+    
+    this.currentFilters = { 
+      category: defaultCat && defaultCat.id ? String(defaultCat.id) : '', 
+      tag: '', 
+      search: '' 
+    };
     
     // Reset form elements
     const searchInput = document.getElementById('articleSearch');
@@ -326,9 +384,10 @@ class ArticleViewer {
     const tagFilter = document.getElementById('tagFilter');
     
     if (searchInput) searchInput.value = '';
-    if (categoryFilter) categoryFilter.value = '';
+    if (categoryFilter) categoryFilter.value = this.currentFilters.category;
     if (tagFilter) tagFilter.value = '';
     
+    Config.log('Filters cleared, reset to default Character category');
     this.refreshArticleGrid();
   }
 
@@ -352,27 +411,51 @@ class ArticleViewer {
       // Convert markdown to HTML
       const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
       
-      // Two-column layout: image left, text right
+      // Convert summary markdown to HTML too
+      const summaryHtml = article.summary ? 
+        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : 
+        '';
+      
+      // NEW: Split content into pages
+      const pages = this.splitContentIntoPages(htmlContent);
+      const pageHtml = this.renderArticlePages(pages);
+      const navigationHtml = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
+      
       if (article.image_url) {
         content.innerHTML = `
           <div class="article-modal-columns">
             <div class="article-modal-image-col">
               <img src="${article.image_url}" class="article-image" alt="${article.title}" loading="lazy">
+              ${summaryHtml}
             </div>
             <div class="article-modal-text-col">
-              ${htmlContent}
+              <div class="article-pages-container">
+                ${pageHtml}
+              </div>
+              ${navigationHtml}
             </div>
           </div>
         `;
       } else {
+        // No image: summary still on left, content on right
         content.innerHTML = `
           <div class="article-modal-columns">
-            <div class="article-modal-image-col"></div>
+            <div class="article-modal-image-col">
+              ${summaryHtml}
+            </div>
             <div class="article-modal-text-col">
-              ${htmlContent}
+              <div class="article-pages-container">
+                ${pageHtml}
+              </div>
+              ${navigationHtml}
             </div>
           </div>
         `;
+      }
+      
+      // Setup pagination if needed
+      if (pages.length > 1) {
+        this.setupArticlePagination(pages.length);
       }
     }
 
@@ -380,10 +463,190 @@ class ArticleViewer {
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('modal-active');
-    // DO NOT touch body.style.overflow here
-    // document.body.style.overflow = 'hidden';
 
     Config.log('Article modal opened:', article.title);
+  }
+
+  // NEW: Split HTML content into pages based on fixed container height
+  splitContentIntoPages(htmlContent) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    const elements = Array.from(tempDiv.children);
+    const pages = [];
+    let currentPage = [];
+    let currentHeight = 0;
+    const maxHeight = 540;
+    const avgLineHeight = 24;
+    const avgCharsPerLine = 70;
+    
+    elements.forEach(element => {
+      const text = element.textContent || '';
+      const lines = Math.ceil(text.length / avgCharsPerLine);
+      let estimatedHeight = lines * avgLineHeight;
+      
+      // Add extra height for headers
+      if (element.tagName === 'H1') {
+        estimatedHeight += 20;
+      } else if (element.tagName === 'H2') {
+        estimatedHeight += 15;
+      } else if (element.tagName === 'H3') {
+        estimatedHeight += 10;
+      }
+      
+      // If this element fits on current page, add it
+      if (currentHeight + estimatedHeight <= maxHeight) {
+        currentPage.push(element.outerHTML);
+        currentHeight += estimatedHeight;
+      } else {
+        // Element doesn't fit - check if it's a paragraph that can be split
+        if (element.tagName === 'P' && currentPage.length > 0 && estimatedHeight > maxHeight * 0.3) {
+          // This is a long paragraph and we have content on current page
+          // Split the paragraph across pages
+          const remainingHeight = maxHeight - currentHeight;
+          const remainingChars = Math.floor((remainingHeight / avgLineHeight) * avgCharsPerLine);
+          
+          if (remainingChars > 50) { // Only split if we can fit meaningful content
+            const words = text.split(' ');
+            let firstPart = '';
+            let secondPart = '';
+            let charCount = 0;
+            
+            for (let i = 0; i < words.length; i++) {
+              const word = words[i];
+              if (charCount + word.length < remainingChars) {
+                firstPart += word + ' ';
+                charCount += word.length + 1;
+              } else {
+                secondPart = words.slice(i).join(' ');
+                break;
+              }
+            }
+            
+            // Add first part to current page
+            if (firstPart.trim()) {
+              currentPage.push(`<p>${firstPart.trim()}</p>`);
+            }
+            
+            // Save current page and start new one with second part
+            pages.push(currentPage.join(''));
+            currentPage = secondPart.trim() ? [`<p>${secondPart.trim()}</p>`] : [];
+            currentHeight = secondPart.trim() ? Math.ceil(secondPart.length / avgCharsPerLine) * avgLineHeight : 0;
+          } else {
+            // Not enough room to split meaningfully, start new page
+            pages.push(currentPage.join(''));
+            currentPage = [element.outerHTML];
+            currentHeight = estimatedHeight;
+          }
+        } else {
+          // Not a splittable paragraph, or no content on current page yet
+          // Save current page if it has content
+          if (currentPage.length > 0) {
+            pages.push(currentPage.join(''));
+          }
+          // Start new page with this element
+          currentPage = [element.outerHTML];
+          currentHeight = estimatedHeight;
+        }
+      }
+    });
+    
+    // Add remaining content as last page
+    if (currentPage.length > 0) {
+      pages.push(currentPage.join(''));
+    }
+    
+    return pages.length > 0 ? pages : [htmlContent];
+  }
+
+  // NEW: Render pages HTML
+  renderArticlePages(pages) {
+    return pages.map((pageContent, index) => `
+      <div class="article-page ${index === 0 ? 'active' : ''}" data-page="${index}">
+        ${pageContent}
+      </div>
+    `).join('');
+  }
+
+  // NEW: Render navigation controls
+  renderArticleNavigation(totalPages) {
+    const dots = Array.from({ length: totalPages }, (_, i) => 
+      `<button class="article-dot ${i === 0 ? 'active' : ''}" data-page="${i}"></button>`
+    ).join('');
+    
+    return `
+      <div class="article-navigation">
+        <button class="article-nav-btn article-prev" disabled>‹</button>
+        <div class="article-dots">${dots}</div>
+        <button class="article-nav-btn article-next" ${totalPages <= 1 ? 'disabled' : ''}>›</button>
+      </div>
+    `;
+  }
+
+  // NEW: Setup pagination event listeners
+  setupArticlePagination(totalPages) {
+    let currentPage = 0;
+    
+    const updatePage = (newPage) => {
+      if (newPage < 0 || newPage >= totalPages) return;
+      
+      // Fade out current page
+      const pages = document.querySelectorAll('.article-page');
+      const dots = document.querySelectorAll('.article-dot');
+      
+      pages[currentPage]?.classList.remove('active');
+      dots[currentPage]?.classList.remove('active');
+      
+      // Fade in new page
+      currentPage = newPage;
+      pages[currentPage]?.classList.add('active');
+      dots[currentPage]?.classList.add('active');
+      
+      // Update button states
+      const prevBtn = document.querySelector('.article-prev');
+      const nextBtn = document.querySelector('.article-next');
+      
+      if (prevBtn) prevBtn.disabled = currentPage === 0;
+      if (nextBtn) nextBtn.disabled = currentPage === totalPages - 1;
+    };
+    
+    // Previous button
+    document.querySelector('.article-prev')?.addEventListener('click', () => {
+      updatePage(currentPage - 1);
+    });
+    
+    // Next button
+    document.querySelector('.article-next')?.addEventListener('click', () => {
+      updatePage(currentPage + 1);
+    });
+    
+    // Dot buttons
+    document.querySelectorAll('.article-dot').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        const page = parseInt(e.target.dataset.page);
+        updatePage(page);
+      });
+    });
+    
+    // NEW: Arrow key navigation
+    const arrowKeyHandler = (e) => {
+      // Only handle arrow keys when article modal is open
+      if (!document.body.classList.contains('modal-active')) return;
+      
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        updatePage(currentPage - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        updatePage(currentPage + 1);
+      }
+    };
+    
+    // Add arrow key listener
+    document.addEventListener('keydown', arrowKeyHandler);
+    
+    // Store the handler so we can remove it when modal closes
+    this._arrowKeyHandler = arrowKeyHandler;
   }
 
   closeModal() {
@@ -394,8 +657,12 @@ class ArticleViewer {
       overlay.classList.remove('show');
       modal.classList.remove('show');
       document.body.classList.remove('modal-active');
-      // Optional: drop this line; base.css handles overflow
-      document.body.style.overflow = '';
+      
+      // NEW: Remove arrow key listener when modal closes
+      if (this._arrowKeyHandler) {
+        document.removeEventListener('keydown', this._arrowKeyHandler);
+        this._arrowKeyHandler = null;
+      }
       
       Config.log('Article modal closed');
     }

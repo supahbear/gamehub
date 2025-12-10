@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS - TTRPG World Hub</title>
     
+    <!-- ADD: Preload critical background video -->
+    <link rel="preload" href="assets/videos/Breach-vid.mp4" as="video" type="video/mp4">
+    
     <!-- CSS files in load order: foundation → components → content → overrides -->
     <link href="base.css" rel="stylesheet" type="text/css" />
     <link href="components.css" rel="stylesheet" type="text/css" />
@@ -22,7 +25,13 @@
 <body>
     <!-- Background video layer for world selection -->
     <div id="worldBackgroundLayer" class="world-background-layer">
-        <video id="bgVideo-breach" class="world-bg-video active" autoplay muted loop playsinline>
+        <!-- NEW: Neutral default background -->
+        <video id="bgVideo-neutral" class="world-bg-video active" autoplay muted loop playsinline>
+            <source src="assets/videos/neutral-landing.mp4" type="video/mp4">
+        </video>
+        
+        <!-- World-specific backgrounds (start inactive) - REMOVED autoplay -->
+        <video id="bgVideo-breach" class="world-bg-video" muted loop playsinline>
             <source src="assets/videos/Breach-vid.mp4" type="video/mp4">
         </video>
         <video id="bgVideo-meridian" class="world-bg-video" muted loop playsinline>
@@ -51,8 +60,7 @@
                 
                 <div class="landing-message">
                     <div class="message-content" id="landingMessage">
-                        Welcome to the Nexus! This little space is for playing and immersing yourself in different fictional universes - some even accompanied by original game systems! Nexus supports different modes for use: Explore and Play. 
-                        After selecting a world, you will be taken directly to Explore mode for guided tours and database search. Enjoy!
+                        Welcome to the Nexus! After selecting a destination, you'll be transported to a new world with guided tours and an indexed database of articles describing people, places and everything in-between that makes each world alive. Keep in mind that Nexus is a work in progress. Read, explore, and enjoy 🖤
                     </div>
                 </div>
             </section>
@@ -65,7 +73,7 @@
                 <div class="hub-content" id="hubContent">
                     <!-- Dynamic content based on world and mode -->
                 </div>
-                <button class="back-btn" id="hubBackBtn">← Back to Worlds</button>
+                <!-- REMOVED: back button - logo click reloads instead -->
             </section>
         </main>
 

@@ -6,7 +6,7 @@ class TTRPGHub {
     this.currentExploreSubmode = 'tours';
     this.worlds = [];
     
-    this.activeBackgroundWorld = 'breach'; // Reverted to Breach default
+    this.activeBackgroundWorld = 'neutral'; // Changed from 'breach' to 'neutral'
     this.backgroundVideos = {};
 
     this.init();
@@ -14,22 +14,19 @@ class TTRPGHub {
 
   async init() {
     this.setupEventListeners();
-    this.addDebugControls();
     
     await this.loadWorlds();
     this.renderWorlds();
+    
+    // REMOVE: Don't call setupWorldBackgrounds here - cards don't exist yet
     
     Config.log('TTRPG Hub initialized');
   }
 
   // ========== Event Listeners ==========
   setupEventListeners() {
-    // Only back to worlds button needed
-    const backBtn = document.getElementById('hubBackBtn');
-    if (backBtn) {
-      backBtn.addEventListener('click', () => this.showWorldSelection());
-    }
-    // Remove mode selection event listeners
+    // REMOVED: back button listener - button no longer exists
+    // Logo click handler already reloads the page via onclick in HTML
   }
 
   // ========== Data Loading ==========
@@ -177,10 +174,14 @@ class TTRPGHub {
       setTimeout(() => {
         worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
         this.setupCardListeners();
+        // ADD: Setup background videos AFTER cards exist
+        this.setupWorldBackgrounds();
       }, 350); // Give extra 50ms buffer after transition completes
     } else {
       worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
       this.setupCardListeners();
+      // ADD: Setup background videos AFTER cards exist
+      this.setupWorldBackgrounds();
     }
 
     Config.log(`Rendered ${this.worlds.length} worlds`);
@@ -306,10 +307,10 @@ class TTRPGHub {
       hubHeader.innerHTML = `
         <div class="explore-toggle-row">
           <button class="explore-primary-btn ${this.currentExploreSubmode === 'tours' ? 'active' : ''}" data-submode="tours">
-            🗺️ <span>Take a Tour</span>
+            <span>Tours</span>
           </button>
           <button class="explore-primary-btn ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
-            🔍 <span>Search Database</span>
+            <span>Articles</span>
           </button>
         </div>
       `;
@@ -326,40 +327,18 @@ class TTRPGHub {
     const hubContent = document.getElementById('hubContent');
     if (!hubContent) return;
 
-    const contentMap = {
-      explore: () => this.getExploreModeContent(),
-      build: () => this.getBuildModeContent()
-    };
-
-    const contentFunction = contentMap[this.currentMode];
-    if (contentFunction) {
-      try {
-        hubContent.innerHTML = '<div class="loading">Loading...</div>';
-        const content = await contentFunction();
-        hubContent.innerHTML = content;
-        
-        // Setup mode-specific listeners
-        if (this.currentMode === 'explore') {
-          this.setupExploreToggleListeners();
-          // Load initial submode content
-          await this.loadExploreSubmode(this.currentExploreSubmode);
-        }
-      } catch (error) {
-        hubContent.innerHTML = `<div class="error">Error loading ${this.currentMode} mode: ${error.message}</div>`;
-        Config.error('Error loading hub content:', error);
-      }
-    } else {
-      hubContent.innerHTML = '<p>Unknown mode selected.</p>';
+    // Simplified - only explore mode exists
+    try {
+      hubContent.innerHTML = '<div class="loading">Loading...</div>';
+      const content = await this.getExploreModeContent();
+      hubContent.innerHTML = content;
+      
+      this.setupExploreToggleListeners();
+      await this.loadExploreSubmode(this.currentExploreSubmode);
+    } catch (error) {
+      hubContent.innerHTML = `<div class="error">Error loading content: ${error.message}</div>`;
+      Config.error('Error loading hub content:', error);
     }
-  }
-
-  getPlayModeContent() {
-    return this.createModeContent('🎲 Play Mode', [
-      { title: 'Character Sheets', desc: 'Manage your characters', action: 'Character sheets coming soon!' },
-      { title: 'Dice Roller', desc: 'Roll dice for actions', action: 'Dice roller coming soon!' },
-      { title: 'Session Notes', desc: 'Track your adventure', action: 'Session notes coming soon!' },
-      { title: 'Maps & Tokens', desc: 'Visual battle maps', action: 'Maps coming soon!' }
-    ], '#4CAF50');
   }
 
   async getExploreModeContent() {
@@ -371,15 +350,6 @@ class TTRPGHub {
         </div>
       </div>
     `;
-  }
-
-  getBuildModeContent() {
-    return this.createModeContent('🔨 Build Mode', [
-      { title: 'World Editor', desc: 'Modify world details', action: 'World editor coming soon!' },
-      { title: 'NPC Creator', desc: 'Design characters', action: 'NPC creator coming soon!' },
-      { title: 'Location Builder', desc: 'Create places', action: 'Location builder coming soon!' },
-      { title: 'Content Manager', desc: 'Organize all content', action: 'Content manager coming soon!' }
-    ], '#FF9800');
   }
 
   // ========== Explore Submode Management ==========
@@ -421,9 +391,13 @@ class TTRPGHub {
         contentEl.innerHTML = content;
         this.tourViewer.setupTourCardListeners();
       } else if (submode === 'database') {
+        // FIXED: Create once and reuse - don't recreate on every switch
         if (!this.articleViewer) {
           this.articleViewer = new ArticleViewer(this);
           window.articleViewer = this.articleViewer;
+          Config.log('Created new ArticleViewer instance');
+        } else {
+          Config.log('Reusing existing ArticleViewer instance');
         }
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
         contentEl.innerHTML = content;
@@ -433,47 +407,6 @@ class TTRPGHub {
       contentEl.innerHTML = `<div class="error">Error loading ${submode}: ${error.message}</div>`;
       Config.error('Error loading explore submode:', error);
     }
-  }
-
-  createModeContent(title, tools, color) {
-    const worldName = this.currentWorld?.name || 'World';
-    const toolCards = tools.map(tool => `
-      <div class="tool-card">
-        <h4>${tool.title}</h4>
-        <p>${tool.desc}</p>
-        <button onclick="alert('${tool.action}')" style="background: ${color};">
-          ${tool.title.includes('Roll') ? 'Roll' : tool.title.includes('Open') ? 'Open' : 
-            tool.title.includes('View') ? 'View' : tool.title.includes('Load') ? 'Load' :
-            tool.title.includes('Browse') ? 'Browse' : tool.title.includes('Read') ? 'Read' :
-            tool.title.includes('Edit') ? 'Edit' : tool.title.includes('Create') ? 'Create' :
-            tool.title.includes('Build') ? 'Build' : 'Manage'}
-        </button>
-      </div>
-    `).join('');
-
-    return `
-      <h3>${title} - ${worldName}</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
-        ${toolCards}
-      </div>
-      <style>
-        .tool-card {
-          background: ${color}1A;
-          border: 1px solid ${color}4D;
-          border-radius: 8px;
-          padding: 15px;
-          text-align: center;
-        }
-        .tool-card button {
-          border: none;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 4px;
-          cursor: pointer;
-          margin-top: 10px;
-        }
-      </style>
-    `;
   }
 
   // ========== Tour Data Loading ==========
@@ -527,62 +460,42 @@ class TTRPGHub {
     // Remove debug button creation and insertion
   }
 
-  async testAppsScript() {
-    Config.log('=== Apps Script Connection Test ===');
-    
-    // Test basic connectivity
-    try {
-      const response = await fetch(Config.APPS_SCRIPT_URL);
-      Config.log('Basic connectivity - Status:', response.status);
-      
-      const text = await response.text();
-      Config.log('Response preview:', text.substring(0, 300));
-    } catch (error) {
-      Config.error('Basic connectivity failed:', error);
-    }
-
-    // Test worlds endpoint
-    try {
-      const worldsUrl = Config.getUrl(Config.ENDPOINTS.WORLDS);
-      Config.log('Testing worlds endpoint:', worldsUrl);
-      
-      const response = await fetch(worldsUrl);
-      const text = await response.text();
-      
-      Config.log('Worlds response status:', response.status);
-      Config.log('Worlds response:', text);
-      
-      try {
-        const data = JSON.parse(text);
-        Config.log('Parsed worlds data:', data);
-      } catch (parseError) {
-        Config.error('JSON parse error:', parseError);
-      }
-    } catch (error) {
-      Config.error('Worlds endpoint test failed:', error);
-    }
-  }
-
   // ========== Utility Methods ==========
-  markdownToHtml(markdown) {
-    if (!markdown) return 'No content available';
+  // REMOVE: Duplicate - ArticleViewer has its own
+
+  // ADD THIS: Missing method that handles world card interactions
+  setupCardListeners() {
+    const worldCards = document.querySelectorAll('.world-card');
+    Config.log(`Setting up listeners for ${worldCards.length} world cards`);
     
-    // Basic markdown conversion
-    return markdown
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^(.*)/, '<p>$1</p>');
+    worldCards.forEach(card => {
+      const worldId = card.dataset.worldId;
+      
+      // Handle click to select world
+      card.addEventListener('click', () => {
+        Config.log(`World card clicked: ${worldId}`);
+        this.selectWorld(worldId);
+      });
+
+      // Play card's embedded video on hover
+      const video = card.querySelector('.world-video');
+      if (video) {
+        card.addEventListener('mouseenter', () => {
+          video.play().catch(e => Config.log('Card video play prevented:', e));
+        });
+        card.addEventListener('mouseleave', () => {
+          video.pause();
+          video.currentTime = 0;
+        });
+      }
+    });
   }
 
   // NEW: Setup background video system
   setupWorldBackgrounds() {
-    // Cache background video elements (no more 'default')
+    // Cache background video elements - now includes neutral
     this.backgroundVideos = {
+      neutral: document.getElementById('bgVideo-neutral'),
       breach: document.getElementById('bgVideo-breach'),
       meridian: document.getElementById('bgVideo-meridian'),
       laguna: document.getElementById('bgVideo-laguna')
@@ -590,38 +503,31 @@ class TTRPGHub {
 
     Config.log('Background videos cached:', this.backgroundVideos);
 
-    // Breach is already marked active in HTML and autoplays
-    if (this.backgroundVideos.breach) {
-      Config.log('Attempting to play Breach background video...');
-      this.backgroundVideos.breach.play()
-        .then(() => Config.log('Breach background video playing'))
-        .catch(e => Config.error('Breach bg autoplay blocked:', e));
+    // Neutral is already marked active in HTML and autoplays
+    if (this.backgroundVideos.neutral) {
+      Config.log('Attempting to play neutral background video...');
+      this.backgroundVideos.neutral.play()
+        .then(() => Config.log('Neutral background video playing'))
+        .catch(e => Config.error('Neutral bg autoplay blocked:', e));
     } else {
-      Config.error('Breach background video element not found');
+      Config.error('Neutral background video element not found');
     }
 
-    // Attach hover listeners to world cards
+    // Attach hover listeners to world cards - NOW they exist
     const worldCards = document.querySelectorAll('.world-card');
     Config.log(`Found ${worldCards.length} world cards for background hover`);
     
     worldCards.forEach(card => {
       const worldId = card.dataset.worldId;
-      Config.log(`Attaching hover listeners to card: ${worldId}`);
+      Config.log(`Attaching background hover listeners to card: ${worldId}`);
       
       card.addEventListener('mouseenter', () => {
-        Config.log(`Mouse entered ${worldId} card`);
+        Config.log(`Mouse entered ${worldId} card - switching background`);
         this.activateWorldBackground(worldId);
       });
       
-      card.addEventListener('mouseleave', () => {
-        setTimeout(() => {
-          const isHoveringAnyCard = document.querySelector('.world-card:hover');
-          if (!isHoveringAnyCard) {
-            Config.log('Mouse left all cards, returning to Breach');
-            this.activateWorldBackground('breach'); // Back to Breach default
-          }
-        }, 100);
-      });
+      // REMOVED: mouseleave logic - background now stays on last hovered world
+      // No more automatic return when leaving cards
     });
   }
 
@@ -634,17 +540,21 @@ class TTRPGHub {
       return;
     }
     
-    // Deactivate current
+    // Deactivate current - IMPORTANT: pause the video too
     if (this.backgroundVideos[this.activeBackgroundWorld]) {
       Config.log(`Deactivating ${this.activeBackgroundWorld}`);
-      this.backgroundVideos[this.activeBackgroundWorld].classList.remove('active');
+      const currentVideo = this.backgroundVideos[this.activeBackgroundWorld];
+      currentVideo.classList.remove('active');
+      currentVideo.pause(); // ADD: Stop the current video
     }
     
     // Activate new
     if (this.backgroundVideos[worldId]) {
       Config.log(`Activating ${worldId}, adding .active class`);
-      this.backgroundVideos[worldId].classList.add('active');
-      this.backgroundVideos[worldId].play()
+      const newVideo = this.backgroundVideos[worldId];
+      newVideo.classList.add('active');
+      newVideo.currentTime = 0; // ADD: Reset to start
+      newVideo.play()
         .then(() => Config.log(`${worldId} video playing`))
         .catch(e => Config.error(`${worldId} video play blocked:`, e));
     } else {

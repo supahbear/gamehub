@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster:wght@400&family=Cinzel:wght@400;600;900&family=Fjalla+One:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster:wght@400&family=Cinzel:wght@400;600;900&family=Fjalla+One:wght@400&family=Faculty+Glyphic&display=swap');
 
 /* ========== CSS VARIABLES ========== */
 :root {
@@ -19,15 +19,15 @@
     --font-weight-bold: 700;
     --font-weight-heavy: 900;
     
-    /* Card system colors - default inactive */
-    --card-border-operator: #cccccc;
-    --card-glow-operator: rgba(0,0,0,0);
-    --card-border-handler: #cccccc;
-    --card-glow-handler: rgba(0,0,0,0);
-    --card-border-broker: #cccccc;
-    --card-glow-broker: rgba(0,0,0,0);
-    --card-border-default: #cccccc;
-    --card-glow-default: rgba(0,0,0,0);
+    /* Card system colors - purple theme */
+    --card-border-operator: #b19cd9;
+    --card-glow-operator: rgba(177, 156, 217, 0.5);
+    --card-border-handler: #c9b5e6;
+    --card-glow-handler: rgba(201, 181, 230, 0.5);
+    --card-border-broker: #9d87c7;
+    --card-glow-broker: rgba(157, 135, 199, 0.5);
+    --card-border-default: rgba(177, 156, 217, 0.3);
+    --card-glow-default: rgba(177, 156, 217, 0.2);
     --card-overlay-gradient: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
     
     /* Modal system */
@@ -35,14 +35,14 @@
     --modal-border: #cccccc;
     --modal-overlay: rgba(0,0,0,0.5);
     
-    /* Tour system */
-    --tour-accent: #34495e;
-    --tour-bg: rgba(255, 255, 255, 0.9);
-    --tour-card-bg: #ffffff;
-    --tour-nav-bg: #34495e;
-    --tour-nav-text: #ffffff;
-    --tour-dot-inactive: rgba(52, 73, 94, 0.3);
-    --tour-slide-bg: #f8f9fa;
+    /* Tour system - purple theme */
+    --tour-accent: #b19cd9;
+    --tour-bg: rgba(44, 44, 62, 0.9);
+    --tour-card-bg: rgba(177, 156, 217, 0.1);
+    --tour-nav-bg: #b19cd9;
+    --tour-nav-text: #2c2c3e;
+    --tour-dot-inactive: rgba(177, 156, 217, 0.3);
+    --tour-slide-bg: #2c2c3e;
 }
 
 /* ========== BASE STYLES ========== */
@@ -54,14 +54,12 @@
 
 body {
     font-family: var(--font-family);
-    /* REMOVE or comment out the background gradient so videos show through */
-    /* background: var(--primary-bg); */
-    background: transparent; /* NEW: let video layer show */
+    background: transparent;
     color: var(--text-color);
     min-height: 100vh;
     transition: background 1.5s ease;
     overflow-y: scroll;
-    position: relative; /* NEW: establish stacking context for bg videos */
+    position: relative;
 }
 
 .container {
@@ -69,6 +67,7 @@ body {
     margin: 0 auto;
     padding: 20px;
     transition: opacity 0.5s ease;
+    background: transparent;
 }
 
 .container.transitioning {

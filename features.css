@@ -16,8 +16,9 @@
     text-align: center;
     font-size: 1rem;
     line-height: 1.6;
-    color: var(--text-color);
+    color: #ffffff;
     font-weight: var(--font-weight-normal);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .message-content p {
@@ -32,6 +33,14 @@
     max-width: 1680px; /* was 1400px - allow up to 6 columns */
     margin: 0 auto;
     margin-top: 0 !important; /* Remove any extra top margin */
+    padding: 0 20px; /* Add horizontal padding for better spacing */
+}
+
+/* Let the grid expand to the container width (removes 1600px cap from cards.css) */
+.article-viewer .articles-grid {
+    max-width: none;
+    margin: 0 auto; /* Ensure centering */
+    padding: 0;
 }
 
 .article-filters {
@@ -42,8 +51,8 @@
     align-items: center;
     padding: 14px !important;       /* was 20px */
     border-radius: 10px;
-    background: none;
-    border: none;
+    background: rgba(177, 156, 217, 0.1); /* Purple tint background */
+    border: 1px solid rgba(177, 156, 217, 0.3); /* Purple border */
 }
 
 .filter-group {
@@ -54,39 +63,45 @@
 .filter-group input, .filter-group select {
     width: 100%;
     padding: 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(177, 156, 217, 0.4); /* Purple border */
     border-radius: 5px;
-    background: var(--card-bg);
-    color: var(--text-color);
+    background: rgba(0, 0, 0, 0.3); /* Dark semi-transparent */
+    color: #ffffff; /* White text */
     font-size: 14px;
     font-family: var(--font-family);
     font-weight: var(--font-weight-normal);
 }
 
 .filter-group input::placeholder {
-    color: var(--text-secondary);
+    color: rgba(177, 156, 217, 0.6); /* Purple placeholder */
 }
 
 .filter-group select option {
-    background: var(--card-bg);
-    color: var(--text-color);
+    background: #2c2c3e; /* Dark background for dropdown */
+    color: #ffffff;
     padding: 8px;
 }
 
 .clear-btn {
     padding: 10px 20px;
-    background: var(--button-bg);
-    color: var(--text-color);
-    border: none;
+    background: rgba(177, 156, 217, 0.25) !important; /* Purple tint - force override */
+    color: #e8e8e8 !important; /* Light text - force override */
+    border: 1px solid rgba(177, 156, 217, 0.5) !important; /* Purple border - force override */
     border-radius: 5px;
     cursor: pointer;
     font-size: 14px;
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
+    transition: all 0.3s ease;
+    text-transform: uppercase; /* Make text uppercase */
 }
 
 .clear-btn:hover {
-    background: var(--button-hover);
+    background: rgba(177, 156, 217, 0.4) !important; /* Darker purple on hover */
+    border-color: #b19cd9 !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(177, 156, 217, 0.5);
+    transform: translateY(-1px); /* Slight lift on hover */
 }
 
 /* ========== TOUR SYSTEM ========== */
@@ -242,20 +257,22 @@
 .category-title {
     font-size: 1.5rem;
     margin-bottom: 20px;
-    color: var(--text-color);
-    border-bottom: 2px solid var(--tour-accent);
+    color: #c9b5e6; /* Light purple */
+    border-bottom: 2px solid #b19cd9; /* Purple border */
     padding-bottom: 8px;
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
+    text-shadow: 0 0 12px rgba(177, 156, 217, 0.4); /* Purple glow */
 }
 
 .tour-categories .category-title {
-    color: #ffffff;
+    color: #c9b5e6; /* Light purple */
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 16px;
     padding-bottom: 8px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 2px solid rgba(177, 156, 217, 0.5); /* Purple border */
+    text-shadow: 0 0 8px rgba(177, 156, 217, 0.3); /* Purple glow */
 }
 
 .tour-cards {
@@ -345,7 +362,7 @@
     line-height: 1.4;
     margin-bottom: 10px;
     opacity: 0.9;
-    font-family: var(--font-family);
+    font-family: 'Faculty Glyphic', var(--font-family); /* Changed to Faculty Glyphic */
     font-weight: var(--font-weight-normal);
 }
 
@@ -367,6 +384,8 @@
 /* Let the grid expand to the container width (removes 1600px cap from cards.css) */
 .article-viewer .articles-grid {
     max-width: none;
+    margin: 0 auto; /* Ensure centering */
+    padding: 0;
 }
 
 /* On large screens, enforce exactly 6 columns */
@@ -485,7 +504,7 @@
     font-size: 1.1rem;
     line-height: 1.6;
     color: var(--text-color);
-    font-family: var(--font-family);
+    font-family: 'Faculty Glyphic', var(--font-family); /* Changed to Faculty Glyphic */
     font-weight: var(--font-weight-normal);
 }
 

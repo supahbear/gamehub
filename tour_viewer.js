@@ -300,7 +300,7 @@ class TourViewer {
             <div class="slide-content">
                 <h2 class="slide-title">${slide.title || 'Untitled'}</h2>
                 <div class="slide-body">
-                    ${this.hub.markdownToHtml(slide.content || 'No content available')}
+                    ${this.markdownToHtml(slide.content || 'No content available')}
                 </div>
             </div>
         </div>
@@ -309,6 +309,10 @@ class TourViewer {
 
   renderSlideMedia(slide) {
     const mediaUrl = slide.media_url;
+    if (!mediaUrl) {
+      return '<div class="slide-media-placeholder">No media available</div>';
+    }
+    
     const isVideo = mediaUrl.match(/\.(mp4|webm|ogg)$/i);
     
     if (isVideo) {
@@ -320,6 +324,21 @@ class TourViewer {
     } else {
         return `<img src="${mediaUrl}" alt="${slide.title}" loading="lazy">`;
     }
+  }
+
+  // ADD THIS: Markdown conversion utility
+  markdownToHtml(markdown) {
+    if (!markdown) return 'No content available';
+    
+    return markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^(.*)/, '<p>$1</p>');
   }
 
   setupTourModalListeners() {

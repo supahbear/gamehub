@@ -123,6 +123,9 @@ body.world-breach .current-mode:hover {
     border-radius: 10px;
     margin-bottom: 20px;
     border: none;
+    max-width: 100%; /* Ensure it uses full width */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Hide mode indicator in explore mode */
@@ -198,38 +201,51 @@ body.world-breach .current-mode:hover {
 }
 
 .explore-primary-btn {
-    padding: 16px 24px;
-    background: var(--button-bg);
-    border: 2px solid var(--border-color);
+    padding: 20px 28px;
+    background: transparent;
+    border: none;
     border-radius: 12px;
-    color: var(--text-color);
+    color: #b19cd9; /* Purple color */
     cursor: pointer;
     transition: all 0.25s ease;
-    font-size: 1.05rem;
+    font-size: 1.6rem;
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     white-space: nowrap;
+    opacity: 0.5; /* Reduced from 0.6 for inactive */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-decoration: underline;
+    text-shadow: 0 0 8px rgba(177, 156, 217, 0.3); /* Purple glow */
 }
 
 .explore-primary-btn:hover {
-    background: var(--button-hover);
-    border-color: var(--text-accent);
+    background: transparent;
+    border-color: transparent;
     transform: translateY(-2px);
+    opacity: 0.75;
+    text-shadow: 0 0 12px rgba(177, 156, 217, 0.5); /* Stronger purple glow on hover */
 }
 
 .explore-primary-btn.active {
-    background: var(--tour-accent);
-    border-color: var(--tour-accent);
-    color: var(--tour-bg);
+    background: transparent;
+    border-color: transparent;
+    color: #c9b5e6; /* Brighter purple when active */
+    opacity: 1;
+    box-shadow: none;
+    transform: translateY(-2px);
+    text-decoration: underline;
+    text-shadow: 0 0 20px rgba(201, 181, 230, 0.8), /* Strong purple glow */
+                 0 0 40px rgba(201, 181, 230, 0.4); /* Extended purple glow */
 }
 
 /* Breach edit: bigger font size on buttons, bold */
 body.world-breach .explore-primary-btn {
-    font-size: 1.25rem;
+    font-size: 1.8rem;
     font-weight: var(--font-weight-heavy);
 }
 
@@ -257,9 +273,4 @@ body.world-breach .explore-primary-btn {
 main {
     /* ...existing code... */
     background: transparent; /* NEW: let bg videos show through */
-}
-
-.landing-message {
-    /* ...existing code... */
-    /* Keep any existing background on the message box itself */
 }

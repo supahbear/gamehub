@@ -12,7 +12,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--modal-overlay);
+    background: rgba(44, 44, 62, 0.85); /* Purple-tinted dark overlay instead of neutral */
     backdrop-filter: blur(5px);
     opacity: 0;
     pointer-events: none;
@@ -46,14 +46,14 @@
 
 /* General modal-content (for article modals) */
 .modal-content {
-    background: var(--modal-bg);
-    border: 2px solid var(--modal-border);
+    background: #2c2c3e; /* Dark purple background instead of white */
+    border: 2px solid #b19cd9; /* Purple border */
     border-radius: 15px;
-    max-width: 1100px; /* was 900px */
-    width: 96%;        /* was 90% */
+    max-width: 1400px; /* Increased from 1100px for wider modal */
+    width: 96%;
     max-height: 90vh;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3); /* Purple-tinted shadow */
     position: relative;
     z-index: 10000;
 }
@@ -76,23 +76,44 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--secondary-bg);
+    padding: 15px 20px; /* Reduced from 20px for tighter spacing */
+    border-bottom: 2px solid #b19cd9;
+    background: rgba(44, 44, 62, 0.95); /* Darker purple background instead of light purple tint */
 }
 
 .modal-header h2 {
     margin: 0;
-    color: var(--text-accent);
+    color: #b19cd9; /* Purple color for title - changed from #c9b5e6 */
     font-family: var(--font-family);
     font-weight: var(--font-weight-heavy);
     font-size: 1.8rem;
 }
 
+/* Article modal: use Cinzel for header with glow and center */
+.article-modal .modal-header {
+    justify-content: center; /* Center the header content */
+    position: relative; /* For absolute positioning of close button */
+}
+
+.article-modal .modal-header h2 {
+    font-family: 'Cinzel', serif !important;
+    font-weight: var(--font-weight-heavy);
+    font-size: 2rem;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(177, 156, 217, 0.8), /* Strong purple glow */
+                 0 0 40px rgba(177, 156, 217, 0.4), /* Extended glow */
+                 0 2px 4px rgba(0, 0, 0, 0.8); /* Drop shadow for depth */
+}
+
+.article-modal .close-btn {
+    position: absolute; /* Position close button absolutely */
+    right: 20px; /* Keep it on the right */
+}
+
 .close-btn {
     background: none;
     border: none;
-    color: var(--text-color);
+    color: #c9b5e6; /* Light purple */
     font-size: 28px;
     cursor: pointer;
     padding: 5px 10px;
@@ -103,8 +124,8 @@
 }
 
 .close-btn:hover {
-    background: var(--button-hover);
-    color: var(--text-accent);
+    background: rgba(177, 156, 217, 0.2); /* Purple hover */
+    color: #ffffff;
 }
 
 .modal-body {
@@ -112,24 +133,25 @@
     max-height: calc(90vh - 100px);
     overflow-y: auto;
     line-height: 1.6;
-    color: var(--text-color);
-    font-family: var(--font-family);
+    color: #ffffff; /* Changed to pure white */
+    font-family: 'Faculty Glyphic', var(--font-family); /* Changed to Faculty Glyphic */
     font-weight: var(--font-weight-normal);
 }
 
 .modal-body h1, .modal-body h2, .modal-body h3 {
-    color: var(--text-accent);
+    color: #b19cd9; /* Purple headings */
     margin-top: 20px;
     margin-bottom: 10px;
-    font-family: var(--font-family);
+    font-family: 'Cinzel', serif; /* Keep Cinzel for headers */
     font-weight: var(--font-weight-bold);
 }
 
 .modal-body p {
     margin-bottom: 15px;
-    color: var(--text-color);
+    color: #ffffff; /* Pure white text */
     font-size: 1rem;
-    line-height: 1.4;
+    line-height: 1.6; /* Improved from 1.4 for better readability */
+    font-family: 'Faculty Glyphic', var(--font-family); /* Faculty Glyphic for paragraphs */
 }
 
 .article-image {
@@ -143,16 +165,22 @@
 }
 
 .modal-body::-webkit-scrollbar {
-    width: 8px;
+    width: 0; /* REMOVE: Hide scrollbar completely */
+    display: none; /* Extra insurance */
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
+    display: none; /* Hide thumb */
 }
 
 .modal-body::-webkit-scrollbar-track {
-    background: var(--secondary-bg);
+    display: none; /* Hide track */
+}
+
+/* Also hide for Firefox */
+.modal-body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 }
 
 /* Background blur when modal is active */
@@ -429,39 +457,163 @@ body.modal-active main {
 /* ========== ARTICLE MODAL TWO-COLUMN LAYOUT ========== */
 .article-modal-columns {
     display: grid;
-    /* Scale image column with viewport */
-    grid-template-columns: clamp(280px, 30%, 380px) 1fr;
-    gap: clamp(20px, 3vw, 40px);
+    grid-template-columns: 270px 1fr;
+    gap: 48px;
     align-items: flex-start;
     width: 100%;
+    height: 600px; /* Reduced from 700px to eliminate bottom space */
 }
 
 .article-modal-image-col {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0;
     min-width: 0;
-    /* Scale height with viewport */
-    height: clamp(400px, 60vh, 520px);
+    height: 600px; /* Match parent height */
+    width: 270px;
+    position: relative;
 }
 
 .article-modal-image-col .article-image {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: cover;
-    object-position: center center;
-    border-radius: 8px;
-    margin-bottom: 0;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-    display: block;
+    width: 270px !important;
+    height: 420px !important; /* 70% of 600px = 420px */
+    min-height: 420px !important;
+    max-height: 420px !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: 0 4px 24px rgba(177, 156, 217, 0.2);
+    display: block !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    position: relative !important;
+}
+
+/* Summary takes remaining space but flexes based on content */
+.article-modal-summary {
+    padding: 16px;
+    background: rgba(177, 156, 217, 0.08);
+    border-left: none;
+    border-top: 3px solid #b19cd9;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-style: normal;
+    font-family: 'Faculty Glyphic', var(--font-family);
+    margin: 0;
+    min-height: 60px;
+    max-height: 180px; /* 30% of 600px = 180px */
+    height: auto;
+    overflow-y: auto;
+    flex-shrink: 1;
+    flex-grow: 1;
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
 }
 
 .article-modal-text-col {
     width: 100%;
-    min-width: 0;
-    /* Use modal-body styles for text */
+    min-width: 700px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+}
+
+/* Article pages container */
+.article-pages-container {
+    position: relative;
+    flex: 1;
+    height: 540px; /* Match the 600px total - 60px navigation */
+    overflow: hidden;
+}
+
+.article-page {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto; /* Allow vertical scrolling within page */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+    padding: 0 40px 0 0; /* Increased right padding for breathing room */
+    box-sizing: border-box;
+}
+
+.article-page.active {
+    opacity: 1;
+    pointer-events: auto;
+    position: relative;
+}
+
+/* NEW: Article navigation (similar to tour navigation) */
+.article-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0; /* Reduced from 16px */
+    margin-top: 16px; /* Reduced from 20px */
+    border-top: 1px solid rgba(177, 156, 217, 0.2);
+}
+
+.article-nav-btn {
+    background: rgba(177, 156, 217, 0.2);
+    color: #c9b5e6;
+    border: 1px solid rgba(177, 156, 217, 0.4);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    min-width: 40px;
+    height: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.article-nav-btn:hover:not(:disabled) {
+    background: rgba(177, 156, 217, 0.3);
+    border-color: #b19cd9;
+}
+
+.article-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.article-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.article-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(177, 156, 217, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.article-dot.active {
+    background: #b19cd9;
+    transform: scale(1.2);
+}
+
+.article-dot:hover {
+    background: rgba(177, 156, 217, 0.6);
 }
 
 @media (max-width: 900px) {
@@ -472,16 +624,25 @@ body.modal-active main {
     .article-modal-columns {
         grid-template-columns: 1fr;
         gap: 20px;
+        height: auto;
     }
     .article-modal-image-col {
-        justify-content: center;
-        margin-bottom: 16px;
-        height: clamp(250px, 40vh, 320px); /* scale on mobile too */
+        gap: 12px;
+        height: auto;
+        width: 100%;
     }
     .article-modal-image-col .article-image {
-        max-width: 100%;
-        max-height: 100%;
-        height: 100%;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 9 / 16; /* Maintain 9:16 on mobile */
+        max-height: 500px;
+    }
+    .article-modal-text-col {
+        min-width: 0;
+    }
+    .article-pages-container {
+        height: auto;
+        min-height: 300px;
     }
     
     /* Scale tour modal for smaller screens */
