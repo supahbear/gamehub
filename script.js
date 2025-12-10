@@ -312,6 +312,9 @@ class TTRPGHub {
           <button class="explore-primary-btn ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
             <span>Articles</span>
           </button>
+          <button class="explore-primary-btn ${this.currentExploreSubmode === 'quests' ? 'active' : ''}" data-submode="quests">
+            <span>Quests</span>
+          </button>
         </div>
       `;
     }
@@ -402,6 +405,17 @@ class TTRPGHub {
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
         contentEl.innerHTML = content;
         this.articleViewer.setupEventListeners();
+      } else if (submode === 'quests') {
+        if (!this.questViewer) {
+          this.questViewer = new QuestViewer(this);
+          window.questViewer = this.questViewer;
+          Config.log('Created new QuestViewer instance');
+        } else {
+          Config.log('Reusing existing QuestViewer instance');
+        }
+        const content = await this.questViewer.renderQuestMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.questViewer.setupEventListeners();
       }
     } catch (error) {
       contentEl.innerHTML = `<div class="error">Error loading ${submode}: ${error.message}</div>`;

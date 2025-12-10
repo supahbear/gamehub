@@ -594,6 +594,312 @@
 
 /* Reduce margin below explore toggle bar (hub-header) */
 .hub-header {
-    margin-bottom: 10px !important; /* was 30px */
-    padding: 12px !important;       /* was 20px */
+  margin-bottom: 10px !important;
+  padding: 12px !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ========== QUEST SYSTEM ========== */
+.quest-viewer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.quest-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* Sidebar with expandable location tabs - matching modal styling */
+.quest-sidebar {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(177, 156, 217, 0.3) transparent;
+}
+
+.quest-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.quest-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(177, 156, 217, 0.3);
+  border-radius: 3px;
+}
+
+.quest-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-search-bar {
+  margin-bottom: 0;
+}
+
+.quest-search-bar input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #2c2c3e; /* Solid dark background like modal */
+  border: 1px solid rgba(177, 156, 217, 0.4);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: var(--font-family);
+}
+
+.quest-search-bar input::placeholder {
+  color: rgba(177, 156, 217, 0.6);
+}
+
+/* NEW: Unified container matching modal styling */
+.quest-locations-container {
+  background: #2c2c3e; /* Solid dark background like modal */
+  border: 2px solid #b19cd9; /* Purple border like modal */
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3); /* Add depth like modal */
+}
+
+/* Location tabs - now borderless inside container */
+.location-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(177, 156, 217, 0.15);
+  border-radius: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.location-tab:last-child {
+  border-bottom: none;
+}
+
+.location-tab.has-active {
+  background: rgba(177, 156, 217, 0.12);
+}
+
+.location-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  color: #e8e8e8;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.location-header:hover {
+  background: rgba(177, 156, 217, 0.15);
+  color: #ffffff;
+}
+
+.location-icon {
+  font-size: 0.7rem;
+  color: #b19cd9;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.location-header.expanded .location-icon {
+  transform: rotate(90deg);
+}
+
+.location-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-count {
+  padding: 2px 8px;
+  background: rgba(177, 156, 217, 0.25);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  color: #c9b5e6;
+  flex-shrink: 0;
+}
+
+/* Location content - expandable with smooth animation */
+.location-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.location-content.expanded {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+/* NEW: Indented quest items */
+.quest-list-item {
+  width: 100%;
+  padding: 10px 14px 10px 40px; /* Increased left padding from 36px to 40px for more indent */
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: #d0d0d0;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-normal);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* NEW: Add arrow indicator for indented items */
+.quest-list-item::before {
+  content: '›';
+  position: absolute;
+  left: 24px;
+  color: rgba(177, 156, 217, 0.5);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.quest-list-item:hover::before {
+  color: #b19cd9;
+  left: 26px;
+}
+
+.quest-list-item:hover {
+  background: rgba(177, 156, 217, 0.1);
+  color: #ffffff;
+  border-left-color: rgba(177, 156, 217, 0.5);
+}
+
+.quest-list-item.selected {
+  background: rgba(177, 156, 217, 0.2);
+  border-left-color: #b19cd9;
+  color: #ffffff;
+  font-weight: var(--font-weight-bold);
+}
+
+.quest-list-item.selected::before {
+  color: #b19cd9;
+  left: 26px;
+}
+
+/* Content display area - matching article modal styling */
+.quest-content {
+  background: #2c2c3e; /* Solid dark background like article modal */
+  border: 2px solid #b19cd9; /* Purple border like article modal */
+  border-radius: 0;
+  padding: 30px;
+  min-height: 500px;
+  animation: fadeIn 0.4s ease-out;
+  box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3); /* Add depth like modal */
+}
+
+.quest-detail-header {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(177, 156, 217, 0.3);
+}
+
+.quest-detail-title {
+  font-size: 2rem;
+  color: #b19cd9;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 0 20px rgba(177, 156, 217, 0.8), /* Strong purple glow like modal */
+               0 0 40px rgba(177, 156, 217, 0.4), /* Extended glow */
+               0 2px 4px rgba(0, 0, 0, 0.8); /* Drop shadow for depth */
+}
+
+.quest-detail-summary {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 25px;
+  border-radius: 0;
+  font-style: normal;
+  color: #e8e8e8;
+  font-family: 'Faculty Glyphic', var(--font-family);
+  line-height: 1.6;
+  font-size: 1rem;
+  animation: fadeInUp 0.5s ease-out 0.2s both;
+}
+
+.quest-detail-summary strong {
+  color: #c9b5e6;
+  font-weight: var(--font-weight-bold);
+  font-family: 'Cinzel', serif;
+}
+
+.quest-detail-summary em {
+  color: #ffffff;
+  font-style: italic;
+  font-family: 'Faculty Glyphic', var(--font-family);
+}
+
+.quest-detail-body {
+  color: #ffffff;
+  font-family: 'Faculty Glyphic', var(--font-family);
+  line-height: 1.7;
+  font-size: 1rem;
+  animation: fadeInUp 0.5s ease-out 0.3s both;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .quest-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .quest-sidebar {
+    position: static;
+    max-height: none;
+  }
+  
+  .quest-content {
+    padding: 20px;
+  }
+  
+  .quest-detail-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .quest-detail-title {
+    font-size: 1.6rem;
+  }
+  
+  .quest-detail-tags {
+    justify-content: flex-start;
+  }
 }

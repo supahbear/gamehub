@@ -17,6 +17,9 @@ const Config = {
   // UI Configuration
   DEBUG_MODE: true, // Set to false for production
   ANIMATION_DURATION: 300,
+  
+  // Feature Configuration
+  QUEST_CATEGORY_SLUGS: ['breachquest', 'quest'], // Exclude these from articles
 
   // Helper methods
   getUrl(endpoint, params = {}) {

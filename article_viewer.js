@@ -22,8 +22,22 @@ class ArticleViewer {
         this.hub.loadCategories(worldId)
       ]);
       
-      this.currentArticles = articles;
-      this.currentCategories = categories;
+      // Filter out Quest category from articles and categories
+      const questCategory = categories.find(cat => {
+        const slug = String(cat.slug || '').trim().toLowerCase();
+        return slug === 'breachquest' || slug === 'quest';
+      });
+      
+      const questCategoryId = questCategory ? String(questCategory.id) : null;
+      
+      // Exclude quest articles and quest category
+      this.currentArticles = questCategoryId 
+        ? articles.filter(a => String(a.category_id) !== questCategoryId)
+        : articles;
+    
+      this.currentCategories = questCategoryId
+        ? categories.filter(c => String(c.id) !== questCategoryId)
+        : categories;
 
       // FIXED: Search for "Character" (singular), not "characters" (plural)
       if (!this._hasInitialized) {

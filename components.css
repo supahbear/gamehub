@@ -193,59 +193,64 @@ body.world-breach .current-mode:hover {
 
 /* ========== EXPLORE MODE TOGGLE (new separated buttons) ========== */
 .explore-toggle-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
-    gap: 16px;
-    max-width: 720px;
-    margin: 0 auto 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 15px 20px;
 }
 
 .explore-primary-btn {
-    padding: 20px 28px;
+    padding: 12px 24px;
     background: transparent;
     border: none;
-    border-radius: 12px;
-    color: #b19cd9; /* Purple color */
-    cursor: pointer;
-    transition: all 0.25s ease;
-    font-size: 1.6rem;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.7);
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    white-space: nowrap;
-    opacity: 0.5; /* Reduced from 0.6 for inactive */
+    font-size: 1.2rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    text-decoration: underline;
-    text-shadow: 0 0 8px rgba(177, 156, 217, 0.3); /* Purple glow */
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.explore-primary-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: #b19cd9;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(177, 156, 217, 0.5);
 }
 
 .explore-primary-btn:hover {
-    background: transparent;
-    border-color: transparent;
-    transform: translateY(-2px);
-    opacity: 0.75;
-    text-shadow: 0 0 12px rgba(177, 156, 217, 0.5); /* Stronger purple glow on hover */
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(177, 156, 217, 0.6);
+}
+
+.explore-primary-btn:hover::after {
+    width: 100%;
 }
 
 .explore-primary-btn.active {
-    background: transparent;
-    border-color: transparent;
-    color: #c9b5e6; /* Brighter purple when active */
-    opacity: 1;
-    box-shadow: none;
-    transform: translateY(-2px);
-    text-decoration: underline;
-    text-shadow: 0 0 20px rgba(201, 181, 230, 0.8), /* Strong purple glow */
-                 0 0 40px rgba(201, 181, 230, 0.4); /* Extended purple glow */
+    color: #ffffff;
+    border-bottom-color: #b19cd9;
+    text-shadow: 0 0 20px rgba(177, 156, 217, 0.8);
 }
 
-/* Breach edit: bigger font size on buttons, bold */
+.explore-primary-btn.active::after {
+    width: 100%;
+}
+
+/* Breach edit: bigger font size on buttons */
 body.world-breach .explore-primary-btn {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: var(--font-weight-heavy);
 }
 

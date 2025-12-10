@@ -375,3 +375,22 @@ body.world-breach .logo {
     height: 80px;
     width: auto;
 }
+
+/* ========== QUEST SYSTEM OVERRIDES ========== */
+body.world-breach .quest-detail-title {
+  color: #b19cd9 !important;
+  font-family: 'Cinzel', serif !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 20px rgba(177, 156, 217, 0.6) !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: initial !important;
+  background-clip: initial !important;
+}
+
+body.world-breach .quest-detail-tag {
+  font-family: 'Cinzel', serif !important;
+  color: #c9b5e6 !important;
+  background: rgba(201, 181, 230, 0.25) !important;
+  border: 1px solid rgba(201, 181, 230, 0.4) !important;
+}
