@@ -123,28 +123,14 @@ class TTRPGHub {
   }
 
   useFallbackWorlds() {
-    // Enhanced fallback data with video URLs
+    // Single world - The Breach
     this.worlds = [
       {
         id: 'breach',
         name: 'The Breach',
         description: 'A D&D 5e campaign where reality itself has been torn asunder.',
         system: 'D&D 5e',
-        video_url: 'assets/videos/breach-loopv2.mp4' // Updated to v2
-      },
-      {
-        id: 'laguna',
-        name: 'Laguna', 
-        description: 'A Pokémon adventure in tropical paradise with hidden mysteries.',
-        system: 'Pokémon',
-        video_url: 'assets/videos/laguna-loop.mp4'
-      },
-      {
-        id: 'meridian',
-        name: 'Meridian City',
-        description: 'Stranded in a mysterious city where survival is just the beginning.',
-        system: 'Castaway',
-        video_url: 'assets/videos/meridian-loop.mp4'
+        video_url: 'assets/videos/breach-loopv2.mp4'
       }
     ];
     Config.log('Using fallback worlds:', this.worlds);
@@ -507,12 +493,10 @@ class TTRPGHub {
 
   // NEW: Setup background video system
   setupWorldBackgrounds() {
-    // Cache background video elements - now includes neutral
+    // Cache background video elements - Breach only
     this.backgroundVideos = {
       neutral: document.getElementById('bgVideo-neutral'),
-      breach: document.getElementById('bgVideo-breach'),
-      meridian: document.getElementById('bgVideo-meridian'),
-      laguna: document.getElementById('bgVideo-laguna')
+      breach: document.getElementById('bgVideo-breach')
     };
 
     Config.log('Background videos cached:', this.backgroundVideos);

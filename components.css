@@ -91,19 +91,6 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* World-specific current mode accents */
-body.world-meridian .current-mode:hover {
-    border-color: rgba(0, 255, 255, 0.3);
-}
-
-body.world-laguna .current-mode:hover {
-    border-color: rgba(0, 188, 212, 0.3);
-}
-
-body.world-breach .current-mode:hover {
-    border-color: rgba(255, 215, 0, 0.3);
-}
-
 /* ========== HUB LAYOUT ========== */
 .hub-header {
     display: flex;

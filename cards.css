@@ -192,40 +192,6 @@
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* World-specific fonts and colors */
-.world-card[data-world-id="meridian"] .world-name {
-    font-family: 'Orbitron', monospace;
-    font-weight: 900;
-    top: calc(50% - 1.3rem); /* ADD: Moved up slightly (was calc(50% - 1.1rem)) */
-}
-
-.world-card[data-world-id="meridian"] .world-system {
-    color: #ff6b35;
-}
-
-.world-card[data-world-id="meridian"]:hover {
-    border-color: #ff6b35; /* ADD: fill border with Meridian color */
-    box-shadow: 0 12px 35px rgba(255, 107, 53, 0.7),
-                inset 0 0 30px rgba(255, 107, 53, 0.2); /* ADD: inner glow with Meridian color */
-}
-
-.world-card[data-world-id="laguna"] .world-name {
-    font-family: 'Lobster', cursive;
-    font-weight: 400;
-    font-size: 2.5rem; /* Increased from default 2.2rem */
-    top: calc(50% - 1.5rem); /* Moved up slightly (was calc(50% - 1.1rem)) */
-}
-
-.world-card[data-world-id="laguna"] .world-system {
-    color: #00bcd4;
-}
-
-.world-card[data-world-id="laguna"]:hover {
-    border-color: #00bcd4; /* ADD: fill border with Laguna color */
-    box-shadow: 0 12px 35px rgba(0, 188, 212, 0.7),
-                inset 0 0 30px rgba(0, 188, 212, 0.2); /* ADD: inner glow with Laguna color */
-}
-
 .world-card[data-world-id="breach"] .world-name {
     font-family: 'Cinzel', serif;
     font-weight: 900;
