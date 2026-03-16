@@ -33,15 +33,6 @@ body.world-breach {
     --modal-bg: #1a0f1e;
     --modal-border: #b19cd9;
     --modal-overlay: rgba(26, 15, 30, 0.85);
-
-    /* Tour System Purple Colors */
-    --tour-accent: #b19cd9;
-    --tour-bg: rgba(26, 15, 30, 0.97);
-    --tour-card-bg: rgba(177, 156, 217, 0.07);
-    --tour-nav-bg: #b19cd9;
-    --tour-nav-text: #1a0f1e;
-    --tour-dot-inactive: rgba(177, 156, 217, 0.2);
-    --tour-slide-bg: #1a0f1e;
 }
 
 /* Remove blurred image background layer */

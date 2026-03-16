@@ -9,8 +9,6 @@ const Config = {
     WORLDS: 'worlds',
     ARTICLES: 'articles', 
     CATEGORIES: 'categories',
-    TOURS: 'tours',
-    TOUR_SLIDES: 'tour_slides',
     DICE_CONFIG: 'dice/config'
   },
 

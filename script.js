@@ -3,7 +3,7 @@ class TTRPGHub {
   constructor() {
     this.currentWorld = null;
     this.currentMode = 'explore'; // Always explore mode
-    this.currentExploreSubmode = 'tours';
+    this.currentSelectedPanel = 'lorebook';
     this.worlds = [];
     
     this.activeBackgroundWorld = 'neutral'; // Changed from 'breach' to 'neutral'
@@ -128,7 +128,7 @@ class TTRPGHub {
       {
         id: 'breach',
         name: 'Beyond the Vale',
-        description: 'Leaving the safety of home to save the world is no small feat, but intention can only take you so far. Becoming a hero or a villain is just a choice away.',
+        description: 'Becoming a hero is no easy feat. Saving the world might be a good place to start.',
         system: 'D&D 5e',
         video_url: 'assets/videos/breach-loopv2.mp4'
       }
@@ -269,7 +269,6 @@ class TTRPGHub {
     this.setPageVisibility('landing');
     this.currentWorld = null;
     this.currentMode = 'explore';
-    this.currentExploreSubmode = 'tours';
     // Clear world theme when returning to hub
     this.clearWorldTheme();
   }
@@ -277,12 +276,20 @@ class TTRPGHub {
   showWorldHub() {
     this.setPageVisibility('hub');
     
-    // Always explore mode
-    this.currentMode = 'explore';
-    this.currentExploreSubmode = this.currentExploreSubmode || 'tours';
+    // Trigger fade-in animation for world hub and its children
+    const worldHub = document.getElementById('worldHub');
+    if (worldHub) {
+      worldHub.classList.remove('entering');
+      // Force reflow to restart animation
+      void worldHub.offsetWidth;
+      worldHub.classList.add('entering');
+    }
     
-    this.updateHubHeader();
-    this.loadHubContent();
+    this.currentMode = 'explore';
+    this.currentSelectedPanel = this.currentSelectedPanel || 'lorebook';
+    this.initializePanels();
+    Config.log('showWorldHub: About to activate breach background');
+    this.activateWorldBackground('breach');
   }
 
   setPageVisibility(activePage) {
@@ -298,158 +305,118 @@ class TTRPGHub {
     });
   }
 
-  updateHubHeader() {
-    const worldNameEl = document.getElementById('currentWorldName');
-    const modeEl = document.getElementById('currentMode');
-    const worldHub = document.getElementById('worldHub');
-
-    // Set data-mode attribute for CSS targeting
-    if (worldHub) {
-      worldHub.setAttribute('data-mode', 'explore');
-    }
-
-    // Show two large, separate buttons (no container box)
-    const hubHeader = document.querySelector('.hub-header');
-    if (hubHeader) {
-      hubHeader.innerHTML = `
-        <div class="explore-toggle-row">
-          <button class="explore-primary-btn ${this.currentExploreSubmode === 'tours' ? 'active' : ''}" data-submode="tours">
-            <span>Tours</span>
-          </button>
-          <button class="explore-primary-btn ${this.currentExploreSubmode === 'database' ? 'active' : ''}" data-submode="database">
-            <span>Articles</span>
-          </button>
-          <button class="explore-primary-btn ${this.currentExploreSubmode === 'quests' ? 'active' : ''}" data-submode="quests">
-            <span>Quests</span>
-          </button>
-        </div>
-      `;
-    }
-
-    // Hide the mode indicator for explore mode
-    if (modeEl) {
-      modeEl.style.display = 'none';
-    }
-  }
-
-  // ========== Hub Content ==========
-  async loadHubContent() {
-    const hubContent = document.getElementById('hubContent');
-    if (!hubContent) return;
-
-    // Simplified - only explore mode exists
-    try {
-      hubContent.innerHTML = '<div class="loading">Loading...</div>';
-      const content = await this.getExploreModeContent();
-      hubContent.innerHTML = content;
-      
-      this.setupExploreToggleListeners();
-      await this.loadExploreSubmode(this.currentExploreSubmode);
-    } catch (error) {
-      hubContent.innerHTML = `<div class="error">Error loading content: ${error.message}</div>`;
-      Config.error('Error loading hub content:', error);
-    }
-  }
-
-  async getExploreModeContent() {
-    // Return the container that will hold both submodes
-    return `
-      <div class="explore-content">
-        <div class="explore-submode-content" id="exploreModeContent">
-          <div class="loading">Loading...</div>
-        </div>
-      </div>
-    `;
-  }
-
-  // ========== Explore Submode Management ==========
-  setupExploreToggleListeners() {
-    // Target the new large buttons
-    document.querySelectorAll('.explore-primary-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const submode = e.currentTarget.dataset.submode;
-        this.switchExploreSubmode(submode);
+  // ========== Panel Management ==========
+  async initializePanels() {
+    // Setup panel selector click listeners
+    document.querySelectorAll('.hub-panel').forEach(panel => {
+      const enterBtn = panel.querySelector('.enter-btn');
+      if (enterBtn) {
+        enterBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.selectPanel(panel.dataset.panel);
+        });
+      }
+      // Also allow clicking anywhere on the panel to enter
+      panel.addEventListener('click', (e) => {
+        if (e.target === panel || e.target.closest('.panel-selector')) {
+          this.selectPanel(panel.dataset.panel);
+        }
       });
     });
-  }
 
-  switchExploreSubmode(submode) {
-    this.currentExploreSubmode = submode;
-
-    // Update active state on new buttons
-    document.querySelectorAll('.explore-primary-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.submode === submode);
+    // Setup panel pill button listeners
+    document.querySelectorAll('.panel-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.selectPanel(e.currentTarget.dataset.panel);
+      });
     });
 
-    // Load new content
-    this.loadExploreSubmode(submode);
+    // Panels start collapse to show selectors
+    this.currentSelectedPanel = null;
   }
 
-  async loadExploreSubmode(submode) {
-    const contentEl = document.getElementById('exploreModeContent');
+  async selectPanel(panelName) {
+    this.currentSelectedPanel = panelName;
+    
+    const container = document.getElementById('hubPanelsContainer');
+    const collapsedHeader = document.getElementById('hubCollapsedHeader');
+    const panels = document.querySelectorAll('.hub-panel');
+    
+    // Update pill button active state
+    document.querySelectorAll('.panel-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.panel === panelName);
+    });
+    
+    // Show selected panel, collapse others
+    panels.forEach(panel => {
+      const isSelected = panel.dataset.panel === panelName;
+      panel.classList.toggle('expanded', isSelected);
+      panel.classList.toggle('collapsed', !isSelected);
+    });
+    
+    // Show/hide collapsed header based on whether any panel is selected
+    if (panelName) {
+      collapsedHeader.style.display = 'flex';
+    }
+
+    // Load content for the selected panel if not already loaded
+    await this.loadPanelContent(panelName);
+  }
+
+  async loadPanelContent(panelName) {
+    let contentEl;
+    
+    if (panelName === 'lorebook') {
+      contentEl = document.getElementById('loreBookContent');
+    } else if (panelName === 'journal') {
+      contentEl = document.getElementById('journalContent');
+    } else if (panelName === 'maps') {
+      contentEl = document.getElementById('mapsContent');
+    }
+    
     if (!contentEl) return;
+    
+    // Check if already loaded
+    if (contentEl.textContent.trim() && contentEl.style.display !== 'none') {
+      return;
+    }
     
     try {
       contentEl.innerHTML = '<div class="loading">Loading...</div>';
+      contentEl.style.display = 'block';
       
-      if (submode === 'tours') {
-        if (!this.tourViewer) {
-          this.tourViewer = new TourViewer(this);
-          window.tourViewer = this.tourViewer;
-        }
-        const content = await this.tourViewer.renderTourContentOnly(this.currentWorld.id);
-        contentEl.innerHTML = content;
-        this.tourViewer.setupTourCardListeners();
-      } else if (submode === 'database') {
-        // FIXED: Create once and reuse - don't recreate on every switch
+      // Hide the selector when content loads
+      const panel = contentEl.closest('.hub-panel');
+      if (panel) {
+        const selector = panel.querySelector('.panel-selector');
+        if (selector) selector.style.display = 'none';
+      }
+      
+      if (panelName === 'lorebook') {
         if (!this.articleViewer) {
           this.articleViewer = new ArticleViewer(this);
           window.articleViewer = this.articleViewer;
           Config.log('Created new ArticleViewer instance');
-        } else {
-          Config.log('Reusing existing ArticleViewer instance');
         }
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
         contentEl.innerHTML = content;
         this.articleViewer.setupEventListeners();
-      } else if (submode === 'quests') {
+      } else if (panelName === 'journal') {
         if (!this.questViewer) {
           this.questViewer = new QuestViewer(this);
           window.questViewer = this.questViewer;
           Config.log('Created new QuestViewer instance');
-        } else {
-          Config.log('Reusing existing QuestViewer instance');
         }
         const content = await this.questViewer.renderQuestMode(this.currentWorld.id);
         contentEl.innerHTML = content;
         this.questViewer.setupEventListeners();
+      } else if (panelName === 'maps') {
+        // TODO: Implement maps gallery
+        contentEl.innerHTML = '<div class="maps-placeholder">Maps coming soon...</div>';
       }
     } catch (error) {
-      contentEl.innerHTML = `<div class="error">Error loading ${submode}: ${error.message}</div>`;
-      Config.error('Error loading explore submode:', error);
-    }
-  }
-
-  // ========== Tour Data Loading ==========
-  async loadTours(worldId) {
-    try {
-      const url = Config.getUrl(Config.ENDPOINTS.TOURS, { world_id: worldId });
-      const data = await this.jsonp(url);
-      return data.success ? data.data : [];
-    } catch (error) {
-      Config.error('Failed to load tours:', error);
-      return [];
-    }
-  }
-
-  async loadTourSlides(tourId) {
-    try {
-      const url = Config.getUrl(Config.ENDPOINTS.TOUR_SLIDES, { tour_id: tourId });
-      const data = await this.jsonp(url);
-      return data.success ? data.data : [];
-    } catch (error) {
-      Config.error('Failed to load tour slides:', error);
-      return [];
+      contentEl.innerHTML = `<div class="error">Error loading ${panelName}: ${error.message}</div>`;
+      Config.error(`Error loading ${panelName}:`, error);
     }
   }
 
@@ -546,8 +513,13 @@ class TTRPGHub {
       });
       
       card.addEventListener('mouseleave', () => {
-        Config.log(`Mouse left ${worldId} card - returning to neutral background`);
-        this.activateWorldBackground('neutral');
+        // Only revert to neutral if no world is currently selected
+        if (!this.currentWorld) {
+          Config.log(`Mouse left ${worldId} card - returning to neutral background`);
+          this.activateWorldBackground('neutral');
+        } else {
+          Config.log(`Mouse left ${worldId} card, but world is selected - keeping ${worldId} background`);
+        }
       });
     });
   }
@@ -555,6 +527,8 @@ class TTRPGHub {
   // NEW: Activate a world's background video
   activateWorldBackground(worldId) {
     Config.log(`Activating background for: ${worldId}`);
+    Config.log(`Current activeBackgroundWorld: ${this.activeBackgroundWorld}`);
+    Config.log(`backgroundVideos keys:`, Object.keys(this.backgroundVideos));
     
     if (this.activeBackgroundWorld === worldId) {
       Config.log(`${worldId} already active, skipping`);
@@ -566,20 +540,24 @@ class TTRPGHub {
       Config.log(`Deactivating ${this.activeBackgroundWorld}`);
       const currentVideo = this.backgroundVideos[this.activeBackgroundWorld];
       currentVideo.classList.remove('active');
-      currentVideo.pause(); // ADD: Stop the current video
+      currentVideo.style.opacity = '0'; // Force opacity immediately
+      currentVideo.pause();
+      Config.log(`Deactivated, opacity set to 0`);
     }
     
     // Activate new
     if (this.backgroundVideos[worldId]) {
-      Config.log(`Activating ${worldId}, adding .active class`);
+      Config.log(`Activating ${worldId}, adding .active class and setting opacity`);
       const newVideo = this.backgroundVideos[worldId];
       newVideo.classList.add('active');
-      newVideo.currentTime = 0; // ADD: Reset to start
+      newVideo.style.opacity = '1'; // Force opacity immediately
+      newVideo.currentTime = 0;
       newVideo.play()
-        .then(() => Config.log(`${worldId} video playing`))
+        .then(() => Config.log(`${worldId} video playing, opacity at 1`))
         .catch(e => Config.error(`${worldId} video play blocked:`, e));
     } else {
       Config.error(`No background video found for ${worldId}`);
+      Config.error(`Available videos:`, this.backgroundVideos);
     }
     
     this.activeBackgroundWorld = worldId;

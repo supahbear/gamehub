@@ -61,20 +61,73 @@
                 
                 <div class="landing-message">
                     <div class="message-content" id="landingMessage">
-                        Welcome to the Nexus! This platform is intended as a multi-campaign hub within the same universe. Enjoy 🖤
+                        Welcome to the Nexus, a place intended as a multi-campaign hub within the same universe.<br>❤️Enjoy❤️
                     </div>
                 </div>
             </section>
 
             <section class="world-hub" id="worldHub" style="display: none;">
-                <div class="hub-header">
-                    <h2 id="currentWorldName">World Name</h2>
+                <header>
+                    <div class="logo-container" onclick="window.location.reload()">
+                        <img src="assets/breach-logo.png" alt="The Breach" class="logo" />
+                        <h1 class="logo-fallback">The Breach</h1>
+                    </div>
+                </header>
+                <!-- Collapsed header with panel toggles (hidden initially, shows when panel active) -->
+                <div class="hub-collapsed-header" id="hubCollapsedHeader" style="display: none;">
+                    <div class="collapsed-panels-toggle">
+                        <button class="panel-pill" data-panel="lorebook">Lorebook</button>
+                        <button class="panel-pill" data-panel="journal">Journal</button>
+                        <button class="panel-pill" data-panel="maps">Maps</button>
+                    </div>
                 </div>
-                <span class="current-mode" id="currentMode">Mode: Explore</span>
-                <div class="hub-content" id="hubContent">
-                    <!-- Dynamic content based on world and mode -->
+
+                <!-- Three full-bleed panels - selector state -->
+                <div class="hub-panels-container" id="hubPanelsContainer">
+                    <div class="hub-panel" data-panel="lorebook">
+                        <video class="panel-bg-video" muted loop playsinline>
+                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Lorebook</h2>
+                            <p>Characters · Factions · Lore</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="loreBookContent" style="display: none;">
+                            <!-- Article viewer content loads here -->
+                        </div>
+                    </div>
+
+                    <div class="hub-panel" data-panel="journal">
+                        <video class="panel-bg-video" muted loop playsinline>
+                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Journal</h2>
+                            <p>Quests · Missions · Notes</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="journalContent" style="display: none;">
+                            <!-- Quest viewer content loads here -->
+                        </div>
+                    </div>
+
+                    <div class="hub-panel" data-panel="maps">                        <video class="panel-bg-video" muted loop playsinline>
+                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Maps</h2>
+                            <p>Realms · Regions · Cities</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="mapsContent" style="display: none;">
+                            <!-- Maps gallery content loads here -->
+                        </div>
+                    </div>
                 </div>
-                <!-- REMOVED: back button - logo click reloads instead -->
             </section>
         </main>
 
@@ -93,32 +146,10 @@
             </div>
         </div>
 
-        <!-- Tour Modal -->
-        <div id="tourModalOverlay" class="modal-overlay">
-            <!-- Small centered loading box shown while slides load -->
-            <div id="tourLoadingBox" class="tour-loading-box" style="display: none;">
-                Loading tour...
-            </div>
-
-            <div class="tour-modal" id="tourModal">
-                <div class="modal-content">
-                    <div class="tour-slide-container" id="tourSlideContainer"></div>
-                </div>
-                <div class="tour-modal-navigation">
-                    <button class="tour-nav-btn" id="tourModalPrevBtn">Previous</button>
-                    <div class="tour-dots" id="tourModalDots"></div>
-                    <button class="tour-nav-btn" id="tourModalNextBtn">Next</button>
-                </div>
-                <button id="closeTourModalBtn" class="close-btn">&times;</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript files -->
-    <script src="config.js"></script>
-    <script src="script.js"></script>
-    <script src="article_viewer.js"></script>
-    <script src="tour_viewer.js"></script>
-    <script src="quest_viewer.js"></script>
+        <!-- JavaScript files -->
+        <script src="config.js"></script>
+        <script src="script.js"></script>
+        <script src="article_viewer.js"></script>
+        <script src="quest_viewer.js"></script>
 </body>
 </html>

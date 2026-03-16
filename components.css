@@ -91,16 +91,339 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* ========== HUB LAYOUT ========== */
-.hub-header {
+/* ========== HUB LAYOUT - PANELS ========== */
+.world-hub {
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
-    justify-content: flex-start;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    z-index: 100;
+}
+
+/* Collapsed header with panel pills */
+.hub-collapsed-header {
+    display: flex !important;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: none;
-    border-radius: 10px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    backdrop-filter: none;
     border: none;
+    box-shadow: none;
+    flex-shrink: 0;
+    min-height: 0;
+}
+
+.collapsed-panels-toggle {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.panel-pill {
+    background: transparent;
+    border: none;
+    color: #b19cd9;
+    cursor: pointer;
+    padding: 8px 0;
+    font-family: var(--font-family);
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-shadow: none;
+}
+
+.panel-pill:hover {
+    color: #c9b5e6;
+}
+
+.panel-selector {
+    position: relative;
+    z-index: 2;
+}
+
+.panel-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hub-panels-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    width: 100%;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
+.hub-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    transition: all 0.4s ease;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* panel-bg-video properties are defined in cards.css */
+
+
+.panel-pill {
+    padding: 8px 20px;
+    background: rgba(177, 156, 217, 0.1);
+    border: 1px solid rgba(177, 156, 217, 0.3);
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Cinzel', serif;
+}
+
+.panel-pill:hover {
+    background: rgba(177, 156, 217, 0.2);
+    border-color: rgba(177, 156, 217, 0.5);
+}
+
+.panel-pill.active {
+    background: #b19cd9;
+    border-color: #b19cd9;
+    color: #ffffff;
+}
+
+/* Three full-bleed panels container */
+.hub-panels-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 120px); /* Subtract header height */
+}
+
+.hub-panel {
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid rgba(177, 156, 217, 0.1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-width: 0;
+    cursor: pointer;
+    height: 100%;
+}
+
+.hub-panel:hover {
+    background: transparent;
+}
+
+/* Radial glow on hover - per panel colour */
+.hub-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(177, 156, 217, 0.07) 0%, transparent 65%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.hub-panel[data-panel="journal"]::before {
+    background: radial-gradient(ellipse at 50% 50%, rgba(201, 169, 97, 0.1) 0%, transparent 65%);
+}
+
+.hub-panel[data-panel="maps"]::before {
+    background: radial-gradient(ellipse at 50% 50%, rgba(64, 184, 160, 0.09) 0%, transparent 65%);
+}
+
+.hub-panel:hover::before {
+    opacity: 1;
+}
+
+.hub-panel:last-child {
+    border-right: none;
+}
+
+/* Expanded state - single panel takes full width */
+.hub-panel.expanded {
+    grid-column: 1 / -1;
+    overflow-y: auto;
+}
+
+/* Collapsed state - hide panels that aren't expanded */
+.hub-panel.collapsed {
+    display: none;
+}
+
+.panel-header {
+    padding: 30px 20px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    border-bottom: 1px solid rgba(177, 156, 217, 0.2);
+    flex-shrink: 0;
+}
+
+.panel-header h2 {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #b19cd9;
+    margin: 0 0 8px 0;
+    font-family: var(--font-family);
+}
+
+.panel-header p {
+    font-size: 0.95rem;
+    color: #c9b5e6;
+    margin: 0;
+}
+
+/* Panel selector - initial view */
+.panel-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px 40px 80px;
+    text-align: center;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.panel-star {
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: block;
+    margin-bottom: 4px;
+    transition: color 0.3s ease;
+}
+
+.hub-panel:hover .panel-star {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.panel-selector h2 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #ffffff;
+}
+
+/* Per-panel gradient text */
+.hub-panel[data-panel="lorebook"] .panel-selector h2 {
+    background: linear-gradient(135deg, #c9b5e6, #8ab5e8, #b19cd9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hub-panel[data-panel="journal"] .panel-selector h2 {
+    background: linear-gradient(135deg, #f0e6c8, #c9a961, #e8d5a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hub-panel[data-panel="maps"] .panel-selector h2 {
+    background: linear-gradient(135deg, #7dd8c8, #40b8a0, #9de8d8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.panel-selector p {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-weight: var(--font-weight-normal);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.hub-panel:hover .panel-selector p {
+    opacity: 1;
+}
+
+.enter-btn {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    opacity: 0;
+}
+
+.hub-panel:hover .enter-btn {
+    opacity: 1;
+}
+
+.enter-btn:hover {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+}
+
+.maps-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+/* Override old hub styles */
+.hub-header {
+    display: none !important;
 }
 
 .hub-content {
@@ -249,17 +572,19 @@ body.world-breach .explore-primary-btn {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
     transition: opacity 0.5s ease;
-    background: transparent; /* NEW: ensure container doesn't block bg videos */
+    background: transparent;
 }
 
 /* ========== LANDING PAGE STYLES ========== */
 .landing-screen {
     /* ...existing code... */
     background: transparent; /* NEW: let bg videos show through */
+    position: relative;
+    z-index: 1; /* Ensure landing content stays above background layer */
 }
 
 main {
