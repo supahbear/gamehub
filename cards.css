@@ -57,28 +57,32 @@
     border: 4px solid var(--border-color);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); /* Increased from 0.2 to 0.5 */
     
-    /* NEW: Fade-in animation on load */
-    opacity: 0;
-    animation: cardFadeIn 0.6s ease-out forwards;
     /* ADD: Force hardware acceleration */
     will-change: opacity, transform;
     transform: translateZ(0); /* Force GPU rendering */
 }
 
-/* Stagger the fade-in for each card - reduced delays for smoother start */
-.world-card:nth-child(1) { animation-delay: 0s; } /* No delay for first card */
-.world-card:nth-child(2) { animation-delay: 0.15s; }
-.world-card:nth-child(3) { animation-delay: 0.3s; }
-.world-card:nth-child(4) { animation-delay: 0.45s; }
+/* Stagger text fade-in for each card */
+.world-card:nth-child(1) .world-name { animation-delay: 0s; }
+.world-card:nth-child(2) .world-name { animation-delay: 0.15s; }
+.world-card:nth-child(3) .world-name { animation-delay: 0.3s; }
+.world-card:nth-child(4) .world-name { animation-delay: 0.45s; }
 
-@keyframes cardFadeIn {
+@keyframes textFadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px) translateZ(0);
     }
     to {
         opacity: 1;
-        transform: translateY(0) translateZ(0);
+    }
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 
@@ -92,20 +96,43 @@
 
 .world-card.loading {
     cursor: default;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent; /* Completely transparent */
+    pointer-events: none;
+    opacity: 1;
+    visibility: visible;
+    animation: none !important;
+}
+
+.world-card.loading .world-card-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    filter: brightness(0.6);
+}
+
+.world-card.loading .world-name {
     color: #ffffff;
-    border: none; /* No border */
-    box-shadow: none;
-    font-size: 1.2rem;
-    font-weight: 600;
-    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.9);
-    animation: none !important; /* Keep this to disable card fade-in */
-    backdrop-filter: none; /* Removed blur completely */
-    opacity: 1; /* REMOVED !important - allows JS to override */
-    visibility: visible !important; /* Keep visibility important */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 900;
+    font-size: 2.2rem;
+    font-family: 'Cinzel', serif;
+    animation: textFadeIn 1.2s ease-out forwards;
+}
+
+.world-card.loading .world-overlay {
+    display: none; /* Hide overlay for loading card - only show when real data loads */
+}
+
+.world-card.loading .world-description {
+    color: #ffffff !important;
+}
+
+.world-card.loading .world-system {
+    color: #ffffff !important;
 }
 
 .world-video {
@@ -157,11 +184,13 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    opacity: 0;
+    animation: overlayFadeIn 1.2s ease-out 0.3s forwards;
 }
 
 .world-name {
     position: absolute;
-    top: calc(50% - 1.1rem);
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: calc(100% - 40px);
@@ -173,6 +202,8 @@
     line-height: 1.1;
     z-index: 3;
     pointer-events: none;
+    opacity: 0;
+    animation: textFadeIn 1.2s ease-out forwards;
 }
 
 .world-description {

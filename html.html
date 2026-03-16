@@ -37,22 +37,31 @@
     <div class="container">
         <header>
             <div class="logo-container" onclick="window.location.reload()">
-                <img src="assets/nexus-logo.png" alt="NEXUS" class="logo" />
-                <h1 class="logo-fallback">NEXUS</h1>
+                <img src="assets/breach-logo.png" alt="The Breach" class="logo" />
+                <h1 class="logo-fallback">The Breach</h1>
             </div>
         </header>
 
         <main>
             <section class="landing-screen">
-                <h2>Choose your next destination</h2>
+                <h2>Tales from the Breach...</h2>
                 <div class="worlds-grid" id="worldsGrid">
-                    <!-- Worlds will be loaded dynamically -->
-                    <div class="world-card loading">Loading worlds...</div>
+                    <!-- Loading card - shows card asset video with Loading overlay -->
+                    <div class="world-card loading" data-loading="true" data-world-id="breach">
+                        <video class="world-video" muted loop playsinline autoplay>
+                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
+                        </video>
+                        <div class="world-name">Loading</div>
+                        <div class="world-overlay">
+                            <div class="world-description">Preparing to enter The Breach...</div>
+                            <div class="world-system">System: D&D 5e</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="landing-message">
                     <div class="message-content" id="landingMessage">
-                        Welcome to the Nexus! After selecting a destination, you'll be transported to a new world with guided tours and an indexed database of articles describing people, places and everything in-between that makes each world alive. Keep in mind that Nexus is a work in progress. Read, explore, and enjoy 🖤
+                        Welcome to the Nexus! This platform is intended as a multi-campaign hub within the same universe. Enjoy 🖤
                     </div>
                 </div>
             </section>

@@ -127,8 +127,8 @@ class TTRPGHub {
     this.worlds = [
       {
         id: 'breach',
-        name: 'The Breach',
-        description: 'A D&D 5e campaign where reality itself has been torn asunder.',
+        name: 'Beyond the Vale',
+        description: 'Leaving the safety of home to save the world is no small feat, but intention can only take you so far. Becoming a hero or a villain is just a choice away.',
         system: 'D&D 5e',
         video_url: 'assets/videos/breach-loopv2.mp4'
       }
@@ -150,30 +150,50 @@ class TTRPGHub {
       return;
     }
 
-    // Simple fade out of loading text, then render cards
+    // Update the loading card's content instead of replacing it
     const loadingCard = worldsGrid.querySelector('.world-card.loading');
-    if (loadingCard) {
-      loadingCard.style.transition = 'opacity 0.3s ease-out';
-      loadingCard.style.opacity = '0';
+    if (loadingCard && this.worlds.length > 0) {
+      const world = this.worlds[0]; // Get first (only) world for Breach
       
-      // Wait for fade-out to complete (350ms > 300ms transition) before replacing DOM
-      setTimeout(() => {
-        worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
-        this.setupCardListeners();
-        // ADD: Setup background videos AFTER cards exist
-        this.setupWorldBackgrounds();
-      }, 350); // Give extra 50ms buffer after transition completes
-    } else {
-      worldsGrid.innerHTML = this.worlds.map(world => this.renderWorldCard(world)).join('');
-      this.setupCardListeners();
-      // ADD: Setup background videos AFTER cards exist
-      this.setupWorldBackgrounds();
+      // Update text content of the card
+      const worldNameEl = loadingCard.querySelector('.world-name');
+      const descriptionEl = loadingCard.querySelector('.world-description');
+      const systemEl = loadingCard.querySelector('.world-system');
+      const overlayEl = loadingCard.querySelector('.world-overlay');
+      
+      if (worldNameEl) {
+        worldNameEl.textContent = world.name;
+        // Restart animation by removing and re-adding it
+        worldNameEl.style.animation = 'none';
+        // Force reflow to restart animation
+        void worldNameEl.offsetWidth;
+        worldNameEl.style.animation = '';
+      }
+      if (descriptionEl) descriptionEl.textContent = world.description;
+      if (systemEl) systemEl.textContent = `System: ${world.system}`;
+      
+      // Restart overlay animation
+      if (overlayEl) {
+        overlayEl.style.animation = 'none';
+        void overlayEl.offsetWidth;
+        overlayEl.style.animation = '';
+      }
+      
+      // Remove loading indicators
+      loadingCard.removeAttribute('data-loading');
+      loadingCard.classList.remove('loading');
     }
+    
+    this.setupCardListeners();
+    // ADD: Setup background videos AFTER cards exist
+    this.setupWorldBackgrounds();
 
     Config.log(`Rendered ${this.worlds.length} worlds`);
   }
 
   renderWorldCard(world) {
+    // This method is kept for compatibility but is no longer used in renderWorlds()
+    // The loading card is updated in place instead of being replaced
     const hasVideo = world.video_url && world.video_url.trim();
     const videoElement = hasVideo ? 
       `<video class="world-video" muted loop playsinline>
@@ -189,6 +209,19 @@ class TTRPGHub {
         <div class="world-overlay">
           <div class="world-description">${world.description}</div>
           <div class="world-system">System: ${world.system}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderLoadingCard() {
+    return `
+      <div class="world-card loading" data-loading="true">
+        <div class="world-video-placeholder"></div>
+        <div class="world-name">Loading</div>
+        <div class="world-overlay">
+          <div class="world-description">Preparing to enter The Breach...</div>
+          <div class="world-system">System: D&D 5e</div>
         </div>
       </div>
     `;
@@ -226,21 +259,9 @@ class TTRPGHub {
     if (this.currentWorld) {
       Config.log('Selected world:', this.currentWorld.name);
       
-      // Start quick content fade
-      const container = document.querySelector('.container');
-      container.classList.add('transitioning');
-      
-      // Wait for content fade out, then apply theme and switch content
-      setTimeout(() => {
-        // Apply theme after content is hidden
-        this.applyWorldTheme(worldId);
-        this.showWorldHub();
-        
-        // Small delay before content fade back in
-        setTimeout(() => {
-          container.classList.remove('transitioning');
-        }, 100);
-      }, 500);
+      // Apply theme and switch to hub
+      this.applyWorldTheme(worldId);
+      this.showWorldHub();
     }
   }
 
@@ -524,8 +545,10 @@ class TTRPGHub {
         this.activateWorldBackground(worldId);
       });
       
-      // REMOVED: mouseleave logic - background now stays on last hovered world
-      // No more automatic return when leaving cards
+      card.addEventListener('mouseleave', () => {
+        Config.log(`Mouse left ${worldId} card - returning to neutral background`);
+        this.activateWorldBackground('neutral');
+      });
     });
   }
 

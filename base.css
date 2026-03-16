@@ -70,15 +70,6 @@ body {
     background: transparent;
 }
 
-.container.transitioning {
-    opacity: 0;
-}
-
-.container.transitioning .landing-message {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
 /* ========== HEADER & LOGO ========== */
 header {
     text-align: center;

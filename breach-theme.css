@@ -50,6 +50,16 @@ body.world-breach::before {
     content: none;
 }
 
+/* Landing page heading - use Cinzel font matching cards */
+.landing-screen h2 {
+    font-family: 'Cinzel', serif !important;
+    font-weight: 900 !important;
+    font-size: 2.5rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9) !important;
+}
+
 /* Breach-specific styling */
 
 body.world-breach h1 {
