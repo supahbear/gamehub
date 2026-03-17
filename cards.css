@@ -78,8 +78,21 @@
     height: auto;
     object-fit: cover;
     opacity: 1;
-    filter: blur(3px) brightness(0.18);
     z-index: 0;
+}
+
+/* Atlas video is wide — scale down slightly to show more of the frame */
+.hub-panel[data-panel="atlas"] .panel-bg-video {
+    transform: translate(-50%, -50%) scale(0.8);
+    min-width: 125%;
+    min-height: 125%;
+}
+
+/* Bestiary video — scale down to show more of the frame */
+.hub-panel[data-panel="bestiary"] .panel-bg-video {
+    transform: translate(-50%, -50%) scale(0.55);
+    min-width: 180%;
+    min-height: 180%;
 }
 
 /* ========== WORLD CARDS ========== */

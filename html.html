@@ -44,7 +44,7 @@
 
         <main>
             <section class="landing-screen">
-                <h2>Tales from the Breach...</h2>
+                <h2>Tales from the Breach</h2>
                 <div class="worlds-grid" id="worldsGrid">
                     <!-- Loading card - shows card asset video with Loading overlay -->
                     <div class="world-card loading" data-loading="true" data-world-id="breach">
@@ -68,7 +68,7 @@
 
             <section class="world-hub" id="worldHub" style="display: none;">
                 <header>
-                    <div class="logo-container" onclick="window.location.reload()">
+                    <div class="logo-container" onclick="hub && hub.showWorldSelection()">
                         <img src="assets/breach-logo.png" alt="The Breach" class="logo" />
                         <h1 class="logo-fallback">The Breach</h1>
                     </div>
@@ -76,31 +76,34 @@
                 <!-- Collapsed header with panel toggles (hidden initially, shows when panel active) -->
                 <div class="hub-collapsed-header" id="hubCollapsedHeader" style="display: none;">
                     <div class="collapsed-panels-toggle">
-                        <button class="panel-pill" data-panel="lorebook">Lorebook</button>
+                        <button class="panel-pill" data-panel="encyclopedia">Encyclopedia</button>
                         <button class="panel-pill" data-panel="journal">Journal</button>
-                        <button class="panel-pill" data-panel="maps">Maps</button>
+                        <button class="panel-pill" data-panel="atlas">Atlas</button>
+                        <button class="panel-pill" data-panel="bestiary">Bestiary</button>
+                        <button class="panel-pill" data-panel="alchemy">Alchemy</button>
+                        <button class="panel-pill" data-panel="literature">Literature</button>
                     </div>
                 </div>
 
-                <!-- Three full-bleed panels - selector state -->
+                <!-- Six full-bleed panels - two rows of three -->
                 <div class="hub-panels-container" id="hubPanelsContainer">
-                    <div class="hub-panel" data-panel="lorebook">
-                        <video class="panel-bg-video" muted loop playsinline>
+                    <div class="hub-panel" data-panel="encyclopedia">
+                        <video class="panel-bg-video" muted loop playsinline autoplay>
                             <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
                         </video>
                         <div class="panel-selector">
                             <span class="panel-star">✦</span>
-                            <h2>Lorebook</h2>
+                            <h2>Encyclopedia</h2>
                             <p>Characters · Factions · Lore</p>
                             <button class="enter-btn">Enter</button>
                         </div>
-                        <div class="panel-content" id="loreBookContent" style="display: none;">
+                        <div class="panel-content" id="encyclopediaContent" style="display: none;">
                             <!-- Article viewer content loads here -->
                         </div>
                     </div>
 
                     <div class="hub-panel" data-panel="journal">
-                        <video class="panel-bg-video" muted loop playsinline>
+                        <video class="panel-bg-video" muted loop playsinline autoplay>
                             <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
                         </video>
                         <div class="panel-selector">
@@ -114,17 +117,62 @@
                         </div>
                     </div>
 
-                    <div class="hub-panel" data-panel="maps">                        <video class="panel-bg-video" muted loop playsinline>
+                    <div class="hub-panel" data-panel="atlas">                        <video class="panel-bg-video" muted loop playsinline autoplay>
+                            <source src="assets/videos/maps-panel-loop.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Atlas</h2>
+                            <p>Realms · Regions · Cities</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="atlasContent" style="display: none;">
+                            <!-- Maps gallery content loads here -->
+                        </div>
+                    </div>
+
+                    <div class="hub-panel" data-panel="bestiary">
+                        <video class="panel-bg-video" muted loop playsinline autoplay>
+                            <source src="assets/videos/bestiary-loop.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Bestiary</h2>
+                            <p>Creatures · Monsters · Beasts</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="bestiaryContent" style="display: none;">
+                            <!-- Bestiary content loads here -->
+                        </div>
+                    </div>
+
+                    <div class="hub-panel" data-panel="alchemy">
+                        <video class="panel-bg-video" muted loop playsinline autoplay>
                             <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
                         </video>
                         <div class="panel-selector">
                             <span class="panel-star">✦</span>
-                            <h2>Maps</h2>
-                            <p>Realms · Regions · Cities</p>
+                            <h2>Alchemy</h2>
+                            <p>Potions · Reagents · Formulae</p>
                             <button class="enter-btn">Enter</button>
                         </div>
-                        <div class="panel-content" id="mapsContent" style="display: none;">
-                            <!-- Maps gallery content loads here -->
+                        <div class="panel-content" id="alchemyContent" style="display: none;">
+                            <!-- Alchemy content loads here -->
+                        </div>
+                    </div>
+
+                    <div class="hub-panel" data-panel="literature">
+                        <video class="panel-bg-video" muted loop playsinline autoplay>
+                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
+                        </video>
+                        <div class="panel-selector">
+                            <span class="panel-star">✦</span>
+                            <h2>Literature</h2>
+                            <p>Tomes · Scrolls · Tales</p>
+                            <button class="enter-btn">Enter</button>
+                        </div>
+                        <div class="panel-content" id="literatureContent" style="display: none;">
+                            <!-- Literature content loads here -->
                         </div>
                     </div>
                 </div>
@@ -151,5 +199,6 @@
         <script src="script.js"></script>
         <script src="article_viewer.js"></script>
         <script src="quest_viewer.js"></script>
+        <script src="atlas_viewer.js"></script>
 </body>
 </html>

@@ -1,9 +1,12 @@
 // article-viewer.js - Redesigned for overlay card system with unified explore mode safety
 class ArticleViewer {
-  constructor(hub) {
+  // allowedSheets: array of sheet names this viewer may display, e.g. ['Characters','Factions','Religion']
+  // defaultSheet:  the sheet that is selected by default, e.g. 'Characters'
+  constructor(hub, allowedSheets = ['Characters'], defaultSheet = null) {
     this.hub = hub;
+    this.allowedSheets = Array.isArray(allowedSheets) ? allowedSheets : [allowedSheets];
+    this.defaultSheet = defaultSheet || this.allowedSheets[0];
     this.currentArticles = [];
-    this.currentCategories = [];
     this.currentFilters = {
       category: '',
       tag: '',
@@ -12,55 +15,25 @@ class ArticleViewer {
     // Prevent duplicate bindings on re-render
     this._filtersBound = false;
     this._modalBound = false;
-    this._hasInitialized = false; // NEW: Track if we've done initial setup
+    this._hasInitialized = false;
   }
 
-  async loadArticleData(worldId) {
+  async loadArticleData() {
     try {
-      const [articles, categories] = await Promise.all([
-        this.hub.loadArticles(worldId),
-        this.hub.loadCategories(worldId)
-      ]);
-      
-      // Filter out Quest category from articles and categories
-      const questCategory = categories.find(cat => {
-        const slug = String(cat.slug || '').trim().toLowerCase();
-        return slug === 'breachquest' || slug === 'quest';
-      });
-      
-      const questCategoryId = questCategory ? String(questCategory.id) : null;
-      
-      // Exclude quest articles and quest category
-      this.currentArticles = questCategoryId 
-        ? articles.filter(a => String(a.category_id) !== questCategoryId)
-        : articles;
-    
-      this.currentCategories = questCategoryId
-        ? categories.filter(c => String(c.id) !== questCategoryId)
-        : categories;
+      const rows = await this.hub.loadSheets(this.allowedSheets);
+      this.currentArticles = rows;
 
-      // FIXED: Search for "Character" (singular), not "characters" (plural)
       if (!this._hasInitialized) {
-        const defaultCat = categories.find(cat => {
-          const name = String(cat.name || '').trim().toLowerCase();
-          const slug = String(cat.slug || '').trim().toLowerCase();
-          // FIXED: Look for both singular and plural
-          return name === 'character' || name === 'characters' || 
-                 slug === 'character' || slug === 'characters';
-        });
-        if (defaultCat && defaultCat.id !== undefined && defaultCat.id !== null && defaultCat.id !== '') {
-          this.currentFilters.category = String(defaultCat.id);
-          Config.log('Set default category to Character:', defaultCat.id);
-        }
+        this.currentFilters.category = this.defaultSheet;
         this._hasInitialized = true;
+        Config.log(`ArticleViewer default sheet: ${this.defaultSheet}`);
       }
-      
-      Config.log(`Loaded ${articles.length} articles, ${categories.length} categories`);
-      Config.log('Current filters:', this.currentFilters);
-      return { articles, categories };
+
+      Config.log(`ArticleViewer loaded ${rows.length} rows from sheets:`, this.allowedSheets);
+      return rows;
     } catch (error) {
       Config.error('Failed to load article data:', error);
-      return { articles: [], categories: [] };
+      return [];
     }
   }
 
@@ -69,22 +42,7 @@ class ArticleViewer {
     this._hasInitialized = false;
     
     // Load data FIRST, which sets the default category
-    await this.loadArticleData(worldId);
-
-    // THEN check if we need to force the default (in case loadArticleData didn't set it)
-    if (!this.currentFilters.category && !this._hasInitialized) {
-      const defaultCat = this.currentCategories.find(cat => {
-        const name = String(cat.name || '').trim().toLowerCase();
-        const slug = String(cat.slug || '').trim().toLowerCase();
-        return name === 'character' || name === 'characters' || 
-               slug === 'character' || slug === 'characters';
-      });
-      if (defaultCat && defaultCat.id) {
-        this.currentFilters.category = String(defaultCat.id);
-        this._hasInitialized = true;
-        Config.log('Force-applied default Character category in renderReadMode:', defaultCat.id);
-      }
-    }
+    await this.loadArticleData();
 
     if (this.currentArticles.length === 0) {
       // Still render wrapper so refresh logic stays stable
@@ -132,21 +90,16 @@ class ArticleViewer {
   }
 
   renderFilters() {
-    const categoryOptions = this.currentCategories
-      .map(cat => `<option value="${cat.id}" ${String(this.currentFilters.category) == String(cat.id) ? 'selected' : ''}>${cat.name}</option>`)
-      .join('');
+    const multiSheet = this.allowedSheets.length > 1;
 
-    // UPDATED: Only get tags from articles in the current category filter
-    const articlesInCurrentCategory = this.currentFilters.category 
-      ? this.currentArticles.filter(article => {
-          const articleCategories = (article.category_id || '').split(',').map(c => c.trim());
-          return articleCategories.includes(this.currentFilters.category);
-        })
-      : this.currentArticles; // If no category selected, use all articles
+    // Only get tags from articles in the current sheet filter (or all if no filter)
+    const articlesInCurrentCategory = this.currentFilters.category
+      ? this.currentArticles.filter(article => article._category === this.currentFilters.category)
+      : this.currentArticles;
 
     const allTags = [...new Set(
       articlesInCurrentCategory
-        .flatMap(article => (article.tags_csv || '').split(','))
+        .flatMap(article => (article.tags || '').split(','))
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
     )].sort();
@@ -154,6 +107,12 @@ class ArticleViewer {
     const tagOptions = allTags
       .map(tag => `<option value="${tag}">${tag}</option>`)
       .join('');
+
+    const categoryOptions = multiSheet
+      ? this.allowedSheets
+          .map(sheet => `<option value="${sheet}" ${this.currentFilters.category === sheet ? 'selected' : ''}>${sheet}</option>`)
+          .join('')
+      : '';
 
     return `
       <div class="article-filters">
@@ -163,12 +122,13 @@ class ArticleViewer {
                  placeholder="Search articles..." 
                  value="${this.currentFilters.search}">
         </div>
+        ${multiSheet ? `
         <div class="filter-group">
           <select id="categoryFilter">
             <option value="">All Categories</option>
             ${categoryOptions}
           </select>
-        </div>
+        </div>` : ''}
         <div class="filter-group">
           <select id="tagFilter">
             <option value="">All Tags</option>
@@ -181,22 +141,21 @@ class ArticleViewer {
   }
 
   renderArticleCard(article) {
-    const category = this.currentCategories.find(cat => cat.id == article.category_id);
-    const tags = (article.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
+    const tags = (article.tags || '').split(',').map(t => t.trim()).filter(t => t);
     const primaryTag = tags[0] || 'default';
     const cssTag = primaryTag.toLowerCase().replace(/[^a-z0-9]/g, '');
     const hasImage = article.image_url && article.image_url.trim();
-    const backgroundImage = hasImage ? 
-      `<img src="${article.image_url}" class="card-background" alt="${article.title}" loading="lazy">` :
+    const backgroundImage = hasImage ?
+      `<img src="${article.image_url}" class="card-background" alt="${article.name}" loading="lazy">` :
       `<div class="card-background-placeholder"></div>`;
 
     return `
-      <div class="article-card tag-${cssTag}" data-article-id="${article.id}">
+      <div class="article-card tag-${cssTag}" data-article-id="${article._rowIndex}">
         ${backgroundImage}
         <div class="card-overlay">
-          <h4 class="card-title">${article.title}</h4>
+          <h4 class="card-title">${article.name}</h4>
           <div class="card-badges-row">
-            ${category ? `<div class="card-category-badge">${category.name}</div>` : ''}
+            <div class="card-category-badge">${article._category || ''}</div>
             <span class="card-tag">${primaryTag}</span>
           </div>
           <p class="card-summary">${article.summary || 'No summary available'}</p>
@@ -230,56 +189,34 @@ class ArticleViewer {
   }
 
   sortArticles(articles) {
-    // If no category filter (showing all), group by category then alphabetical
     if (!this.currentFilters.category) {
+      // Group by sheet order, then alphabetical within each sheet
       return articles.sort((a, b) => {
-        // Get category data for sort_order
-        const catA = this.currentCategories.find(c => c.id === a.category_id) || { sort_order: 999, name: 'Unknown' };
-        const catB = this.currentCategories.find(c => c.id === b.category_id) || { sort_order: 999, name: 'Unknown' };
-        
-        // First sort by category sort_order
-        if (catA.sort_order !== catB.sort_order) {
-          return catA.sort_order - catB.sort_order;
-        }
-        
-        // If sort_order is the same, sort by category name
-        if (catA.name !== catB.name) {
-          return catA.name.localeCompare(catB.name);
-        }
-        
-        // Finally, alphabetical by article title within category
-        return a.title.localeCompare(b.title);
+        const idxA = this.allowedSheets.indexOf(a._category);
+        const idxB = this.allowedSheets.indexOf(b._category);
+        if (idxA !== idxB) return idxA - idxB;
+        return (a.name || '').localeCompare(b.name || '');
       });
     } else {
-      // Single category selected - just alphabetical by title
-      return articles.sort((a, b) => a.title.localeCompare(b.title));
+      return articles.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
   }
 
   filterArticles() {
     return this.currentArticles.filter(article => {
-      // Category filter is exclusive - if set, only show that category
-      if (this.currentFilters.category) {
-        // Handle both single and comma-separated category IDs
-        const articleCategories = (article.category_id || '').split(',').map(c => c.trim());
-        if (!articleCategories.includes(this.currentFilters.category)) {
-          return false;
-        }
+      if (this.currentFilters.category && article._category !== this.currentFilters.category) {
+        return false;
       }
 
-      // Search filter (applies within current category view)
       if (this.currentFilters.search) {
         const searchTerm = this.currentFilters.search.toLowerCase();
-        const searchableText = `${article.title} ${article.summary} ${article.content_md}`.toLowerCase();
+        const searchableText = `${article.name} ${article.summary || ''} ${article.content || ''}`.toLowerCase();
         if (!searchableText.includes(searchTerm)) return false;
       }
 
-      // Tag filter (applies within current category view)
       if (this.currentFilters.tag) {
-        const articleTags = (article.tags_csv || '').split(',').map(t => t.trim().toLowerCase());
-        if (!articleTags.includes(this.currentFilters.tag.toLowerCase())) {
-          return false;
-        }
+        const articleTags = (article.tags || '').split(',').map(t => t.trim().toLowerCase());
+        if (!articleTags.includes(this.currentFilters.tag.toLowerCase())) return false;
       }
 
       return true;
@@ -303,8 +240,8 @@ class ArticleViewer {
       if (categoryFilter) {
         categoryFilter.addEventListener('change', (e) => {
           this.currentFilters.category = e.target.value;
-          this.currentFilters.tag = ''; // UPDATED: Clear tag filter when category changes
-          this.refreshFilters(); // UPDATED: Refresh filters to update tag dropdown
+          this.currentFilters.tag = ''; // Clear tag filter when category changes
+          this.refreshFilters(); // Refresh filters to update tag dropdown
           this.refreshArticleGrid();
         });
       }
@@ -352,7 +289,7 @@ class ArticleViewer {
   }
 
   refreshFilters() {
-    // NEW: Refresh the entire filter bar (to update tag dropdown based on category)
+    // Refresh the entire filter bar (to update tag dropdown based on category)
     const filtersContainer = document.querySelector('.article-filters');
     if (filtersContainer) {
       const parent = filtersContainer.parentElement;
@@ -378,35 +315,23 @@ class ArticleViewer {
   }
 
   clearFilters() {
-    // FIXED: Same change for clear filters
-    const defaultCat = this.currentCategories.find(cat => {
-      const name = String(cat.name || '').trim().toLowerCase();
-      const slug = String(cat.slug || '').trim().toLowerCase();
-      return name === 'character' || name === 'characters' || 
-             slug === 'character' || slug === 'characters';
-    });
-    
-    this.currentFilters = { 
-      category: defaultCat && defaultCat.id ? String(defaultCat.id) : '', 
-      tag: '', 
-      search: '' 
+    this.currentFilters = {
+      category: this.defaultSheet,
+      tag: '',
+      search: ''
     };
-    
-    // Reset form elements
     const searchInput = document.getElementById('articleSearch');
     const categoryFilter = document.getElementById('categoryFilter');
     const tagFilter = document.getElementById('tagFilter');
-    
     if (searchInput) searchInput.value = '';
-    if (categoryFilter) categoryFilter.value = this.currentFilters.category;
+    if (categoryFilter) categoryFilter.value = this.defaultSheet;
     if (tagFilter) tagFilter.value = '';
-    
-    Config.log('Filters cleared, reset to default Character category');
+    Config.log('Filters cleared, reset to default sheet:', this.defaultSheet);
     this.refreshArticleGrid();
   }
 
   openArticle(articleId) {
-    const article = this.currentArticles.find(a => a.id == articleId);
+    const article = this.currentArticles.find(a => String(a._rowIndex) === String(articleId));
     if (!article) return;
 
     // Use the HTML modal structure
@@ -420,17 +345,15 @@ class ArticleViewer {
       return;
     }
 
-    if (title) title.textContent = article.title;
+    if (title) title.textContent = article.name;
     if (content) {
-      // Convert markdown to HTML
-      const htmlContent = this.markdownToHtml(article.content_md || 'No content available');
+      const htmlContent = this.markdownToHtml(article.content || 'No content available');
       
-      // Convert summary markdown to HTML too
-      const summaryHtml = article.summary ? 
-        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : 
+      const summaryHtml = article.summary ?
+        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` :
         '';
       
-      // NEW: Split content into pages
+      // Split content into pages
       const pages = this.splitContentIntoPages(htmlContent);
       const pageHtml = this.renderArticlePages(pages);
       const navigationHtml = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
@@ -439,7 +362,7 @@ class ArticleViewer {
         content.innerHTML = `
           <div class="article-modal-columns">
             <div class="article-modal-image-col">
-              <img src="${article.image_url}" class="article-image" alt="${article.title}" loading="lazy">
+              <img src="${article.image_url}" class="article-image" alt="${article.name}" loading="lazy">
               ${summaryHtml}
             </div>
             <div class="article-modal-text-col">
@@ -478,10 +401,10 @@ class ArticleViewer {
     modal.classList.add('show');
     document.body.classList.add('modal-active');
 
-    Config.log('Article modal opened:', article.title);
+    Config.log('Article modal opened:', article.name);
   }
 
-  // NEW: Split HTML content into pages based on fixed container height
+  // Split HTML content into pages based on fixed container height
   splitContentIntoPages(htmlContent) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
@@ -573,7 +496,7 @@ class ArticleViewer {
     return pages.length > 0 ? pages : [htmlContent];
   }
 
-  // NEW: Render pages HTML
+  // Render pages HTML
   renderArticlePages(pages) {
     return pages.map((pageContent, index) => `
       <div class="article-page ${index === 0 ? 'active' : ''}" data-page="${index}">
@@ -582,7 +505,7 @@ class ArticleViewer {
     `).join('');
   }
 
-  // NEW: Render navigation controls
+  // Render navigation controls
   renderArticleNavigation(totalPages) {
     const dots = Array.from({ length: totalPages }, (_, i) => 
       `<button class="article-dot ${i === 0 ? 'active' : ''}" data-page="${i}"></button>`
@@ -597,7 +520,7 @@ class ArticleViewer {
     `;
   }
 
-  // NEW: Setup pagination event listeners
+  // Setup pagination event listeners
   setupArticlePagination(totalPages) {
     let currentPage = 0;
     
@@ -642,7 +565,7 @@ class ArticleViewer {
       });
     });
     
-    // NEW: Arrow key navigation
+    // Arrow key navigation
     const arrowKeyHandler = (e) => {
       // Only handle arrow keys when article modal is open
       if (!document.body.classList.contains('modal-active')) return;
@@ -672,7 +595,7 @@ class ArticleViewer {
       modal.classList.remove('show');
       document.body.classList.remove('modal-active');
       
-      // NEW: Remove arrow key listener when modal closes
+      // Remove arrow key listener when modal closes
       if (this._arrowKeyHandler) {
         document.removeEventListener('keydown', this._arrowKeyHandler);
         this._arrowKeyHandler = null;

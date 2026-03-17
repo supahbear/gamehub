@@ -30,10 +30,11 @@
 }
 
 .article-viewer {
-    max-width: 1680px; /* was 1400px - allow up to 6 columns */
+    max-width: 100%;
     margin: 0 auto;
-    margin-top: 0 !important; /* Remove any extra top margin */
-    padding: 0 20px; /* Add horizontal padding for better spacing */
+    margin-top: 0 !important;
+    padding: 0; /* panel-content already provides 20px padding on all sides */
+    box-sizing: border-box;
 }
 
 /* Let the grid expand to the container width (removes 1600px cap from cards.css) */
@@ -108,7 +109,7 @@
 
 .articles-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* was 220px */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
 }
 
@@ -119,12 +120,7 @@
     padding: 0;
 }
 
-/* On large screens, enforce exactly 6 columns */
-@media (min-width: 1500px) {
-    .article-viewer .articles-grid {
-        grid-template-columns: repeat(6, minmax(210px, 1fr)); /* was 190px */
-    }
-}
+/* Grid columns are fully responsive — auto-fill handles all screen sizes */
 
 /* ========== TOUR SLIDESHOW ========== */
 .tour-slideshow {
@@ -551,6 +547,173 @@
   min-height: 500px;
   animation: fadeIn 0.4s ease-out;
   box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3); /* Add depth like modal */
+}
+
+/* ========== ATLAS GALLERY ========== */
+.atlas-viewer {
+  padding: 20px;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.atlas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.atlas-tile {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(64, 184, 160, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.atlas-tile:hover {
+  transform: scale(1.03);
+  border-color: #40b8a0;
+  box-shadow: 0 0 18px rgba(64, 184, 160, 0.45);
+}
+
+.atlas-tile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.atlas-tile:hover .atlas-tile-img {
+  transform: scale(1.06);
+}
+
+.atlas-tile-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(64, 184, 160, 0.1), rgba(0,0,0,0.3));
+}
+
+.atlas-tile-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.atlas-tile:hover .atlas-tile-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.atlas-tile-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+
+.atlas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.atlas-empty .empty-icon {
+  font-size: 3rem;
+}
+
+.atlas-empty h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: rgba(64, 184, 160, 0.6);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.atlas-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Atlas lightbox — inside the shared article modal */
+.atlas-lightbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.atlas-lightbox-img {
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
+.atlas-lightbox-caption {
+  font-family: 'Faculty Glyphic', var(--font-family);
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+  margin: 0;
+  max-width: 800px;
+}
+
+.atlas-lightbox-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 8px;
+}
+
+.atlas-nav-btn {
+  background: rgba(64, 184, 160, 0.15);
+  border: 1px solid rgba(64, 184, 160, 0.4);
+  color: #ffffff;
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.atlas-nav-btn:hover:not(:disabled) {
+  background: rgba(64, 184, 160, 0.35);
+  border-color: #40b8a0;
+  box-shadow: 0 0 12px rgba(64, 184, 160, 0.4);
+}
+
+.atlas-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.atlas-counter {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .quest-detail-header {

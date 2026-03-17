@@ -11,58 +11,21 @@ class QuestViewer {
     this.expandedTags = new Set(); // Track which location tabs are expanded
   }
 
-  async loadQuestData(worldId) {
+  async loadQuestData() {
     try {
-      const [articles, categories] = await Promise.all([
-        this.hub.loadArticles(worldId),
-        this.hub.loadCategories(worldId)
-      ]);
-      
-      Config.log('All categories:', categories);
-      Config.log('All articles:', articles);
-      
-      // Find the Quest category - check BOTH id and slug fields
-      const questCategory = categories.find(cat => {
-        const id = String(cat.id || '').trim().toLowerCase();
-        const slug = String(cat.slug || '').trim().toLowerCase();
-        Config.log(`Checking category - id: ${id}, slug: ${slug}`);
-        return id === 'breachquest' || slug === 'breachquest' || 
-               id === 'quest' || slug === 'quest';
-      });
-      
-      if (!questCategory) {
-        Config.warn('Quest category not found in categories list');
-        Config.log('Available categories:', categories.map(c => ({ id: c.id, slug: c.slug, name: c.name })));
-        this.currentQuests = [];
-        return { quests: [] };
-      }
-      
-      Config.log('Found quest category:', questCategory);
-      
-      // Filter to ONLY quest category articles
-      const questCategoryId = String(questCategory.id);
-      const questCategorySlug = String(questCategory.slug || '').toLowerCase();
-      
-      this.currentQuests = articles.filter(a => {
-        const articleCategoryId = String(a.category_id || '').trim().toLowerCase();
-        const matches = articleCategoryId === questCategoryId.toLowerCase() || 
-                       articleCategoryId === questCategorySlug;
-        if (matches) {
-          Config.log(`Matched quest article: ${a.title} (category_id: ${articleCategoryId})`);
-        }
-        return matches;
-      });
-      
-      Config.log(`Loaded ${this.currentQuests.length} quests`);
+      const rows = await this.hub.loadSheets(['Journal']);
+      this.currentQuests = rows;
+      Config.log(`QuestViewer loaded ${rows.length} journal entries`);
       return { quests: this.currentQuests };
     } catch (error) {
       Config.error('Failed to load quest data:', error);
+      this.currentQuests = [];
       return { quests: [] };
     }
   }
 
   async renderQuestMode(worldId) {
-    await this.loadQuestData(worldId);
+    await this.loadQuestData();
 
     if (this.currentQuests.length === 0) {
       return this.renderEmptyState();
@@ -70,7 +33,7 @@ class QuestViewer {
 
     // Auto-select first quest if none selected
     if (!this.selectedQuestId && this.currentQuests.length > 0) {
-      this.selectedQuestId = this.currentQuests[0].id;
+      this.selectedQuestId = String(this.currentQuests[0]._rowIndex);
     }
 
     return `
@@ -131,11 +94,11 @@ class QuestViewer {
       // Filter by search if active
       if (this.currentFilters.search) {
         const searchTerm = this.currentFilters.search.toLowerCase();
-        const searchableText = `${quest.title} ${quest.summary} ${quest.content_md}`.toLowerCase();
+        const searchableText = `${quest.name} ${quest.summary || ''} ${quest.content || ''}`.toLowerCase();
         if (!searchableText.includes(searchTerm)) return;
       }
       
-      const tags = (quest.tags_csv || '').split(',').map(t => t.trim()).filter(t => t);
+      const tags = (quest.tags || '').split(',').map(t => t.trim()).filter(t => t);
       const location = tags[0] || 'Miscellaneous';
       
       if (!grouped[location]) {
@@ -155,7 +118,7 @@ class QuestViewer {
     });
     
     locations.forEach(key => {
-      sortedGrouped[key] = grouped[key].sort((a, b) => a.title.localeCompare(b.title));
+      sortedGrouped[key] = grouped[key].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     });
     
     return sortedGrouped;
@@ -163,7 +126,7 @@ class QuestViewer {
 
   renderLocationTab(location, quests) {
     const isExpanded = this.expandedTags.has(location);
-    const hasSelectedQuest = quests.some(q => q.id === this.selectedQuestId);
+    const hasSelectedQuest = quests.some(q => String(q._rowIndex) === this.selectedQuestId);
     
     return `
       <div class="location-tab ${hasSelectedQuest ? 'has-active' : ''}">
@@ -180,17 +143,17 @@ class QuestViewer {
   }
 
   renderQuestListItem(quest) {
-    const isSelected = quest.id === this.selectedQuestId;
+    const isSelected = String(quest._rowIndex) === this.selectedQuestId;
     
     return `
-      <button class="quest-list-item ${isSelected ? 'selected' : ''}" data-quest-id="${quest.id}">
-        ${quest.title}
+      <button class="quest-list-item ${isSelected ? 'selected' : ''}" data-quest-id="${quest._rowIndex}">
+        ${quest.name}
       </button>
     `;
   }
 
   renderQuestDetail() {
-    const quest = this.currentQuests.find(q => q.id === this.selectedQuestId);
+    const quest = this.currentQuests.find(q => String(q._rowIndex) === String(this.selectedQuestId));
     
     if (!quest) {
       return `
@@ -200,7 +163,7 @@ class QuestViewer {
       `;
     }
 
-    const htmlContent = this.markdownToHtml(quest.content_md || 'No content available');
+    const htmlContent = this.markdownToHtml(quest.content || 'No content available');
     
     // Format summary with "Questgiver:" prefix if it exists
     const formattedSummary = quest.summary ? 
@@ -210,11 +173,11 @@ class QuestViewer {
     return `
       <div class="quest-detail">
         <div class="quest-detail-header">
-          <h2 class="quest-detail-title">${quest.title}</h2>
+          <h2 class="quest-detail-title">${quest.name}</h2>
         </div>
         ${quest.image_url ? `
           <div class="quest-detail-image">
-            <img src="${quest.image_url}" alt="${quest.title}" loading="lazy">
+            <img src="${quest.image_url}" alt="${quest.name}" loading="lazy">
           </div>
         ` : ''}
         ${formattedSummary}
@@ -285,7 +248,7 @@ class QuestViewer {
     this.refreshQuestContent();
   }
 
-  // NEW: Just update CSS classes without rebuilding DOM
+  // Update CSS classes without rebuilding DOM
   updateSelectionStates() {
     // Update quest item selection states
     document.querySelectorAll('.quest-list-item').forEach(item => {

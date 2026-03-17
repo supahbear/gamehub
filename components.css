@@ -98,6 +98,9 @@
     left: 0;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -130,58 +133,6 @@
 }
 
 .panel-pill {
-    background: transparent;
-    border: none;
-    color: #b19cd9;
-    cursor: pointer;
-    padding: 8px 0;
-    font-family: var(--font-family);
-    font-size: 0.85rem;
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    text-shadow: none;
-}
-
-.panel-pill:hover {
-    color: #c9b5e6;
-}
-
-.panel-selector {
-    position: relative;
-    z-index: 2;
-}
-
-.panel-content {
-    position: relative;
-    z-index: 2;
-}
-
-.hub-panels-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    width: 100%;
-    height: calc(100vh - 80px);
-    overflow: hidden;
-}
-
-.hub-panel {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    background: transparent;
-    transition: all 0.4s ease;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-}
-
-/* panel-bg-video properties are defined in cards.css */
-
-
-.panel-pill {
     padding: 8px 20px;
     background: rgba(177, 156, 217, 0.1);
     border: 1px solid rgba(177, 156, 217, 0.3);
@@ -194,9 +145,53 @@
     font-family: 'Cinzel', serif;
 }
 
-.panel-pill:hover {
-    background: rgba(177, 156, 217, 0.2);
-    border-color: rgba(177, 156, 217, 0.5);
+/* Pill hover: match each panel's colour */
+.panel-pill[data-panel="encyclopedia"]:hover,
+.panel-pill[data-panel="encyclopedia"].panel-hovered {
+    background: rgba(177, 156, 217, 0.25);
+    border-color: #b19cd9;
+    box-shadow: 0 0 10px rgba(177, 156, 217, 0.4);
+    color: #c9b5e6;
+}
+
+.panel-pill[data-panel="journal"]:hover,
+.panel-pill[data-panel="journal"].panel-hovered {
+    background: rgba(201, 169, 97, 0.2);
+    border-color: #c9a961;
+    box-shadow: 0 0 10px rgba(201, 169, 97, 0.4);
+    color: #e8d5a0;
+}
+
+.panel-pill[data-panel="atlas"]:hover,
+.panel-pill[data-panel="atlas"].panel-hovered {
+    background: rgba(64, 184, 160, 0.18);
+    border-color: #40b8a0;
+    box-shadow: 0 0 10px rgba(64, 184, 160, 0.4);
+    color: #7dd8c8;
+}
+
+.panel-pill[data-panel="bestiary"]:hover,
+.panel-pill[data-panel="bestiary"].panel-hovered {
+    background: rgba(200, 70, 70, 0.2);
+    border-color: #c84646;
+    box-shadow: 0 0 10px rgba(200, 70, 70, 0.4);
+    color: #e89090;
+}
+
+.panel-pill[data-panel="alchemy"]:hover,
+.panel-pill[data-panel="alchemy"].panel-hovered {
+    background: rgba(80, 180, 100, 0.2);
+    border-color: #50b464;
+    box-shadow: 0 0 10px rgba(80, 180, 100, 0.4);
+    color: #90dda0;
+}
+
+.panel-pill[data-panel="literature"]:hover,
+.panel-pill[data-panel="literature"].panel-hovered {
+    background: rgba(80, 140, 210, 0.2);
+    border-color: #508cd2;
+    box-shadow: 0 0 10px rgba(80, 140, 210, 0.4);
+    color: #90bcea;
 }
 
 .panel-pill.active {
@@ -205,28 +200,83 @@
     color: #ffffff;
 }
 
-/* Three full-bleed panels container */
+.panel-pill[data-panel="journal"].active {
+    background: #c9a961;
+    border-color: #c9a961;
+}
+
+.panel-pill[data-panel="atlas"].active {
+    background: #40b8a0;
+    border-color: #40b8a0;
+}
+
+.panel-pill[data-panel="bestiary"].active {
+    background: #c84646;
+    border-color: #c84646;
+}
+
+.panel-pill[data-panel="alchemy"].active {
+    background: #50b464;
+    border-color: #50b464;
+}
+
+.panel-pill[data-panel="literature"].active {
+    background: #508cd2;
+    border-color: #508cd2;
+}
+
+.panel-selector {
+    position: relative;
+    z-index: 2;
+}
+
+.panel-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* panel-bg-video properties are defined in cards.css */
+
+/* ========== HUB PANELS CONTAINER ========== */
 .hub-panels-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    flex: 1;
+    position: relative;
+    width: 1200px;
+    max-width: 90vw;
+    height: 80vh;
+    max-height: 900px;
+    min-height: 560px;
     overflow: hidden;
-    height: calc(100vh - 120px); /* Subtract header height */
+    margin: 40px auto 0;
+    align-self: center;
+    border-radius: 0;
 }
 
 .hub-panel {
+    position: absolute;
     display: flex;
     flex-direction: column;
     background: transparent;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border-right: 1px solid rgba(177, 156, 217, 0.1);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    min-width: 0;
+    overflow: hidden;
     cursor: pointer;
-    height: 100%;
+    border-radius: 0;
+    transition:
+        left    0.55s cubic-bezier(0.77, 0, 0.175, 1),
+        width   0.55s cubic-bezier(0.77, 0, 0.175, 1),
+        top     0.55s cubic-bezier(0.77, 0, 0.175, 1),
+        height  0.55s cubic-bezier(0.77, 0, 0.175, 1),
+        opacity 0.4s ease;
+    will-change: left, width, top, height, opacity;
 }
+
+/* Default 6-panel positions: two rows of three */
+/* Row 1 */
+.hub-panel[data-panel="encyclopedia"] { top: 0; left: 0;                    height: calc(50% - 4px); width: calc(33.333% - 4px); }
+.hub-panel[data-panel="journal"]      { top: 0; left: calc(33.333% + 2px);  height: calc(50% - 4px); width: calc(33.333% - 4px); }
+.hub-panel[data-panel="atlas"]        { top: 0; left: calc(66.666% + 4px);  height: calc(50% - 4px); width: calc(33.333% - 4px); }
+/* Row 2 */
+.hub-panel[data-panel="bestiary"]     { top: calc(50% + 4px); left: 0;                   height: calc(50% - 4px); width: calc(33.333% - 4px); }
+.hub-panel[data-panel="alchemy"]      { top: calc(50% + 4px); left: calc(33.333% + 2px); height: calc(50% - 4px); width: calc(33.333% - 4px); }
+.hub-panel[data-panel="literature"]   { top: calc(50% + 4px); left: calc(66.666% + 4px); height: calc(50% - 4px); width: calc(33.333% - 4px); }
 
 .hub-panel:hover {
     background: transparent;
@@ -237,7 +287,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 50% 50%, rgba(177, 156, 217, 0.07) 0%, transparent 65%);
+    background: radial-gradient(ellipse at 50% 60%, rgba(177, 156, 217, 0.35) 0%, transparent 60%);
     opacity: 0;
     transition: opacity 0.4s ease;
     pointer-events: none;
@@ -245,30 +295,173 @@
 }
 
 .hub-panel[data-panel="journal"]::before {
-    background: radial-gradient(ellipse at 50% 50%, rgba(201, 169, 97, 0.1) 0%, transparent 65%);
+    background: radial-gradient(ellipse at 50% 60%, rgba(201, 169, 97, 0.35) 0%, transparent 60%);
 }
 
-.hub-panel[data-panel="maps"]::before {
-    background: radial-gradient(ellipse at 50% 50%, rgba(64, 184, 160, 0.09) 0%, transparent 65%);
+.hub-panel[data-panel="atlas"]::before {
+    background: radial-gradient(ellipse at 50% 60%, rgba(64, 184, 160, 0.32) 0%, transparent 60%);
 }
 
-.hub-panel:hover::before {
+.hub-panel[data-panel="bestiary"]::before {
+    background: radial-gradient(ellipse at 50% 60%, rgba(200, 70, 70, 0.32) 0%, transparent 60%);
+}
+
+.hub-panel[data-panel="alchemy"]::before {
+    background: radial-gradient(ellipse at 50% 60%, rgba(80, 180, 100, 0.32) 0%, transparent 60%);
+}
+
+.hub-panel[data-panel="literature"]::before {
+    background: radial-gradient(ellipse at 50% 60%, rgba(80, 140, 210, 0.32) 0%, transparent 60%);
+}
+
+.hub-panel:hover::before,
+.hub-panel.pill-hovered::before {
     opacity: 1;
 }
 
-.hub-panel:last-child {
-    border-right: none;
+/* Desaturate non-hovered panels when any panel is hovered */
+.hub-panels-container:has(.hub-panel:hover) .hub-panel,
+.hub-panels-container:has(.hub-panel.pill-hovered) .hub-panel {
+    filter: saturate(0.35) brightness(0.75);
+    transition: filter 0.4s ease;
 }
 
-/* Expanded state - single panel takes full width */
+.hub-panels-container:has(.hub-panel:hover) .hub-panel:hover,
+.hub-panels-container:has(.hub-panel.pill-hovered) .hub-panel.pill-hovered {
+    filter: saturate(1) brightness(1);
+}
+
+/* ========== DIRECTIONAL WIPE EXPANSION ========== */
+
+/* ---- ENCYCLOPEDIA (Row 1, Col 1) — expands rightward & downward ---- */
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="encyclopedia"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="journal"] {
+    left: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="atlas"] {
+    left: 115%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="bestiary"] {
+    top: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="alchemy"] {
+    top: 115%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="literature"] {
+    top: 120%; opacity: 0; pointer-events: none;
+}
+
+/* ---- JOURNAL (Row 1, Col 2) — journal pushes left & right; rows slide down ---- */
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="journal"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="encyclopedia"] {
+    left: -45%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="atlas"] {
+    left: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="bestiary"] {
+    top: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="alchemy"] {
+    top: 115%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="literature"] {
+    top: 120%; opacity: 0; pointer-events: none;
+}
+
+/* ---- ATLAS (Row 1, Col 3) — expands leftward & downward ---- */
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="atlas"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="encyclopedia"] {
+    left: -45%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="journal"] {
+    left: -40%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="bestiary"] {
+    top: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="alchemy"] {
+    top: 115%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="literature"] {
+    top: 120%; opacity: 0; pointer-events: none;
+}
+
+/* ---- BESTIARY (Row 2, Col 1) — expands rightward & upward ---- */
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="bestiary"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="encyclopedia"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="journal"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="atlas"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="alchemy"] {
+    left: 110%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="literature"] {
+    left: 115%; opacity: 0; pointer-events: none;
+}
+
+/* ---- ALCHEMY (Row 2, Col 2) — alchemy expands; row pushes left/right; top row up ---- */
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="alchemy"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="encyclopedia"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="journal"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="atlas"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="bestiary"] {
+    left: -45%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="literature"] {
+    left: 110%; opacity: 0; pointer-events: none;
+}
+
+/* ---- LITERATURE (Row 2, Col 3) — expands leftward & upward ---- */
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="literature"] {
+    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+}
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="encyclopedia"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="journal"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="atlas"] {
+    top: -60%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="bestiary"] {
+    left: -45%; opacity: 0; pointer-events: none;
+}
+.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="alchemy"] {
+    left: -40%; opacity: 0; pointer-events: none;
+}
+
+/* Fade out background video once content is loading */
+.hub-panel.expanded .panel-bg-video {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+/* Expanded panel stays fully clipped — scrolling is handled by .panel-content */
 .hub-panel.expanded {
-    grid-column: 1 / -1;
-    overflow-y: auto;
-}
-
-/* Collapsed state - hide panels that aren't expanded */
-.hub-panel.collapsed {
-    display: none;
+    overflow: hidden;
 }
 
 .panel-header {
@@ -300,7 +493,7 @@
     align-items: center;
     justify-content: center;
     flex: 1;
-    padding: 40px 40px 80px;
+    padding: 40px;
     text-align: center;
     gap: 16px;
     position: relative;
@@ -315,56 +508,45 @@
     transition: color 0.3s ease;
 }
 
-.hub-panel:hover .panel-star {
+.hub-panel:hover .panel-star,
+.hub-panel.pill-hovered .panel-star {
     color: rgba(255, 255, 255, 0.65);
 }
 
 .panel-selector h2 {
-    font-size: 3rem;
+    font-size: clamp(0.7rem, 2.5vw, 2rem);
     font-weight: 900;
     margin: 0;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 5px;
+    font-family: 'Cinzel', serif !important;
+    letter-spacing: clamp(1px, 0.2vw, 4px);
     text-transform: uppercase;
-    color: #ffffff;
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 4px 20px rgba(0, 0, 0, 0.6);
+    width: 100%;
+    text-align: center;
+    padding: 0 8px;
+    box-sizing: border-box;
 }
 
-/* Per-panel gradient text */
-.hub-panel[data-panel="lorebook"] .panel-selector h2 {
-    background: linear-gradient(135deg, #c9b5e6, #8ab5e8, #b19cd9);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hub-panel[data-panel="journal"] .panel-selector h2 {
-    background: linear-gradient(135deg, #f0e6c8, #c9a961, #e8d5a0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hub-panel[data-panel="maps"] .panel-selector h2 {
-    background: linear-gradient(135deg, #7dd8c8, #40b8a0, #9de8d8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+/* Per-panel gradient text — removed, all titles are plain white */
 
 .panel-selector p {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-weight: var(--font-weight-normal);
-    letter-spacing: 3px;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 4px;
     text-transform: uppercase;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    opacity: 0.35;
+    transition: opacity 0.3s ease, text-shadow 0.3s ease;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9), 0 2px 16px rgba(0, 0, 0, 0.7);
 }
 
-.hub-panel:hover .panel-selector p {
+.hub-panel:hover .panel-selector p,
+.hub-panel.pill-hovered .panel-selector p {
     opacity: 1;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95), 0 2px 20px rgba(0, 0, 0, 0.8);
 }
 
 .enter-btn {

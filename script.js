@@ -3,7 +3,7 @@ class TTRPGHub {
   constructor() {
     this.currentWorld = null;
     this.currentMode = 'explore'; // Always explore mode
-    this.currentSelectedPanel = 'lorebook';
+    this.currentSelectedPanel = 'encyclopedia';
     this.worlds = [];
     
     this.activeBackgroundWorld = 'neutral'; // Changed from 'breach' to 'neutral'
@@ -18,15 +18,12 @@ class TTRPGHub {
     await this.loadWorlds();
     this.renderWorlds();
     
-    // REMOVE: Don't call setupWorldBackgrounds here - cards don't exist yet
-    
     Config.log('TTRPG Hub initialized');
   }
 
   // ========== Event Listeners ==========
   setupEventListeners() {
-    // REMOVED: back button listener - button no longer exists
-    // Logo click handler already reloads the page via onclick in HTML
+    // Logo click handler reloads the page via onclick in HTML
   }
 
   // ========== Data Loading ==========
@@ -97,29 +94,8 @@ class TTRPGHub {
   }
 
   async loadWorldsFromAppsScript() {
-    const url = Config.getUrl(Config.ENDPOINTS.WORLDS);
-    Config.log('Loading worlds from:', url);
-
-    try {
-      const data = await this.jsonp(url);
-      
-      if (data.success && Array.isArray(data.data)) {
-        this.worlds = data.data.map((world, index) => ({
-          id: world.id || world.key || `world-${index}`,
-          name: world.name || world.world_name || 'Unnamed World',
-          description: world.description || world.world_description || 'No description available',
-          system: world.system || world.dice_set || world.game_system || 'Unknown System',
-          video_url: world.video_url || null
-        }));
-        
-        Config.log('Successfully loaded worlds from Apps Script:', this.worlds);
-        this.renderWorlds();
-      } else {
-        throw new Error('Unexpected response format');
-      }
-    } catch (error) {
-      throw new Error(`JSONP request failed: ${error.message}`);
-    }
+    // World list is not served by the sheet-based backend — always use fallback
+    throw new Error('World list not available from sheet backend');
   }
 
   useFallbackWorlds() {
@@ -185,7 +161,6 @@ class TTRPGHub {
     }
     
     this.setupCardListeners();
-    // ADD: Setup background videos AFTER cards exist
     this.setupWorldBackgrounds();
 
     Config.log(`Rendered ${this.worlds.length} worlds`);
@@ -255,21 +230,24 @@ class TTRPGHub {
 
   // ========== Navigation ==========
   selectWorld(worldId) {
+    const alreadyLoaded = this.currentWorld && this.currentWorld.id === worldId;
     this.currentWorld = this.worlds.find(w => w.id === worldId);
     if (this.currentWorld) {
       Config.log('Selected world:', this.currentWorld.name);
-      
-      // Apply theme and switch to hub
       this.applyWorldTheme(worldId);
-      this.showWorldHub();
+      // Skip full re-init if returning to an already-loaded world
+      if (alreadyLoaded) {
+        this.setPageVisibility('hub');
+      } else {
+        this.showWorldHub();
+      }
     }
   }
 
   showWorldSelection() {
     this.setPageVisibility('landing');
-    this.currentWorld = null;
+    // Keep currentWorld so the card re-entry skips re-init
     this.currentMode = 'explore';
-    // Clear world theme when returning to hub
     this.clearWorldTheme();
   }
 
@@ -286,10 +264,55 @@ class TTRPGHub {
     }
     
     this.currentMode = 'explore';
-    this.currentSelectedPanel = this.currentSelectedPanel || 'lorebook';
+    this.currentSelectedPanel = this.currentSelectedPanel || 'encyclopedia';
+    this.initModalHandlers();
     this.initializePanels();
     Config.log('showWorldHub: About to activate breach background');
     this.activateWorldBackground('breach');
+  }
+
+  // ========== Global Modal Handlers ==========
+  initModalHandlers() {
+    const closeBtn = document.getElementById('closeModalBtn');
+    const overlay  = document.getElementById('modalOverlay');
+    const modal    = document.getElementById('articleModal');
+
+    if (closeBtn && !closeBtn._hubClose) {
+      closeBtn.addEventListener('click', () => this.closeModal());
+      closeBtn._hubClose = true;
+    }
+    if (overlay && !overlay._hubOverlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) this.closeModal();
+      });
+      overlay._hubOverlay = true;
+    }
+    if (modal && !modal._hubModal) {
+      modal.addEventListener('click', (e) => e.stopPropagation());
+      modal._hubModal = true;
+    }
+    if (!this._hubEscBound) {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
+          this.closeModal();
+        }
+      });
+      this._hubEscBound = true;
+    }
+  }
+
+  closeModal() {
+    const modal   = document.getElementById('articleModal');
+    const overlay = document.getElementById('modalOverlay');
+    if (modal)   modal.classList.remove('show');
+    if (overlay) overlay.classList.remove('show');
+    document.body.classList.remove('modal-active');
+    // Clean up per-open listeners from viewers
+    if (this.articleViewer?._arrowKeyHandler) {
+      document.removeEventListener('keydown', this.articleViewer._arrowKeyHandler);
+      this.articleViewer._arrowKeyHandler = null;
+    }
+    if (this.atlasViewer) this.atlasViewer._lightboxOpen = false;
   }
 
   setPageVisibility(activePage) {
@@ -322,12 +345,30 @@ class TTRPGHub {
           this.selectPanel(panel.dataset.panel);
         }
       });
+      // Sync pill glow with panel hover
+      panel.addEventListener('mouseenter', () => {
+        const pill = document.querySelector(`.panel-pill[data-panel="${panel.dataset.panel}"]`);
+        if (pill) pill.classList.add('panel-hovered');
+      });
+      panel.addEventListener('mouseleave', () => {
+        const pill = document.querySelector(`.panel-pill[data-panel="${panel.dataset.panel}"]`);
+        if (pill) pill.classList.remove('panel-hovered');
+      });
     });
 
     // Setup panel pill button listeners
     document.querySelectorAll('.panel-pill').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.selectPanel(e.currentTarget.dataset.panel);
+      });
+      // Sync panel glow with pill hover
+      btn.addEventListener('mouseenter', () => {
+        const panel = document.querySelector(`.hub-panel[data-panel="${btn.dataset.panel}"]`);
+        if (panel) panel.classList.add('pill-hovered');
+      });
+      btn.addEventListener('mouseleave', () => {
+        const panel = document.querySelector(`.hub-panel[data-panel="${btn.dataset.panel}"]`);
+        if (panel) panel.classList.remove('pill-hovered');
       });
     });
 
@@ -336,6 +377,25 @@ class TTRPGHub {
   }
 
   async selectPanel(panelName) {
+    // Toggle off if already active — reinstate 3-split view
+    if (this.currentSelectedPanel === panelName) {
+      this.currentSelectedPanel = null;
+      const container = document.getElementById('hubPanelsContainer');
+      const collapsedHeader = document.getElementById('hubCollapsedHeader');
+      container.removeAttribute('data-expanded');
+      document.querySelectorAll('.hub-panel').forEach(p => {
+        p.classList.remove('expanded');
+        // Hide content, restore selector so panels look correct in 3-split
+        const content = p.querySelector('.panel-content');
+        const selector = p.querySelector('.panel-selector');
+        if (content) content.style.display = 'none';
+        if (selector) selector.style.display = '';
+      });
+      document.querySelectorAll('.panel-pill').forEach(btn => btn.classList.remove('active'));
+      collapsedHeader.style.display = 'flex';
+      return;
+    }
+
     this.currentSelectedPanel = panelName;
     
     const container = document.getElementById('hubPanelsContainer');
@@ -347,11 +407,16 @@ class TTRPGHub {
       btn.classList.toggle('active', btn.dataset.panel === panelName);
     });
     
-    // Show selected panel, collapse others
+    // Drive the directional wipe via data attribute on container
+    if (panelName) {
+      container.setAttribute('data-expanded', panelName);
+    } else {
+      container.removeAttribute('data-expanded');
+    }
+
+    // Mark expanded class for content/video logic — no more display:none collapse
     panels.forEach(panel => {
-      const isSelected = panel.dataset.panel === panelName;
-      panel.classList.toggle('expanded', isSelected);
-      panel.classList.toggle('collapsed', !isSelected);
+      panel.classList.toggle('expanded', panel.dataset.panel === panelName);
     });
     
     // Show/hide collapsed header based on whether any panel is selected
@@ -364,94 +429,126 @@ class TTRPGHub {
   }
 
   async loadPanelContent(panelName) {
-    let contentEl;
-    
-    if (panelName === 'lorebook') {
-      contentEl = document.getElementById('loreBookContent');
-    } else if (panelName === 'journal') {
-      contentEl = document.getElementById('journalContent');
-    } else if (panelName === 'maps') {
-      contentEl = document.getElementById('mapsContent');
-    }
-    
+    const idMap = {
+      encyclopedia: 'encyclopediaContent',
+      journal:      'journalContent',
+      atlas:        'atlasContent',
+      bestiary:     'bestiaryContent',
+      alchemy:      'alchemyContent',
+      literature:   'literatureContent'
+    };
+    const contentEl = document.getElementById(idMap[panelName]);
     if (!contentEl) return;
-    
-    // Check if already loaded
-    if (contentEl.textContent.trim() && contentEl.style.display !== 'none') {
-      return;
-    }
-    
-    try {
-      contentEl.innerHTML = '<div class="loading">Loading...</div>';
+
+    // If already loaded but hidden (panel was collapsed), just show it
+    if (contentEl.dataset.loaded === 'true') {
       contentEl.style.display = 'block';
-      
-      // Hide the selector when content loads
       const panel = contentEl.closest('.hub-panel');
       if (panel) {
         const selector = panel.querySelector('.panel-selector');
         if (selector) selector.style.display = 'none';
       }
-      
-      if (panelName === 'lorebook') {
+      return;
+    }
+
+    try {
+      contentEl.innerHTML = '<div class="loading">Loading...</div>';
+      contentEl.style.display = 'block';
+
+      // Hide the selector overlay while content loads
+      const panel = contentEl.closest('.hub-panel');
+      if (panel) {
+        const selector = panel.querySelector('.panel-selector');
+        if (selector) selector.style.display = 'none';
+      }
+
+      if (panelName === 'encyclopedia') {
         if (!this.articleViewer) {
-          this.articleViewer = new ArticleViewer(this);
+          this.articleViewer = new ArticleViewer(this, ['Characters', 'Factions', 'Religion', 'Items'], 'Characters');
           window.articleViewer = this.articleViewer;
-          Config.log('Created new ArticleViewer instance');
+          Config.log('Created ArticleViewer for encyclopedia');
         }
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
         contentEl.innerHTML = content;
         this.articleViewer.setupEventListeners();
+
       } else if (panelName === 'journal') {
         if (!this.questViewer) {
           this.questViewer = new QuestViewer(this);
           window.questViewer = this.questViewer;
-          Config.log('Created new QuestViewer instance');
+          Config.log('Created QuestViewer for journal');
         }
         const content = await this.questViewer.renderQuestMode(this.currentWorld.id);
         contentEl.innerHTML = content;
         this.questViewer.setupEventListeners();
-      } else if (panelName === 'maps') {
-        // TODO: Implement maps gallery
-        contentEl.innerHTML = '<div class="maps-placeholder">Maps coming soon...</div>';
+
+      } else if (panelName === 'atlas') {
+        if (!this.atlasViewer) {
+          this.atlasViewer = new AtlasViewer(this);
+          window.atlasViewer = this.atlasViewer;
+          Config.log('Created AtlasViewer for atlas');
+        }
+        const content = await this.atlasViewer.renderAtlasMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.atlasViewer.setupEventListeners();
+
+      } else if (panelName === 'bestiary') {
+        if (!this.bestiaryViewer) {
+          this.bestiaryViewer = new ArticleViewer(this, ['Bestiary'], 'Bestiary');
+          window.bestiaryViewer = this.bestiaryViewer;
+          Config.log('Created ArticleViewer for bestiary');
+        }
+        const content = await this.bestiaryViewer.renderReadMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.bestiaryViewer.setupEventListeners();
+
+      } else if (panelName === 'alchemy') {
+        if (!this.alchemyViewer) {
+          this.alchemyViewer = new ArticleViewer(this, ['Alchemy'], 'Alchemy');
+          window.alchemyViewer = this.alchemyViewer;
+          Config.log('Created ArticleViewer for alchemy');
+        }
+        const content = await this.alchemyViewer.renderReadMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.alchemyViewer.setupEventListeners();
+
+      } else if (panelName === 'literature') {
+        if (!this.literatureViewer) {
+          this.literatureViewer = new ArticleViewer(this, ['Literature'], 'Literature');
+          window.literatureViewer = this.literatureViewer;
+          Config.log('Created ArticleViewer for literature');
+        }
+        const content = await this.literatureViewer.renderReadMode(this.currentWorld.id);
+        contentEl.innerHTML = content;
+        this.literatureViewer.setupEventListeners();
       }
+
+      contentEl.dataset.loaded = 'true';
     } catch (error) {
       contentEl.innerHTML = `<div class="error">Error loading ${panelName}: ${error.message}</div>`;
       Config.error(`Error loading ${panelName}:`, error);
     }
   }
 
-  // ========== Article Data Loading ==========
-  async loadArticles(worldId) {
+  // ========== Data Loading ==========
+  // Fetches one or more sheet names in a single JSONP request.
+  // Returns the flat array of row objects, each with a ._category field.
+  async loadSheets(sheetNames) {
     try {
-      const url = Config.getUrl(Config.ENDPOINTS.ARTICLES, { world_id: worldId });
+      const url = Config.getSheetUrl(sheetNames);
       const data = await this.jsonp(url);
-      return data.success ? data.data : [];
+      if (!data.success) {
+        Config.error('loadSheets failed:', data.error);
+        return [];
+      }
+      return data.data || [];
     } catch (error) {
-      Config.error('Failed to load articles:', error);
+      Config.error('loadSheets error:', error);
       return [];
     }
-  }
-
-  async loadCategories(worldId) {
-    try {
-      const url = Config.getUrl(Config.ENDPOINTS.CATEGORIES, { world_id: worldId });
-      const data = await this.jsonp(url);
-      return data.success ? data.data : [];
-    } catch (error) {
-      Config.error('Failed to load categories:', error);
-      return [];
-    }
-  }
-
-  // ========== Debug Tools ==========
-  addDebugControls() {
-    // Remove debug button creation and insertion
   }
 
   // ========== Utility Methods ==========
-  // REMOVE: Duplicate - ArticleViewer has its own
-
-  // ADD THIS: Missing method that handles world card interactions
   setupCardListeners() {
     const worldCards = document.querySelectorAll('.world-card');
     Config.log(`Setting up listeners for ${worldCards.length} world cards`);
@@ -479,9 +576,7 @@ class TTRPGHub {
     });
   }
 
-  // NEW: Setup background video system
   setupWorldBackgrounds() {
-    // Cache background video elements - Breach only
     this.backgroundVideos = {
       neutral: document.getElementById('bgVideo-neutral'),
       breach: document.getElementById('bgVideo-breach')
@@ -524,7 +619,6 @@ class TTRPGHub {
     });
   }
 
-  // NEW: Activate a world's background video
   activateWorldBackground(worldId) {
     Config.log(`Activating background for: ${worldId}`);
     Config.log(`Current activeBackgroundWorld: ${this.activeBackgroundWorld}`);
