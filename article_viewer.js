@@ -21,6 +21,9 @@ class ArticleViewer {
   async loadArticleData() {
     try {
       const rows = await this.hub.loadSheets(this.allowedSheets);
+      // Assign a stable unique ID to every article by position so lookups
+      // are never confused by _rowIndex collisions or missing values.
+      rows.forEach((row, i) => { row._uid = String(i); });
       this.currentArticles = rows;
 
       if (!this._hasInitialized) {
@@ -150,14 +153,11 @@ class ArticleViewer {
       `<div class="card-background-placeholder"></div>`;
 
     return `
-      <div class="article-card tag-${cssTag}" data-article-id="${article._rowIndex}">
+      <div class="article-card tag-${cssTag}" data-article-id="${article._uid}" data-article-category="${article._category}">
         ${backgroundImage}
+        <span class="card-tag">${primaryTag}</span>
         <div class="card-overlay">
           <h4 class="card-title">${article.name}</h4>
-          <div class="card-badges-row">
-            <div class="card-category-badge">${article._category || ''}</div>
-            <span class="card-tag">${primaryTag}</span>
-          </div>
           <p class="card-summary">${article.summary || 'No summary available'}</p>
         </div>
       </div>
@@ -281,7 +281,8 @@ class ArticleViewer {
       card.addEventListener('click', (e) => {
         if (!document.body.classList.contains('modal-active')) {
           const articleId = e.currentTarget.dataset.articleId;
-          this.openArticle(articleId);
+          const articleCategory = e.currentTarget.dataset.articleCategory;
+          this.openArticle(articleId, articleCategory);
         }
       });
       card._boundClick = true;
@@ -330,8 +331,8 @@ class ArticleViewer {
     this.refreshArticleGrid();
   }
 
-  openArticle(articleId) {
-    const article = this.currentArticles.find(a => String(a._rowIndex) === String(articleId));
+  openArticle(articleId, articleCategory) {
+    const article = this.currentArticles.find(a => a._uid === articleId);
     if (!article) return;
 
     // Use the HTML modal structure
@@ -352,6 +353,21 @@ class ArticleViewer {
       const summaryHtml = article.summary ?
         `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` :
         '';
+
+      // Case-insensitive lookup so sheet column casing doesn't matter
+      const _getField = (obj, key) => {
+        const lk = key.toLowerCase();
+        const match = Object.keys(obj).find(k => k.toLowerCase() === lk);
+        return match ? String(obj[match]).trim() : '';
+      };
+      const typeField   = _getField(article, 'type');
+      const effectField = _getField(article, 'effect');
+      const metaHtml = (typeField || effectField) ? `
+        <div class="article-modal-meta">
+          ${typeField   ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
+          ${effectField ? `<div class="article-meta-item"><span class="article-meta-label">Effect</span><span class="article-meta-value">${effectField}</span></div>` : ''}
+        </div>
+        <hr class="article-modal-meta-divider">` : '';
       
       // Split content into pages
       const pages = this.splitContentIntoPages(htmlContent);
@@ -366,6 +382,7 @@ class ArticleViewer {
               ${summaryHtml}
             </div>
             <div class="article-modal-text-col">
+              ${metaHtml}
               <div class="article-pages-container">
                 ${pageHtml}
               </div>
@@ -381,6 +398,7 @@ class ArticleViewer {
               ${summaryHtml}
             </div>
             <div class="article-modal-text-col">
+              ${metaHtml}
               <div class="article-pages-container">
                 ${pageHtml}
               </div>
@@ -413,9 +431,9 @@ class ArticleViewer {
     const pages = [];
     let currentPage = [];
     let currentHeight = 0;
-    const maxHeight = 540;
-    const avgLineHeight = 24;
-    const avgCharsPerLine = 70;
+    const maxHeight = 630;
+    const avgLineHeight = 26;
+    const avgCharsPerLine = 90;
     
     elements.forEach(element => {
       const text = element.textContent || '';

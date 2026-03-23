@@ -29,11 +29,29 @@ class AtlasViewer {
       `;
     }
 
+    // Group entries by their primary tag
+    const groups = new Map();
+    this.maps.forEach((map, i) => {
+      const primaryTag = (map.tags || '').split(',')[0].trim() || 'Other';
+      const label = primaryTag.charAt(0).toUpperCase() + primaryTag.slice(1);
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push({ map, i });
+    });
+
+    const sectionsHtml = [...groups.entries()].map(([label, entries]) => `
+      <div class="atlas-section">
+        <div class="atlas-section-header">
+          <span class="atlas-section-title">${label}</span>
+        </div>
+        <div class="atlas-grid">
+          ${entries.map(({ map, i }) => this.renderMapTile(map, i)).join('')}
+        </div>
+      </div>
+    `).join('');
+
     return `
       <div class="atlas-viewer">
-        <div class="atlas-grid">
-          ${this.maps.map((map, i) => this.renderMapTile(map, i)).join('')}
-        </div>
+        ${sectionsHtml}
       </div>
     `;
   }

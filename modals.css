@@ -457,11 +457,11 @@ body.modal-active main {
 /* ========== ARTICLE MODAL TWO-COLUMN LAYOUT ========== */
 .article-modal-columns {
     display: grid;
-    grid-template-columns: 270px 1fr;
+    grid-template-columns: 350px 1fr;
     gap: 48px;
     align-items: flex-start;
     width: 100%;
-    height: 600px; /* Reduced from 700px to eliminate bottom space */
+    height: 700px;
 }
 
 .article-modal-image-col {
@@ -469,16 +469,17 @@ body.modal-active main {
     flex-direction: column;
     gap: 0;
     min-width: 0;
-    height: 600px; /* Match parent height */
-    width: 270px;
+    height: 700px;
+    width: 350px;
     position: relative;
 }
 
 .article-modal-image-col .article-image {
-    width: 270px !important;
-    height: 420px !important; /* 70% of 600px = 420px */
-    min-height: 420px !important;
-    max-height: 420px !important;
+    width: 350px !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 1 1 auto !important;
     object-fit: cover !important;
     object-position: center center !important;
     border-radius: 8px !important;
@@ -486,8 +487,8 @@ body.modal-active main {
     padding: 0 !important;
     box-shadow: 0 4px 24px rgba(177, 156, 217, 0.2);
     display: block !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
+    flex-shrink: 1 !important;
+    flex-grow: 1 !important;
     position: relative !important;
 }
 
@@ -505,7 +506,7 @@ body.modal-active main {
     font-family: 'Faculty Glyphic', var(--font-family);
     margin: 0;
     min-height: 60px;
-    max-height: 180px; /* 30% of 600px = 180px */
+    max-height: 210px; /* 30% of 700px = 210px */
     height: auto;
     overflow-y: auto;
     flex-shrink: 1;
@@ -529,8 +530,48 @@ body.modal-active main {
 .article-pages-container {
     position: relative;
     flex: 1;
-    height: 540px; /* Match the 600px total - 60px navigation */
+    height: 630px;
     overflow: hidden;
+}
+
+/* ========== ARTICLE META (Type / Effect fields) ========== */
+.article-modal-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-bottom: 10px;
+    text-align: left;
+}
+
+.article-meta-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: 'Faculty Glyphic', var(--font-family);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.article-meta-label {
+    color: #b19cd9;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    min-width: 54px;
+}
+
+.article-meta-value {
+    color: #e8e0f5;
+    flex: 1;
+}
+
+.article-modal-meta-divider {
+    border: none;
+    border-top: 1px solid rgba(177, 156, 217, 0.3);
+    margin: 6px 40px 12px 0;
 }
 
 .article-page {

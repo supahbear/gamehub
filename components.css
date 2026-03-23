@@ -240,15 +240,19 @@
 /* ========== HUB PANELS CONTAINER ========== */
 .hub-panels-container {
     position: relative;
-    width: 1200px;
-    max-width: 90vw;
-    height: 80vh;
-    max-height: 900px;
-    min-height: 560px;
+    width: 1800px;
+    max-width: 98vw;
+    height: 50vh;
+    min-height: 380px;
     overflow: hidden;
     margin: 40px auto 0;
     align-self: center;
     border-radius: 0;
+    /* Layout tokens: change gap/count here and all panel positions update automatically */
+    --panel-gap: 4px;
+    --panel-count: 6;
+    --panel-w: calc((100% - (var(--panel-count) - 1) * var(--panel-gap)) / var(--panel-count));
+    --panel-step: calc(var(--panel-w) + var(--panel-gap));
 }
 
 .hub-panel {
@@ -259,24 +263,21 @@
     overflow: hidden;
     cursor: pointer;
     border-radius: 0;
-    transition:
-        left    0.55s cubic-bezier(0.77, 0, 0.175, 1),
-        width   0.55s cubic-bezier(0.77, 0, 0.175, 1),
-        top     0.55s cubic-bezier(0.77, 0, 0.175, 1),
-        height  0.55s cubic-bezier(0.77, 0, 0.175, 1),
-        opacity 0.4s ease;
-    will-change: left, width, top, height, opacity;
+    top: 0;
+    height: 100%;
+    width: var(--panel-w);
+    container-type: inline-size;
+    transition: opacity 0.28s ease, filter 0.4s ease;
+    will-change: opacity;
 }
 
-/* Default 6-panel positions: two rows of three */
-/* Row 1 */
-.hub-panel[data-panel="encyclopedia"] { top: 0; left: 0;                    height: calc(50% - 4px); width: calc(33.333% - 4px); }
-.hub-panel[data-panel="journal"]      { top: 0; left: calc(33.333% + 2px);  height: calc(50% - 4px); width: calc(33.333% - 4px); }
-.hub-panel[data-panel="atlas"]        { top: 0; left: calc(66.666% + 4px);  height: calc(50% - 4px); width: calc(33.333% - 4px); }
-/* Row 2 */
-.hub-panel[data-panel="bestiary"]     { top: calc(50% + 4px); left: 0;                   height: calc(50% - 4px); width: calc(33.333% - 4px); }
-.hub-panel[data-panel="alchemy"]      { top: calc(50% + 4px); left: calc(33.333% + 2px); height: calc(50% - 4px); width: calc(33.333% - 4px); }
-.hub-panel[data-panel="literature"]   { top: calc(50% + 4px); left: calc(66.666% + 4px); height: calc(50% - 4px); width: calc(33.333% - 4px); }
+/* Default 6-panel positions: single row */
+.hub-panel[data-panel="encyclopedia"] { left: 0; }
+.hub-panel[data-panel="journal"]      { left: calc(1 * var(--panel-step)); }
+.hub-panel[data-panel="atlas"]        { left: calc(2 * var(--panel-step)); }
+.hub-panel[data-panel="bestiary"]     { left: calc(3 * var(--panel-step)); }
+.hub-panel[data-panel="alchemy"]      { left: calc(4 * var(--panel-step)); }
+.hub-panel[data-panel="literature"]   { left: calc(5 * var(--panel-step)); }
 
 .hub-panel:hover {
     background: transparent;
@@ -331,137 +332,46 @@
     filter: saturate(1) brightness(1);
 }
 
-/* ========== DIRECTIONAL WIPE EXPANSION ========== */
+/* ========== PANEL FADE TRANSITION ========== */
 
-/* ---- ENCYCLOPEDIA (Row 1, Col 1) — expands rightward & downward ---- */
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="encyclopedia"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="journal"] {
-    left: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="atlas"] {
-    left: 115%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="bestiary"] {
-    top: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="alchemy"] {
-    top: 115%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="encyclopedia"] .hub-panel[data-panel="literature"] {
-    top: 120%; opacity: 0; pointer-events: none;
+/* Fade all panels out when a selection is in progress */
+.hub-panels-container.panel-fading .hub-panel {
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* ---- JOURNAL (Row 1, Col 2) — journal pushes left & right; rows slide down ---- */
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="journal"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="encyclopedia"] {
-    left: -45%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="atlas"] {
-    left: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="bestiary"] {
-    top: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="alchemy"] {
-    top: 115%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="journal"] .hub-panel[data-panel="literature"] {
-    top: 120%; opacity: 0; pointer-events: none;
+/* Hide non-expanded panels once expanded state is set */
+.hub-panels-container[data-expanded] .hub-panel:not(.expanded) {
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* ---- ATLAS (Row 1, Col 3) — expands leftward & downward ---- */
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="atlas"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="encyclopedia"] {
-    left: -45%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="journal"] {
-    left: -40%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="bestiary"] {
-    top: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="alchemy"] {
-    top: 115%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="atlas"] .hub-panel[data-panel="literature"] {
-    top: 120%; opacity: 0; pointer-events: none;
+/* Expanded panel fills the full container — position set by JS while invisible */
+.hub-panel.expanded {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 2;
 }
 
-/* ---- BESTIARY (Row 2, Col 1) — expands rightward & upward ---- */
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="bestiary"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="encyclopedia"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="journal"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="atlas"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="alchemy"] {
-    left: 110%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="bestiary"] .hub-panel[data-panel="literature"] {
-    left: 115%; opacity: 0; pointer-events: none;
-}
-
-/* ---- ALCHEMY (Row 2, Col 2) — alchemy expands; row pushes left/right; top row up ---- */
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="alchemy"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="encyclopedia"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="journal"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="atlas"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="bestiary"] {
-    left: -45%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="alchemy"] .hub-panel[data-panel="literature"] {
-    left: 110%; opacity: 0; pointer-events: none;
-}
-
-/* ---- LITERATURE (Row 2, Col 3) — expands leftward & upward ---- */
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="literature"] {
-    top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-}
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="encyclopedia"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="journal"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="atlas"] {
-    top: -60%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="bestiary"] {
-    left: -45%; opacity: 0; pointer-events: none;
-}
-.hub-panels-container[data-expanded="literature"] .hub-panel[data-panel="alchemy"] {
-    left: -40%; opacity: 0; pointer-events: none;
-}
-
-/* Fade out background video once content is loading */
+/* Keep bg video hidden in expanded state */
 .hub-panel.expanded .panel-bg-video {
     opacity: 0;
-    transition: opacity 0.6s ease;
 }
 
-/* Expanded panel stays fully clipped — scrolling is handled by .panel-content */
-.hub-panel.expanded {
-    overflow: hidden;
+/* Push panels down ~1/3 of remaining space in collapsed state */
+.hub-panels-container:not([data-expanded]) {
+    transform: translateY(10vh);
+    transition: transform 0.4s ease, height 0.4s ease;
+}
+
+/* Grow the container to fill the viewport when any panel is expanded */
+.hub-panels-container[data-expanded] {
+    height: calc(100vh - 130px);
+    transform: translateY(0);
+    transition: transform 0.4s ease, height 0.4s ease;
 }
 
 .panel-header {
@@ -514,11 +424,11 @@
 }
 
 .panel-selector h2 {
-    font-size: clamp(0.7rem, 2.5vw, 2rem);
+    font-size: clamp(0.6rem, 7cqw, 1.8rem);
     font-weight: 900;
     margin: 0;
     font-family: 'Cinzel', serif !important;
-    letter-spacing: clamp(1px, 0.2vw, 4px);
+    letter-spacing: clamp(0px, 0.4cqw, 4px);
     text-transform: uppercase;
     color: #ffffff !important;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 4px 20px rgba(0, 0, 0, 0.6);
@@ -526,6 +436,7 @@
     text-align: center;
     padding: 0 8px;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* Per-panel gradient text — removed, all titles are plain white */
@@ -582,6 +493,25 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(177, 156, 217, 0.35) transparent;
+}
+
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: rgba(177, 156, 217, 0.35);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(177, 156, 217, 0.6);
 }
 
 .maps-placeholder {

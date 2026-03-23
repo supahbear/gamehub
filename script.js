@@ -5,6 +5,8 @@ class TTRPGHub {
     this.currentMode = 'explore'; // Always explore mode
     this.currentSelectedPanel = 'encyclopedia';
     this.worlds = [];
+    this._sheetCache = null;     // Prefetched sheet data, keyed by sheet name
+    this._sheetPrefetch = null; // In-flight prefetch promise
     
     this.activeBackgroundWorld = 'neutral'; // Changed from 'breach' to 'neutral'
     this.backgroundVideos = {};
@@ -267,6 +269,8 @@ class TTRPGHub {
     this.currentSelectedPanel = this.currentSelectedPanel || 'encyclopedia';
     this.initModalHandlers();
     this.initializePanels();
+    // Prefetch all sheets in the background so panels open instantly
+    this._prefetchAllSheets();
     Config.log('showWorldHub: About to activate breach background');
     this.activateWorldBackground('breach');
   }
@@ -390,6 +394,9 @@ class TTRPGHub {
         const selector = p.querySelector('.panel-selector');
         if (content) content.style.display = 'none';
         if (selector) selector.style.display = '';
+        // Restore bg video
+        const video = p.querySelector('.panel-bg-video');
+        if (video) { video.style.transition = 'opacity 0.3s ease'; video.style.opacity = '1'; }
       });
       document.querySelectorAll('.panel-pill').forEach(btn => btn.classList.remove('active'));
       collapsedHeader.style.display = 'flex';
@@ -406,26 +413,63 @@ class TTRPGHub {
     document.querySelectorAll('.panel-pill').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.panel === panelName);
     });
-    
-    // Drive the directional wipe via data attribute on container
-    if (panelName) {
-      container.setAttribute('data-expanded', panelName);
-    } else {
-      container.removeAttribute('data-expanded');
-    }
 
-    // Mark expanded class for content/video logic — no more display:none collapse
+    // Step 1: instantly kill the expanding panel's video — no transition,
+    // so there is nothing visible to stretch when the wipe starts.
     panels.forEach(panel => {
-      panel.classList.toggle('expanded', panel.dataset.panel === panelName);
+      const video = panel.querySelector('.panel-bg-video');
+      if (!video) return;
+      if (panel.dataset.panel === panelName) {
+        video.style.transition = 'none';
+        video.style.opacity = '0';
+      }
     });
-    
-    // Show/hide collapsed header based on whether any panel is selected
-    if (panelName) {
-      collapsedHeader.style.display = 'flex';
-    }
+
+    // Step 2: defer the actual wipe until the browser has committed the
+    // opacity change to the compositor (two rAF = paint + composite).
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+
+      // Drive the directional wipe via data attribute on container
+      if (panelName) {
+        container.setAttribute('data-expanded', panelName);
+      } else {
+        container.removeAttribute('data-expanded');
+      }
+
+      // Mark expanded class for content/video logic; show/hide content vs selector
+      panels.forEach(panel => {
+        const isExpanded = panel.dataset.panel === panelName;
+        panel.classList.toggle('expanded', isExpanded);
+        const content = panel.querySelector('.panel-content');
+        const selector = panel.querySelector('.panel-selector');
+        if (isExpanded) {
+          if (content) content.style.display = '';
+          if (selector) selector.style.display = 'none';
+        }
+      });
+
+      // Show/hide collapsed header based on whether any panel is selected
+      if (panelName) {
+        collapsedHeader.style.display = 'flex';
+      }
+
+    })); // end requestAnimationFrame
 
     // Load content for the selected panel if not already loaded
     await this.loadPanelContent(panelName);
+  }
+
+  // Fade out current content, swap HTML, fade back in
+  async _fadeInContent(contentEl, html) {
+    contentEl.style.transition = 'opacity 0.2s ease';
+    contentEl.style.opacity    = '0';
+    await new Promise(r => setTimeout(r, 220));
+    contentEl.innerHTML        = html;
+    contentEl.dataset.loaded   = 'true';
+    requestAnimationFrame(() => {
+      contentEl.style.transition = 'opacity 0.4s ease';
+      contentEl.style.opacity    = '1';
+    });
   }
 
   async loadPanelContent(panelName) {
@@ -440,27 +484,11 @@ class TTRPGHub {
     const contentEl = document.getElementById(idMap[panelName]);
     if (!contentEl) return;
 
-    // If already loaded but hidden (panel was collapsed), just show it
-    if (contentEl.dataset.loaded === 'true') {
-      contentEl.style.display = 'block';
-      const panel = contentEl.closest('.hub-panel');
-      if (panel) {
-        const selector = panel.querySelector('.panel-selector');
-        if (selector) selector.style.display = 'none';
-      }
-      return;
-    }
+    // Already loaded — selectPanel already faded it in, nothing more to do
+    if (contentEl.dataset.loaded === 'true') return;
 
     try {
-      contentEl.innerHTML = '<div class="loading">Loading...</div>';
-      contentEl.style.display = 'block';
-
-      // Hide the selector overlay while content loads
-      const panel = contentEl.closest('.hub-panel');
-      if (panel) {
-        const selector = panel.querySelector('.panel-selector');
-        if (selector) selector.style.display = 'none';
-      }
+      // contentEl is already showing the loading text (set by selectPanel)
 
       if (panelName === 'encyclopedia') {
         if (!this.articleViewer) {
@@ -469,7 +497,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for encyclopedia');
         }
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.articleViewer.setupEventListeners();
 
       } else if (panelName === 'journal') {
@@ -479,7 +507,7 @@ class TTRPGHub {
           Config.log('Created QuestViewer for journal');
         }
         const content = await this.questViewer.renderQuestMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.questViewer.setupEventListeners();
 
       } else if (panelName === 'atlas') {
@@ -489,7 +517,7 @@ class TTRPGHub {
           Config.log('Created AtlasViewer for atlas');
         }
         const content = await this.atlasViewer.renderAtlasMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.atlasViewer.setupEventListeners();
 
       } else if (panelName === 'bestiary') {
@@ -499,7 +527,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for bestiary');
         }
         const content = await this.bestiaryViewer.renderReadMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.bestiaryViewer.setupEventListeners();
 
       } else if (panelName === 'alchemy') {
@@ -509,7 +537,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for alchemy');
         }
         const content = await this.alchemyViewer.renderReadMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.alchemyViewer.setupEventListeners();
 
       } else if (panelName === 'literature') {
@@ -519,22 +547,67 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for literature');
         }
         const content = await this.literatureViewer.renderReadMode(this.currentWorld.id);
-        contentEl.innerHTML = content;
+        await this._fadeInContent(contentEl, content);
         this.literatureViewer.setupEventListeners();
       }
-
-      contentEl.dataset.loaded = 'true';
     } catch (error) {
-      contentEl.innerHTML = `<div class="error">Error loading ${panelName}: ${error.message}</div>`;
+      await this._fadeInContent(contentEl, `<div class="error">Error loading ${panelName}: ${error.message}</div>`);
       Config.error(`Error loading ${panelName}:`, error);
     }
   }
 
   // ========== Data Loading ==========
+  // Fetch all sheets in one JSONP call and cache by sheet name.
+  // Subsequent loadSheets() calls are served instantly from cache.
+  async _prefetchAllSheets() {
+    if (this._sheetCache || this._sheetPrefetch) return; // Already done or in flight
+    const allSheets = Object.values(Config.SHEETS);
+    this._sheetPrefetch = this.jsonp(Config.getSheetUrl(allSheets));
+    try {
+      const data = await this._sheetPrefetch;
+      if (data.success) {
+        // Index rows by _category for fast lookup
+        const cache = {};
+        (data.data || []).forEach(row => {
+          const cat = row._category;
+          if (cat) {
+            if (!cache[cat]) cache[cat] = [];
+            cache[cat].push(row);
+          }
+        });
+        this._sheetCache = cache;
+        Config.log('Sheet prefetch complete. Cached categories:', Object.keys(cache));
+      } else {
+        Config.warn('Sheet prefetch failed:', data.error);
+      }
+    } catch (e) {
+      Config.warn('Sheet prefetch error:', e.message);
+    } finally {
+      this._sheetPrefetch = null;
+    }
+  }
+
   // Fetches one or more sheet names in a single JSONP request.
   // Returns the flat array of row objects, each with a ._category field.
   async loadSheets(sheetNames) {
     try {
+      // Serve from prefetch cache when available
+      if (this._sheetCache) {
+        const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
+        Config.log(`loadSheets served ${rows.length} rows from cache for:`, sheetNames);
+        return rows;
+      }
+      // Cache not ready — wait for in-flight prefetch if one exists
+      if (this._sheetPrefetch) {
+        Config.log('loadSheets waiting for prefetch to complete...');
+        await this._sheetPrefetch;
+        if (this._sheetCache) {
+          const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
+          Config.log(`loadSheets served ${rows.length} rows from cache (after wait) for:`, sheetNames);
+          return rows;
+        }
+      }
+      // Fall back to direct request
       const url = Config.getSheetUrl(sheetNames);
       const data = await this.jsonp(url);
       if (!data.success) {

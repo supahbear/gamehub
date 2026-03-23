@@ -69,31 +69,22 @@
 /* ========== PANEL BACKGROUND VIDEOS ========== */
 .panel-bg-video {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    object-position: center center;
     opacity: 1;
     z-index: 0;
 }
 
-/* Atlas video is wide — scale down slightly to show more of the frame */
+/* Atlas video — shift focus toward the map imagery */
 .hub-panel[data-panel="atlas"] .panel-bg-video {
-    transform: translate(-50%, -50%) scale(0.8);
-    min-width: 125%;
-    min-height: 125%;
+    object-position: center 30%;
 }
 
-/* Bestiary video — scale down to show more of the frame */
-.hub-panel[data-panel="bestiary"] .panel-bg-video {
-    transform: translate(-50%, -50%) scale(0.55);
-    min-width: 180%;
-    min-height: 180%;
-}
+/* Bestiary video — no override needed, default center is fine */
 
 /* ========== WORLD CARDS ========== */
 .worlds-grid {
@@ -300,17 +291,16 @@
 /* ========== ARTICLE CARDS ========== */
 .articles-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(204px, 1fr)); /* Reduced from 240px (15% smaller) */
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
-    max-width: 1120px; /* NEW: Limit to ~5 cards (5 * 204px + 4 * 12px gaps = 1068px + padding) */
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0;
-    justify-content: center;
 }
 
 .article-card {
     position: relative;
-    height: 255px;
+    height: 383px;
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
@@ -335,18 +325,6 @@
 /* Top-right badges container - REMOVE from top */
 .article-card .card-top-bar {
     display: none; /* Hide the top bar completely */
-}
-
-/* Remove all old badge positioning rules */
-.article-card .card-top-bar .card-category-badge,
-.article-card .card-top-bar .card-tag,
-.article-card .card-meta-row .card-category-badge,
-.article-card .card-meta-row .card-tag {
-    position: static !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
-    margin: 0 !important;
 }
 
 /* Tag-based styling */
@@ -439,50 +417,21 @@
     width: 100%;
 }
 
-/* NEW: Badges row under the title */
-.card-badges-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 4px;
-    width: 100%;
-}
-
-.card-category-badge {
-    position: static !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
-    margin: 0 !important;
-    z-index: auto;
-    background: rgba(177, 156, 217, 0.9);
-    backdrop-filter: blur(10px);
-    color: #2c2c3e;
-    padding: 3px 8px; /* Reduced from 4px 10px (15% smaller) */
-    border-radius: 15px;
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-bold);
-    font-size: 10px; /* Reduced from 11px */
-    text-transform: uppercase;
-    border: none;
-}
-
 .card-tag {
-    position: static !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
-    margin: 0 !important;
-    padding: 3px 8px; /* Reduced from 4px 10px (15% smaller) */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+    padding: 3px 8px;
     border-radius: 15px;
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
-    font-size: 10px; /* Reduced from 11px */
+    font-size: 10px;
     text-transform: capitalize;
     background: rgba(201, 181, 230, 0.9);
     color: #2c2c3e;
     border: none;
+    backdrop-filter: blur(6px);
 }
 
 .card-summary {
