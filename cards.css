@@ -291,7 +291,7 @@
 /* ========== ARTICLE CARDS ========== */
 .articles-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
     max-width: 1200px;
     margin: 0 auto;
@@ -300,7 +300,7 @@
 
 .article-card {
     position: relative;
-    height: 383px;
+    height: 310px;
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;

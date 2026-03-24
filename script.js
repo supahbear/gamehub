@@ -459,13 +459,14 @@ class TTRPGHub {
     await this.loadPanelContent(panelName);
   }
 
-  // Fade out current content, swap HTML, fade back in
-  async _fadeInContent(contentEl, html) {
+  // Fade out current content, swap HTML, fade back in.
+  // Pass markLoaded=false to skip the permanent cache flag (e.g. empty state).
+  async _fadeInContent(contentEl, html, markLoaded = true) {
     contentEl.style.transition = 'opacity 0.2s ease';
     contentEl.style.opacity    = '0';
     await new Promise(r => setTimeout(r, 220));
     contentEl.innerHTML        = html;
-    contentEl.dataset.loaded   = 'true';
+    if (markLoaded) contentEl.dataset.loaded = 'true';
     requestAnimationFrame(() => {
       contentEl.style.transition = 'opacity 0.4s ease';
       contentEl.style.opacity    = '1';
@@ -497,7 +498,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for encyclopedia');
         }
         const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
+        await this._fadeInContent(contentEl, content, this.articleViewer.currentArticles.length > 0);
         this.articleViewer.setupEventListeners();
 
       } else if (panelName === 'journal') {
@@ -527,7 +528,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for bestiary');
         }
         const content = await this.bestiaryViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
+        await this._fadeInContent(contentEl, content, this.bestiaryViewer.currentArticles.length > 0);
         this.bestiaryViewer.setupEventListeners();
 
       } else if (panelName === 'alchemy') {
@@ -537,7 +538,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for alchemy');
         }
         const content = await this.alchemyViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
+        await this._fadeInContent(contentEl, content, this.alchemyViewer.currentArticles.length > 0);
         this.alchemyViewer.setupEventListeners();
 
       } else if (panelName === 'literature') {
@@ -547,7 +548,7 @@ class TTRPGHub {
           Config.log('Created ArticleViewer for literature');
         }
         const content = await this.literatureViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
+        await this._fadeInContent(contentEl, content, this.literatureViewer.currentArticles.length > 0);
         this.literatureViewer.setupEventListeners();
       }
     } catch (error) {
@@ -597,10 +598,12 @@ class TTRPGHub {
         Config.log(`loadSheets served ${rows.length} rows from cache for:`, sheetNames);
         return rows;
       }
-      // Cache not ready — wait for in-flight prefetch if one exists
+      // Cache not ready — wait for in-flight prefetch if one exists.
+      // Isolate in its own try/catch so a prefetch failure still falls through
+      // to the direct request below instead of returning [] immediately.
       if (this._sheetPrefetch) {
         Config.log('loadSheets waiting for prefetch to complete...');
-        await this._sheetPrefetch;
+        try { await this._sheetPrefetch; } catch (e) { Config.warn('Prefetch rejected, falling back to direct request:', e.message); }
         if (this._sheetCache) {
           const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
           Config.log(`loadSheets served ${rows.length} rows from cache (after wait) for:`, sheetNames);

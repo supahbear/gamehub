@@ -85,9 +85,8 @@ class ArticleViewer {
     return `
       <div class="empty-state">
         <div class="empty-icon">📚</div>
-        <h3>No Articles Yet</h3>
-        <p>This world doesn't have any published articles yet.</p>
-        <p>Switch to Tours to explore guided content instead.</p>
+        <h3>Nothing Here Yet</h3>
+        <p>No articles have been published in this section yet.</p>
       </div>
     `;
   }
@@ -335,10 +334,9 @@ class ArticleViewer {
     const article = this.currentArticles.find(a => a._uid === articleId);
     if (!article) return;
 
-    // Use the HTML modal structure
-    const modal = document.getElementById('articleModal');
+    const modal   = document.getElementById('articleModal');
     const overlay = document.getElementById('modalOverlay');
-    const title = document.getElementById('modalTitle');
+    const title   = document.getElementById('modalTitle');
     const content = document.getElementById('modalBody');
 
     if (!modal || !overlay) {
@@ -349,72 +347,74 @@ class ArticleViewer {
     if (title) title.textContent = article.name;
     if (content) {
       const htmlContent = this.markdownToHtml(article.content || 'No content available');
-      
-      const summaryHtml = article.summary ?
-        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` :
-        '';
 
-      // Case-insensitive lookup so sheet column casing doesn't matter
+      const summaryHtml = article.summary ?
+        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : '';
+
       const _getField = (obj, key) => {
         const lk = key.toLowerCase();
         const match = Object.keys(obj).find(k => k.toLowerCase() === lk);
         return match ? String(obj[match]).trim() : '';
       };
-      const typeField   = _getField(article, 'type');
-      const effectField = _getField(article, 'effect');
-      const metaHtml = (typeField || effectField) ? `
+      const typeField    = _getField(article, 'type');
+      const effectField  = _getField(article, 'effect');
+      const habitatField = _getField(article, 'habitat');
+      const metaHtml = (typeField || effectField || habitatField) ? `
         <div class="article-modal-meta">
-          ${typeField   ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
-          ${effectField ? `<div class="article-meta-item"><span class="article-meta-label">Effect</span><span class="article-meta-value">${effectField}</span></div>` : ''}
+          ${typeField    ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
+          ${habitatField ? `<div class="article-meta-item"><span class="article-meta-label">Habitat</span><span class="article-meta-value">${habitatField}</span></div>` : ''}
+          ${effectField  ? `<div class="article-meta-item"><span class="article-meta-label">Effect</span><span class="article-meta-value">${effectField}</span></div>` : ''}
         </div>
         <hr class="article-modal-meta-divider">` : '';
-      
-      // Split content into pages
-      const pages = this.splitContentIntoPages(htmlContent);
-      const pageHtml = this.renderArticlePages(pages);
-      const navigationHtml = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
-      
-      if (article.image_url) {
-        content.innerHTML = `
-          <div class="article-modal-columns">
-            <div class="article-modal-image-col">
-              <img src="${article.image_url}" class="article-image" alt="${article.name}" loading="lazy">
-              ${summaryHtml}
-            </div>
-            <div class="article-modal-text-col">
-              ${metaHtml}
-              <div class="article-pages-container">
-                ${pageHtml}
-              </div>
-              ${navigationHtml}
-            </div>
+
+      // ── Phase 1: render the shell so the text column is in the DOM ──────────
+      // The modal is visibility:hidden at this point so layout is computed but
+      // nothing is visible. We leave the pages container empty and add an ID to
+      // the text column so paginateContent() can measure inside it.
+      content.innerHTML = `
+        <div class="article-modal-columns">
+          <div class="article-modal-image-col">
+            ${this.renderImageColumn(article, summaryHtml)}
           </div>
-        `;
-      } else {
-        // No image: summary still on left, content on right
-        content.innerHTML = `
-          <div class="article-modal-columns">
-            <div class="article-modal-image-col">
-              ${summaryHtml}
-            </div>
-            <div class="article-modal-text-col">
-              ${metaHtml}
-              <div class="article-pages-container">
-                ${pageHtml}
-              </div>
-              ${navigationHtml}
-            </div>
+          <div class="article-modal-text-col" id="_articleTextCol">
+            ${metaHtml}
+            <div class="article-pages-container" id="_articlePagesContainer"></div>
+            <div id="_articleNavMount"></div>
           </div>
-        `;
+        </div>
+      `;
+
+      // ── Phase 2: measure in the real text column, build pages ───────────────
+      const pagesContainer = document.getElementById('_articlePagesContainer');
+      const navMount       = document.getElementById('_articleNavMount');
+
+      // Pre-render a nav placeholder BEFORE measuring so that its height is
+      // already subtracted from pagesCtr.clientHeight when paginateContent runs.
+      // Without this, pages are sized to the full column height, then the nav
+      // is injected and pushes the bottom of the text area past the container,
+      // causing the last line to be visually clipped.
+      if (navMount) {
+        navMount.innerHTML = this.renderArticleNavigation(2);
       }
-      
-      // Setup pagination if needed
+
+      const pages = this.paginateContent(htmlContent);
+
+      if (pagesContainer) {
+        pagesContainer.innerHTML = this.renderArticlePages(pages);
+      }
+      if (navMount) {
+        navMount.innerHTML = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
+      }
       if (pages.length > 1) {
         this.setupArticlePagination(pages.length);
       }
+
+      const imageUrls = this.parseImageUrls(article.image_url);
+      if (imageUrls.length > 1) {
+        this.setupImageSlideshow();
+      }
     }
 
-    // Show modal using the HTML structure
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('modal-active');
@@ -422,96 +422,94 @@ class ArticleViewer {
     Config.log('Article modal opened:', article.name);
   }
 
-  // Split HTML content into pages based on fixed container height
-  splitContentIntoPages(htmlContent) {
+  paginateContent(htmlContent) {
+    const textCol  = document.getElementById('_articleTextCol');
+    const pagesCtr = document.getElementById('_articlePagesContainer');
+    if (!textCol || !pagesCtr) return [htmlContent];
+
+    // Lock the container to its current flex-allocated height so it doesn't
+    // resize as we inject content during measurement.
+    const containerH = pagesCtr.clientHeight > 0 ? pagesCtr.clientHeight : 600;
+    pagesCtr.style.height = containerH + 'px';
+    // Small buffer for sub-pixel rounding only — font/layout is now exact.
+    const PAGE_HEIGHT = containerH - 4;
+
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
-    
     const elements = Array.from(tempDiv.children);
-    const pages = [];
-    let currentPage = [];
-    let currentHeight = 0;
-    const maxHeight = 630;
-    const avgLineHeight = 26;
-    const avgCharsPerLine = 90;
-    
-    elements.forEach(element => {
-      const text = element.textContent || '';
-      const lines = Math.ceil(text.length / avgCharsPerLine);
-      let estimatedHeight = lines * avgLineHeight;
-      
-      // Add extra height for headers
-      if (element.tagName === 'H1') {
-        estimatedHeight += 20;
-      } else if (element.tagName === 'H2') {
-        estimatedHeight += 15;
-      } else if (element.tagName === 'H3') {
-        estimatedHeight += 10;
-      }
-      
-      // If this element fits on current page, add it
-      if (currentHeight + estimatedHeight <= maxHeight) {
-        currentPage.push(element.outerHTML);
-        currentHeight += estimatedHeight;
-      } else {
-        // Element doesn't fit - check if it's a paragraph that can be split
-        if (element.tagName === 'P' && currentPage.length > 0 && estimatedHeight > maxHeight * 0.3) {
-          // This is a long paragraph and we have content on current page
-          // Split the paragraph across pages
-          const remainingHeight = maxHeight - currentHeight;
-          const remainingChars = Math.floor((remainingHeight / avgLineHeight) * avgCharsPerLine);
-          
-          if (remainingChars > 50) { // Only split if we can fit meaningful content
-            const words = text.split(' ');
-            let firstPart = '';
-            let secondPart = '';
-            let charCount = 0;
-            
-            for (let i = 0; i < words.length; i++) {
-              const word = words[i];
-              if (charCount + word.length < remainingChars) {
-                firstPart += word + ' ';
-                charCount += word.length + 1;
-              } else {
-                secondPart = words.slice(i).join(' ');
-                break;
-              }
-            }
-            
-            // Add first part to current page
-            if (firstPart.trim()) {
-              currentPage.push(`<p>${firstPart.trim()}</p>`);
-            }
-            
-            // Save current page and start new one with second part
-            pages.push(currentPage.join(''));
-            currentPage = secondPart.trim() ? [`<p>${secondPart.trim()}</p>`] : [];
-            currentHeight = secondPart.trim() ? Math.ceil(secondPart.length / avgCharsPerLine) * avgLineHeight : 0;
-          } else {
-            // Not enough room to split meaningfully, start new page
-            pages.push(currentPage.join(''));
-            currentPage = [element.outerHTML];
-            currentHeight = estimatedHeight;
-          }
-        } else {
-          // Not a splittable paragraph, or no content on current page yet
-          // Save current page if it has content
-          if (currentPage.length > 0) {
-            pages.push(currentPage.join(''));
-          }
-          // Start new page with this element
-          currentPage = [element.outerHTML];
-          currentHeight = estimatedHeight;
+    if (!elements.length) return [htmlContent];
+
+    // Measure inside an actual .article-page in the real container so every
+    // CSS property (font, line-height, padding, box-sizing) is inherited
+    // exactly as it will be during the final render. This eliminates the
+    // staging-div font-metric mismatch that caused persistent last-line clipping.
+    const probe = document.createElement('div');
+    probe.className = 'article-page active';
+    // Override only the layout constraints that would prevent accurate measurement:
+    // height:auto  → scrollHeight = true content height (not parent height)
+    // overflow:visible → belt-and-suspenders for accurate scrollHeight
+    probe.style.cssText = 'height:auto;overflow:visible;position:relative;opacity:1;';
+    pagesCtr.appendChild(probe);
+
+    const measure = (html) => { probe.innerHTML = html; return probe.scrollHeight; };
+
+    const pages  = [];
+    let pageHtml = [];
+
+    for (let i = 0; i < elements.length; i++) {
+      const el    = elements[i];
+      const isHdr = /^H[1-3]$/.test(el.tagName);
+
+      // Orphan guard: if a header fits but the next element won't also fit,
+      // push the header to the next page.
+      if (isHdr && pageHtml.length > 0 && elements[i + 1]) {
+        const withBoth = measure([...pageHtml, el.outerHTML, elements[i + 1].outerHTML].join(''));
+        if (withBoth > PAGE_HEIGHT) {
+          pages.push(pageHtml.join(''));
+          pageHtml = [el.outerHTML];
+          continue;
         }
       }
-    });
-    
-    // Add remaining content as last page
-    if (currentPage.length > 0) {
-      pages.push(currentPage.join(''));
+
+      const withEl = measure([...pageHtml, el.outerHTML].join(''));
+
+      if (withEl <= PAGE_HEIGHT) {
+        pageHtml.push(el.outerHTML);
+      } else if (el.tagName === 'P' && pageHtml.length > 0) {
+        // Binary-search: most words of this paragraph that still fit.
+        const words = (el.textContent || '').split(' ');
+        let lo = 1, hi = words.length - 1, bestSplit = 0;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (measure([...pageHtml, `<p>${words.slice(0, mid).join(' ')}</p>`].join('')) <= PAGE_HEIGHT) {
+            bestSplit = mid; lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
+        }
+        if (bestSplit > 0) {
+          pageHtml.push(`<p>${words.slice(0, bestSplit).join(' ')}</p>`);
+          pages.push(pageHtml.join(''));
+          const rest = words.slice(bestSplit).join(' ').trim();
+          pageHtml = rest ? [`<p>${rest}</p>`] : [];
+        } else {
+          pages.push(pageHtml.join(''));
+          pageHtml = [el.outerHTML];
+        }
+      } else {
+        if (pageHtml.length > 0) pages.push(pageHtml.join(''));
+        pageHtml = [el.outerHTML];
+      }
     }
-    
-    return pages.length > 0 ? pages : [htmlContent];
+
+    if (pageHtml.length > 0) pages.push(pageHtml.join(''));
+    probe.remove();
+    return pages.length ? pages : [htmlContent];
+  }
+
+  // Split HTML content into pages — kept as alias so nothing external breaks
+  splitContentIntoPages(htmlContent) {
+    return this.paginateContent(htmlContent);
   }
 
   // Render pages HTML
@@ -602,6 +600,84 @@ class ArticleViewer {
     
     // Store the handler so we can remove it when modal closes
     this._arrowKeyHandler = arrowKeyHandler;
+  }
+
+  // Parse image_offset cell value into a CSS object-position X value.
+  // Accepts: L20PX / L20 / L10% → shift left; R20PX / R20 / R10% → shift right.
+  // Returns a full object-position string, e.g. "calc(50% - 20px) center".
+  parseImageOffset(offsetVal) {
+    if (!offsetVal || !offsetVal.trim()) return null;
+    const m = offsetVal.trim().match(/^([LRlr])(\d+(?:\.\d+)?)(px|%)?$/i);
+    if (!m) return null;
+    const dir = m[1].toUpperCase();
+    const amount = m[2];
+    const unit = m[3] ? m[3].toLowerCase() : 'px';
+    const sign = dir === 'L' ? '-' : '+';
+    return `calc(50% ${sign} ${amount}${unit}) center`;
+  }
+
+  // Parse a potentially multi-URL image_url cell (comma or newline separated)
+  parseImageUrls(imageUrl) {
+    if (!imageUrl || !imageUrl.trim()) return [];
+    return imageUrl.split(/[\n,]/).map(u => u.trim()).filter(u => u.length > 0);
+  }
+
+  // Parse per-image offsets from a comma-separated string.
+  // Each entry maps 1:1 by position to image_url entries.
+  // Use X to explicitly skip a slot: "L20, X, R40" → image 1 shifted, image 2 unchanged, image 3 shifted.
+  // Every image position should have a corresponding entry — X is the only intentional skip.
+  parseImageOffsets(offsetCell, imageCount) {
+    const entries = offsetCell
+      ? offsetCell.split(',').map(s => s.trim())
+      : [];
+    return Array.from({ length: imageCount }, (_, i) => {
+      const raw = entries[i] || '';
+      if (!raw || /^x$/i.test(raw)) return null;
+      return this.parseImageOffset(raw);
+    });
+  }
+
+  // Render the image column interior: single img, slideshow, or just summary
+  renderImageColumn(article, summaryHtml) {
+    const urls = this.parseImageUrls(article.image_url);
+    if (urls.length === 0) {
+      return summaryHtml;
+    }
+    if (urls.length === 1) {
+      const objPos = this.parseImageOffset(article.image_offset);
+      const posStyle = objPos ? ` style="object-position: ${objPos}"` : '';
+      return `<img src="${urls[0]}" class="article-image" alt="${article.name}" loading="lazy"${posStyle}>${summaryHtml}`;
+    }
+    // Multiple images → per-image offsets
+    const offsets = this.parseImageOffsets(article.image_offset, urls.length);
+    const slides = urls.map((url, i) => {
+      const posStyle = offsets[i] ? ` style="object-position: ${offsets[i]}"` : '';
+      return `<img src="${url}" class="slideshow-img${i === 0 ? ' active' : ''}" alt="${article.name} image ${i + 1}" loading="lazy" data-slide="${i}"${posStyle}>`;
+    }).join('');
+    const dots = urls.map((_, i) =>
+      `<button class="image-dot${i === 0 ? ' active' : ''}" data-slide="${i}" aria-label="Image ${i + 1}"></button>`
+    ).join('');
+    return `
+      <div class="article-image-slideshow">
+        ${slides}
+        <div class="image-slide-dots">${dots}</div>
+      </div>
+      ${summaryHtml}`;
+  }
+
+  // Bind click events for image slideshow dots
+  setupImageSlideshow() {
+    const dots = document.querySelectorAll('.image-dot');
+    if (!dots.length) return;
+    dots.forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        const targetSlide = parseInt(e.currentTarget.dataset.slide);
+        document.querySelectorAll('.slideshow-img').forEach((img, i) => {
+          img.classList.toggle('active', i === targetSlide);
+        });
+        dots.forEach((d, i) => d.classList.toggle('active', i === targetSlide));
+      });
+    });
   }
 
   closeModal() {
