@@ -142,6 +142,8 @@
 .article-modal .modal-body {
     overflow: hidden;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
     line-height: 1.6;
     color: #ffffff; /* Changed to pure white */
     font-family: 'Faculty Glyphic', var(--font-family); /* Changed to Faculty Glyphic */
@@ -478,7 +480,8 @@ body.modal-active main {
     gap: 48px;
     align-items: flex-start;
     width: 100%;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
 .article-modal-image-col {

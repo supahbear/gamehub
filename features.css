@@ -109,15 +109,15 @@
 
 .articles-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
 }
 
 /* Let the grid expand to the container width (removes 1600px cap from cards.css) */
 .article-viewer .articles-grid {
     max-width: none;
-    margin: 0 auto; /* Ensure centering */
-    padding: 0;
+    margin: 0 auto;
+    padding: 0 80px; /* Indent grid on both sides; filters stay full width */
 }
 
 /* Grid columns are fully responsive — auto-fill handles all screen sizes */

@@ -265,12 +265,6 @@ class ArticleViewer {
 
     // Bind article cards each refresh
     this.bindArticleCardClicks();
-
-    // Modal close handlers - bind once
-    if (!this._modalBound) {
-      this.setupModalEventListeners();
-      this._modalBound = true;
-    }
   }
 
   bindArticleCardClicks() {
@@ -379,9 +373,9 @@ class ArticleViewer {
           <div class="article-modal-text-col" id="_articleTextCol">
             ${metaHtml}
             <div class="article-pages-container" id="_articlePagesContainer"></div>
-            <div id="_articleNavMount"></div>
           </div>
         </div>
+        <div id="_articleNavMount"></div>
       `;
 
       // ── Phase 2: measure in the real text column, build pages ───────────────
@@ -681,52 +675,9 @@ class ArticleViewer {
   }
 
   closeModal() {
-    const modal = document.getElementById('articleModal');
-    const overlay = document.getElementById('modalOverlay');
-    
-    if (modal && overlay) {
-      overlay.classList.remove('show');
-      modal.classList.remove('show');
-      document.body.classList.remove('modal-active');
-      
-      // Remove arrow key listener when modal closes
-      if (this._arrowKeyHandler) {
-        document.removeEventListener('keydown', this._arrowKeyHandler);
-        this._arrowKeyHandler = null;
-      }
-      
-      Config.log('Article modal closed');
-    }
-  }
-
-  // Add modal listeners (close button, overlay click, ESC)
-  setupModalEventListeners() {
-    const closeBtn = document.getElementById('closeModalBtn');
-    if (closeBtn && !closeBtn._boundArticleClose) {
-      closeBtn.addEventListener('click', () => this.closeModal());
-      closeBtn._boundArticleClose = true;
-    }
-
-    const overlay = document.getElementById('modalOverlay');
-    if (overlay && !overlay._boundArticleOverlay) {
-      overlay.addEventListener('click', () => this.closeModal());
-      overlay._boundArticleOverlay = true;
-    }
-
-    const modal = document.getElementById('articleModal');
-    if (modal && !modal._boundArticleModal) {
-      modal.addEventListener('click', (e) => e.stopPropagation());
-      modal._boundArticleModal = true;
-    }
-
-    if (!this._escListenerBound) {
-      this._escListener = (e) => {
-        if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
-          this.closeModal();
-        }
-      };
-      document.addEventListener('keydown', this._escListener);
-      this._escListenerBound = true;
+    // Delegate to hub so all cleanup (arrow key handler, atlas lightbox state) fires in one place.
+    if (this.hub) {
+      this.hub.closeModal();
     }
   }
 

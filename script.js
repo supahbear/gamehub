@@ -394,9 +394,13 @@ class TTRPGHub {
         const selector = p.querySelector('.panel-selector');
         if (content) content.style.display = 'none';
         if (selector) selector.style.display = '';
-        // Restore bg video
+        // Restore and resume bg video
         const video = p.querySelector('.panel-bg-video');
-        if (video) { video.style.transition = 'opacity 0.3s ease'; video.style.opacity = '1'; }
+        if (video) {
+          video.style.transition = 'opacity 0.3s ease';
+          video.style.opacity = '1';
+          video.play().catch(() => {});
+        }
       });
       document.querySelectorAll('.panel-pill').forEach(btn => btn.classList.remove('active'));
       collapsedHeader.style.display = 'flex';
@@ -416,12 +420,14 @@ class TTRPGHub {
 
     // Step 1: instantly kill the expanding panel's video — no transition,
     // so there is nothing visible to stretch when the wipe starts.
+    // Also pause it since it will be hidden under the panel content.
     panels.forEach(panel => {
       const video = panel.querySelector('.panel-bg-video');
       if (!video) return;
       if (panel.dataset.panel === panelName) {
         video.style.transition = 'none';
         video.style.opacity = '0';
+        video.pause();
       }
     });
 
