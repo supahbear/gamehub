@@ -14,6 +14,9 @@ class QuestViewer {
   async loadQuestData() {
     try {
       const rows = await this.hub.loadSheets(['Journal']);
+      // Assign a stable positional ID so selection/lookup always works.
+      // _rowIndex is never injected by the backend, so we assign it here.
+      rows.forEach((row, i) => { row._rowIndex = String(i); });
       this.currentQuests = rows;
       Config.log(`QuestViewer loaded ${rows.length} journal entries`);
       return { quests: this.currentQuests };
@@ -31,9 +34,13 @@ class QuestViewer {
       return this.renderEmptyState();
     }
 
-    // Auto-select first quest if none selected
+    // Auto-select first quest and auto-expand its location group if none selected
     if (!this.selectedQuestId && this.currentQuests.length > 0) {
       this.selectedQuestId = String(this.currentQuests[0]._rowIndex);
+      // Also expand the group the first quest belongs to so the sidebar isn't blank
+      const firstTags = (this.currentQuests[0].tags || '').split(',').map(t => t.trim()).filter(t => t);
+      const firstLocation = firstTags[0] || 'Miscellaneous';
+      this.expandedTags.add(firstLocation);
     }
 
     return `

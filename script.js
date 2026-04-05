@@ -345,7 +345,11 @@ class TTRPGHub {
 
       const content = await this.questViewer.renderQuestMode(this.currentWorld?.id);
       body.innerHTML = content;
-      body.dataset.loaded = 'true';
+      // Only mark loaded when we actually got data — prevents caching an empty
+      // state that would then stick permanently across re-opens.
+      if (this.questViewer.currentQuests.length > 0) {
+        body.dataset.loaded = 'true';
+      }
       this.questViewer.setupEventListeners();
       return;
     }
@@ -1015,11 +1019,18 @@ class TTRPGHub {
   // Returns the flat array of row objects, each with a ._category field.
   async loadSheets(sheetNames) {
     try {
-      // Serve from prefetch cache when available
+      // Serve from prefetch cache when available — but only if every requested
+      // sheet is present in the cache. Sheets excluded from the prefetch (e.g.
+      // Journal) must fall through to a direct request instead of silently
+      // returning [].
       if (this._sheetCache) {
-        const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
-        Config.log(`loadSheets served ${rows.length} rows from cache for:`, sheetNames);
-        return rows;
+        const allCached = sheetNames.every(name => name in this._sheetCache);
+        if (allCached) {
+          const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
+          Config.log(`loadSheets served ${rows.length} rows from cache for:`, sheetNames);
+          return rows;
+        }
+        Config.log('loadSheets: some sheets not in cache, fetching directly:', sheetNames);
       }
       // Cache not ready — wait for in-flight prefetch if one exists.
       // Isolate in its own try/catch so a prefetch failure still falls through
@@ -1028,9 +1039,13 @@ class TTRPGHub {
         Config.log('loadSheets waiting for prefetch to complete...');
         try { await this._sheetPrefetch; } catch (e) { Config.warn('Prefetch rejected, falling back to direct request:', e.message); }
         if (this._sheetCache) {
-          const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
-          Config.log(`loadSheets served ${rows.length} rows from cache (after wait) for:`, sheetNames);
-          return rows;
+          const allCached = sheetNames.every(name => name in this._sheetCache);
+          if (allCached) {
+            const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
+            Config.log(`loadSheets served ${rows.length} rows from cache (after wait) for:`, sheetNames);
+            return rows;
+          }
+          Config.log('loadSheets: some sheets not in cache after wait, fetching directly:', sheetNames);
         }
       }
       // Fall back to direct request
