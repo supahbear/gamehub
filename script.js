@@ -961,6 +961,7 @@ class TTRPGHub {
       const viewer  = this[viewerKey];
       const content = await viewer.renderReadMode(this.currentWorld?.id);
       await this._fadeInContent(contentEl, content, viewer.currentArticles.length > 0);
+      viewer._container = contentEl;
       viewer.setupEventListeners();
     } catch (error) {
       await this._fadeInContent(contentEl, `<div class="error">Error loading ${panelName}: ${error.message}</div>`);

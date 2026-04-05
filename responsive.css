@@ -184,19 +184,24 @@
        works reliably on mobile (parent has no defined width otherwise) */
     .article-modal, .tour-modal,
     .journal-modal, .calendar-modal, .recaps-modal {
+        top: 5vh;
         left: 0;
         right: 0;
         width: 100%;
-        transform: translateY(-50%);
+        transform: none;
     }
 
     .modal-content {
         width: 94%;
         max-width: 94%;
-        height: 88vh;
-        max-height: 88vh;
+        height: 90vh;
+        max-height: 90vh;
         margin: 0 auto;
         border-radius: 10px;
+    }
+
+    .modal-header {
+        padding: 8px 16px;
     }
 
     .modal-header h2 {
@@ -204,7 +209,7 @@
     }
 
     .modal-body {
-        max-height: calc(88vh - 60px);
+        max-height: calc(90vh - 50px);
     }
 
     /* Article modal: two columns collapse to single column */

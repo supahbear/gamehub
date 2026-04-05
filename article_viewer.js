@@ -274,8 +274,10 @@ class ArticleViewer {
   setupEventListeners() {
     // Bind filter controls once
     if (!this._filtersBound) {
+      const root = this._container || document;
+
       // Search input
-      const searchInput = document.getElementById('articleSearch');
+      const searchInput = root.querySelector('#articleSearch');
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
           this.currentFilters.search = e.target.value;
@@ -284,7 +286,7 @@ class ArticleViewer {
       }
 
       // Category filter
-      const categoryFilter = document.getElementById('categoryFilter');
+      const categoryFilter = root.querySelector('#categoryFilter');
       if (categoryFilter) {
         categoryFilter.addEventListener('change', (e) => {
           this.currentFilters.category = e.target.value;
@@ -295,7 +297,7 @@ class ArticleViewer {
       }
 
       // Tag filter
-      const tagFilter = document.getElementById('tagFilter');
+      const tagFilter = root.querySelector('#tagFilter');
       if (tagFilter) {
         tagFilter.addEventListener('change', (e) => {
           this.currentFilters.tag = e.target.value;
@@ -304,13 +306,13 @@ class ArticleViewer {
       }
 
       // Clear filters
-      const clearFilters = document.getElementById('clearFilters');
+      const clearFilters = root.querySelector('#clearFilters');
       if (clearFilters) {
         clearFilters.addEventListener('click', () => this.clearFilters());
       }
 
       // Open article writer
-      const writeArticleBtn = document.getElementById('writeArticleBtn');
+      const writeArticleBtn = root.querySelector('#writeArticleBtn');
       if (writeArticleBtn) {
         writeArticleBtn.addEventListener('click', () => this.openWriter());
       }
@@ -322,7 +324,8 @@ class ArticleViewer {
     this.bindArticleCardClicks();
 
     // Bind the no-results clear button if present (re-checked each refresh)
-    const noResultsClearBtn = document.getElementById('noResultsClearBtn');
+    const root = this._container || document;
+    const noResultsClearBtn = root.querySelector('#noResultsClearBtn');
     if (noResultsClearBtn && !noResultsClearBtn._bound) {
       noResultsClearBtn.addEventListener('click', () => this.clearFilters());
       noResultsClearBtn._bound = true;
@@ -330,7 +333,8 @@ class ArticleViewer {
   }
 
   bindArticleCardClicks() {
-    document.querySelectorAll('.article-card').forEach(card => {
+    const root = this._container || document;
+    root.querySelectorAll('.article-card').forEach(card => {
       // Avoid duplicate handlers
       if (card._boundClick) return;
       card.addEventListener('click', (e) => {
@@ -346,7 +350,8 @@ class ArticleViewer {
 
   refreshFilters() {
     // Refresh the entire filter bar (to update tag dropdown based on category)
-    const filtersContainer = document.querySelector('.article-filters');
+    const root = this._container || document;
+    const filtersContainer = root.querySelector('.article-filters');
     if (filtersContainer) {
       const parent = filtersContainer.parentElement;
       const newFilters = this.renderFilters();
@@ -359,13 +364,14 @@ class ArticleViewer {
   }
 
   refreshArticleGrid() {
-    const container = document.getElementById('articlesGridContainer');
+    const root = this._container || document;
+    const container = root.querySelector('#articlesGridContainer');
     if (container) {
       // Replace inner content only (keeps a stable mount point)
       container.innerHTML = this.renderArticleGrid();
       // Rebind cards and the no-results clear button
       this.bindArticleCardClicks();
-      const noResultsClearBtn = document.getElementById('noResultsClearBtn');
+      const noResultsClearBtn = root.querySelector('#noResultsClearBtn');
       if (noResultsClearBtn && !noResultsClearBtn._bound) {
         noResultsClearBtn.addEventListener('click', () => this.clearFilters());
         noResultsClearBtn._bound = true;
@@ -381,9 +387,10 @@ class ArticleViewer {
       tag: '',
       search: ''
     };
-    const searchInput = document.getElementById('articleSearch');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const tagFilter = document.getElementById('tagFilter');
+    const root = this._container || document;
+    const searchInput = root.querySelector('#articleSearch');
+    const categoryFilter = root.querySelector('#categoryFilter');
+    const tagFilter = root.querySelector('#tagFilter');
     if (searchInput) searchInput.value = '';
     if (categoryFilter) categoryFilter.value = this.defaultSheet;
     if (tagFilter) tagFilter.value = '';
