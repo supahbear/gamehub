@@ -212,6 +212,41 @@
         max-height: calc(90vh - 50px);
     }
 
+    /* On mobile the paginated layout can't self-contain — let body scroll
+       and let each page flow to its natural height instead */
+    .article-modal .modal-body {
+        overflow-y: auto;
+    }
+
+    .article-modal-text-col {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+    .article-pages-container {
+        flex: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .article-page {
+        position: relative !important;
+        height: auto !important;
+        overflow: visible !important;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .article-page.active {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .article-navigation {
+        margin-top: 8px;
+        padding: 8px 0;
+    }
+
     /* Article modal: two columns collapse to single column */
     .article-modal-columns {
         grid-template-columns: 1fr;
