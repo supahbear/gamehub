@@ -212,15 +212,23 @@
         max-height: calc(90vh - 50px);
     }
 
-    /* On mobile the paginated layout can't self-contain — let body scroll
-       and let each page flow to its natural height instead */
+    /* Article modal: body stays clipped; columns area scrolls internally;
+       nav-mount is always pinned at the bottom as a flex sibling */
     .article-modal .modal-body {
-        overflow-y: auto;
+        overflow: hidden;
+    }
+
+    .article-modal-columns {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     .article-modal-text-col {
         height: auto !important;
         min-height: 0 !important;
+        min-width: 0 !important;
     }
 
     .article-pages-container {
@@ -229,22 +237,43 @@
         overflow: visible !important;
     }
 
+    /* Hide inactive pages via display so they occupy zero height */
     .article-page {
+        display: none !important;
         position: relative !important;
         height: auto !important;
         overflow: visible !important;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .article-page.active {
         opacity: 1 !important;
         pointer-events: auto !important;
     }
 
+    .article-page.active {
+        display: block !important;
+    }
+
+    /* Nav always visible at the bottom — never scrolled away */
+    .article-nav-mount {
+        flex-shrink: 0;
+    }
+
     .article-navigation {
-        margin-top: 8px;
-        padding: 8px 0;
+        margin-top: 0;
+        padding: 6px 0;
+    }
+
+    /* Dots: single row, truncate overflow instead of wrapping */
+    .article-dots {
+        flex-wrap: nowrap !important;
+        min-width: 0;
+        flex-shrink: 1;
+        overflow: hidden;
+        max-width: calc(100vw - 130px);
+    }
+
+    .article-dot {
+        flex-shrink: 0;
+        width: 7px !important;
+        height: 7px !important;
     }
 
     /* Article modal: two columns collapse to single column */
