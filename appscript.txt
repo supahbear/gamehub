@@ -12,12 +12,27 @@
 
 const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 
+// Sheets that may be written to — used by handleWrite and handleEdit
+const ALLOWED_SHEETS = [
+  'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
+  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations'
+];
+
 // ---------------------------------------------------------------------------
 // Entry points
 // ---------------------------------------------------------------------------
 function doGet(e) {
   try {
-    const callback     = e.parameter.callback || 'callback';
+    const callback      = e.parameter.callback || 'callback';
+
+    // Write action — triggered by ArticleWriter via JSONP GET (works from file://)
+    if (e.parameter.action === 'write') {
+      return handleWrite(e, callback);
+    }
+    // Edit action — finds existing row by name and overwrites it
+    if (e.parameter.action === 'edit') {
+      return handleEdit(e, callback);
+    }
     const sheetsParam  = (e.parameter.sheets || '').trim();
     const filterVisible = (e.parameter.filter_visible || 'true') !== 'false';
 
@@ -46,9 +61,87 @@ function doGet(e) {
   }
 }
 
-// Preflight — Apps Script doesn't truly support OPTIONS but keeps things tidy
-function doOptions(e) {
-  return ContentService.createTextOutput('').setMimeType(ContentService.MimeType.TEXT);
+// ---------------------------------------------------------------------------
+// Edit handler — finds an existing row by name and overwrites it in place
+// ---------------------------------------------------------------------------
+function handleEdit(e, callback) {
+  try {
+    const raw     = e.parameter.payload;
+    if (!raw) return jsonp(callback, { success: false, error: 'Missing payload' });
+    const payload   = JSON.parse(raw);
+    const sheetName = payload.sheet;
+    const rowData   = payload.row;
+    const origName  = payload.originalName; // the name before any edits
+
+    if (!sheetName || !ALLOWED_SHEETS.includes(sheetName)) {
+      return jsonp(callback, { success: false, error: 'Invalid or missing sheet name' });
+    }
+    if (!rowData || typeof rowData !== 'object') {
+      return jsonp(callback, { success: false, error: 'Missing row data' });
+    }
+    if (!origName) {
+      return jsonp(callback, { success: false, error: 'Missing originalName for row lookup' });
+    }
+
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) return jsonp(callback, { success: false, error: 'Sheet not found: ' + sheetName });
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    const nameCol = headers.indexOf('name');
+    if (nameCol === -1) return jsonp(callback, { success: false, error: 'No "name" column found in sheet' });
+
+    const lastRow  = sheet.getLastRow();
+    const nameVals = sheet.getRange(2, nameCol + 1, lastRow - 1, 1).getValues();
+    const matchIdx = nameVals.findIndex(r => String(r[0]).trim().toLowerCase() === origName.trim().toLowerCase());
+    if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + origName });
+
+    const targetRow  = matchIdx + 2; // +1 for header, +1 for 1-based
+    const rowValues  = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
+    sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+
+    console.log('Updated row in ' + sheetName + ': ' + (rowData.name || origName));
+    return jsonp(callback, { success: true });
+
+  } catch (err) {
+    console.error('handleEdit error:', err);
+    return jsonp(callback, { success: false, error: String(err) });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Write handler — called from doGet when action=write
+// ---------------------------------------------------------------------------
+function handleWrite(e, callback) {
+  try {
+    const raw     = e.parameter.payload;
+    if (!raw) return jsonp(callback, { success: false, error: 'Missing payload' });
+    const payload   = JSON.parse(raw);
+    const sheetName = payload.sheet;
+    const rowData   = payload.row;
+
+    if (!sheetName || !ALLOWED_SHEETS.includes(sheetName)) {
+      return jsonp(callback, { success: false, error: 'Invalid or missing sheet name' });
+    }
+    if (!rowData || typeof rowData !== 'object') {
+      return jsonp(callback, { success: false, error: 'Missing row data' });
+    }
+
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) return jsonp(callback, { success: false, error: 'Sheet not found: ' + sheetName });
+
+    const headers   = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
+    sheet.appendRow(rowValues);
+
+    console.log('Appended row to ' + sheetName + ': ' + (rowData.name || '(unnamed)'));
+    return jsonp(callback, { success: true });
+
+  } catch (err) {
+    console.error('handleWrite error:', err);
+    return jsonp(callback, { success: false, error: String(err) });
+  }
 }
 
 // ---------------------------------------------------------------------------

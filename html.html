@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS - TTRPG World Hub</title>
     
-    <!-- ADD: Preload critical background video -->
-    <link rel="preload" href="assets/videos/Breach-vid.mp4" as="video" type="video/mp4">
-    
     <!-- CSS files in load order: foundation → components → content → overrides -->
     <link href="base.css" rel="stylesheet" type="text/css" />
     <link href="components.css" rel="stylesheet" type="text/css" />
@@ -23,12 +20,9 @@
 <body>
     <!-- Background video layer for world selection -->
     <div id="worldBackgroundLayer" class="world-background-layer">
-        <!-- NEW: Neutral default background -->
         <video id="bgVideo-neutral" class="world-bg-video active" autoplay muted loop playsinline>
             <source src="assets/videos/neutral-landing.mp4" type="video/mp4">
         </video>
-        
-        <!-- Breach background (start inactive) -->
         <video id="bgVideo-breach" class="world-bg-video" muted loop playsinline>
             <source src="assets/videos/Breach-vid.mp4" type="video/mp4">
         </video>
@@ -46,16 +40,13 @@
             <section class="landing-screen">
                 <h2>Tales from the Breach</h2>
                 <div class="worlds-grid" id="worldsGrid">
-                    <!-- Loading card - shows card asset video with Loading overlay -->
                     <div class="world-card loading" data-loading="true" data-world-id="breach">
                         <video class="world-video" muted loop playsinline autoplay>
                             <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
                         </video>
                         <div class="world-name">Loading</div>
-                        <div class="world-overlay">
-                            <div class="world-description">Preparing to enter The Breach...</div>
-                            <div class="world-system">System: D&D 5e</div>
-                        </div>
+                        <div class="world-description">Loading world...</div>
+                        <div class="world-overlay"></div>
                     </div>
                 </div>
                 
@@ -66,139 +57,187 @@
                 </div>
             </section>
 
+            <!-- ===== WORLD HUB ===== -->
             <section class="world-hub" id="worldHub" style="display: none;">
-                <header>
-                    <div class="logo-container" onclick="hub && hub.showWorldSelection()">
-                        <img src="assets/breach-logo.png" alt="The Breach" class="logo" />
-                        <h1 class="logo-fallback">The Breach</h1>
+
+                <!-- Sticky header bar -->
+                <div class="hub-header" id="hubHeader">
+                    <div class="hub-header-start"></div>
+                    <div class="hub-header-center" id="hubHeaderCenter">
+                        <img src="assets/breach-logo.png" alt="The Breach" class="hub-center-logo" id="hubTitleText" />
+                        <div class="hub-panel-nav" id="hubPanelNav" style="display:none;">
+                            <button class="hub-back-btn" id="hubBackBtn">← Hub</button>
+                            <span class="hub-panel-nav-title" id="hubActivePanelTitle"></span>
+                        </div>
                     </div>
-                </header>
-                <!-- Collapsed header with panel toggles (hidden initially, shows when panel active) -->
-                <div class="hub-collapsed-header" id="hubCollapsedHeader" style="display: none;">
-                    <div class="collapsed-panels-toggle">
-                        <button class="panel-pill" data-panel="encyclopedia">Encyclopedia</button>
-                        <button class="panel-pill" data-panel="journal">Journal</button>
-                        <button class="panel-pill" data-panel="atlas">Atlas</button>
-                        <button class="panel-pill" data-panel="bestiary">Bestiary</button>
-                        <button class="panel-pill" data-panel="alchemy">Alchemy</button>
-                        <button class="panel-pill" data-panel="literature">Literature</button>
+                    <div class="hub-header-end">
+                        <button class="hub-action-btn" id="recapsBtn">Campaign Log</button>
+                        <button class="hub-action-btn" id="journalBtn">Journal</button>
+                        <button class="hub-action-btn" id="calendarBtn">Calendar</button>
                     </div>
                 </div>
 
-                <!-- Six full-bleed panels - two rows of three -->
-                <div class="hub-panels-container" id="hubPanelsContainer">
-                    <div class="hub-panel" data-panel="encyclopedia">
-                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/breach-loopv2.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Encyclopedia</h2>
-                            <p>Characters · Items  Factions · Religion</p>
-                            <button class="enter-btn">Enter</button>
-                        </div>
-                        <div class="panel-content" id="encyclopediaContent" style="display: none;">
-                            <!-- Article viewer content loads here -->
-                        </div>
-                    </div>
+                <!-- Main scrollable area -->
+                <div class="hub-main-area" id="hubMainArea">
 
-                    <div class="hub-panel" data-panel="journal">
-                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/journal-loop.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Journal</h2>
-                            <p>Quests · Notes</p>
-                            <button class="enter-btn">Enter</button>
-                        </div>
-                        <div class="panel-content" id="journalContent" style="display: none;">
-                            <!-- Quest viewer content loads here -->
-                        </div>
-                    </div>
+                    <!-- ── Hub selection grid (shown when no panel active) ── -->
+                    <div class="hub-selection" id="hubSelection">
 
-                    <div class="hub-panel" data-panel="atlas">                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/maps-panel-loop.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Atlas</h2>
-                            <p>Locations · Maps</p>
-                            <button class="enter-btn">Enter</button>
+                        <div class="hub-section">
+                            <div class="hub-section-header">
+                                <div class="hub-section-line"></div>
+                                <span class="hub-section-label">Compendium</span>
+                                <div class="hub-section-line"></div>
+                            </div>
+                            <div class="hub-tiles-row">
+                                <div class="hub-tile" data-panel="alchemy">
+                                    <span class="tile-name">Alchemy</span>
+                                    <span class="tile-sub">flora · ingredients · potions</span>
+                                </div>
+                                <div class="hub-tile" data-panel="bestiary">
+                                    <span class="tile-name">Bestiary</span>
+                                    <span class="tile-sub">creatures · monsters</span>
+                                </div>
+                                <div class="hub-tile" data-panel="characters">
+                                    <span class="tile-name">Characters</span>
+                                    <span class="tile-sub">leaders · allies · enemies</span>
+                                </div>
+                                <div class="hub-tile" data-panel="items">
+                                    <span class="tile-name">Items</span>
+                                    <span class="tile-sub">gear · artifacts · objects</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="panel-content" id="atlasContent" style="display: none;">
-                            <!-- Maps gallery content loads here -->
-                        </div>
-                    </div>
 
-                    <div class="hub-panel" data-panel="bestiary">
-                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/bestiary-loop.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Bestiary</h2>
-                            <p>Creatures · Beasts  Monsters</p>
-                            <button class="enter-btn">Enter</button>
+                        <div class="hub-section">
+                            <div class="hub-section-header">
+                                <div class="hub-section-line"></div>
+                                <span class="hub-section-label">World</span>
+                                <div class="hub-section-line"></div>
+                            </div>
+                            <div class="hub-tiles-row">
+                                <div class="hub-tile" data-panel="deities">
+                                    <span class="tile-name">Deities</span>
+                                    <span class="tile-sub">empyreans · entities</span>
+                                </div>
+                                <div class="hub-tile" data-panel="factions">
+                                    <span class="tile-name">Factions</span>
+                                    <span class="tile-sub">orgs · guilds · houses</span>
+                                </div>
+                                <div class="hub-tile" data-panel="history">
+                                    <span class="tile-name">History</span>
+                                    <span class="tile-sub">eras · events · timeline</span>
+                                </div>
+                                <div class="hub-tile" data-panel="literature">
+                                    <span class="tile-name">Literature</span>
+                                    <span class="tile-sub">books · prose · legends</span>
+                                </div>
+                                <div class="hub-tile" data-panel="locations">
+                                    <span class="tile-name">Locations</span>
+                                    <span class="tile-sub">cities · landmarks · regions</span>
+                                </div>
+                                <div class="hub-tile" data-panel="nations">
+                                    <span class="tile-name">Nations</span>
+                                    <span class="tile-sub">demographic · heraldry</span>
+                                </div>
+                                <div class="hub-tile" data-panel="society">
+                                    <span class="tile-name">Society</span>
+                                    <span class="tile-sub">culture · expression ·</span>
+                                </div>
+                                <div class="hub-tile" data-panel="species">
+                                    <span class="tile-name">Species</span>
+                                    <span class="tile-sub">origin · nature · homeland</span>
+                                </div>
+                                <div class="hub-tile" data-panel="technology">
+                                    <span class="tile-name">Technology</span>
+                                    <span class="tile-sub">engineering · warfare · magic</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="panel-content" id="bestiaryContent" style="display: none;">
-                            <!-- Bestiary content loads here -->
-                        </div> 
-                    </div>
 
-                    <div class="hub-panel" data-panel="alchemy">
-                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/alchemy-loop.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Alchemy</h2>
-                            <p>Flora · Ingredients · Potions</p>
-                            <button class="enter-btn">Enter</button>
-                        </div>
-                        <div class="panel-content" id="alchemyContent" style="display: none;">
-                            <!-- Alchemy content loads here -->
-                        </div>
-                    </div>
+                    </div><!-- /.hub-selection -->
 
-                    <div class="hub-panel" data-panel="literature">
-                        <video class="panel-bg-video" muted loop playsinline autoplay>
-                            <source src="assets/videos/literature-loop.mp4" type="video/mp4">
-                        </video>
-                        <div class="panel-selector">
-                            <span class="panel-star">✦</span>
-                            <h2>Literature</h2>
-                            <p>Lore · History · Books</p>
-                            <button class="enter-btn">Enter</button>
-                        </div>
-                        <div class="panel-content" id="literatureContent" style="display: none;">
-                            <!-- Literature content loads here -->
-                        </div>
-                    </div>
-                </div>
-            </section>
+                    <!-- ── Panel content area (shown when a tile is selected) ── -->
+                    <div class="hub-content-area" id="hubContentArea" style="display:none;">
+                        <div class="panel-content" id="nationsContent"></div>
+                        <div class="panel-content" id="speciesContent"></div>
+                        <div class="panel-content" id="deitiesContent"></div>
+                        <div class="panel-content" id="historyContent"></div>
+                        <div class="panel-content" id="literatureContent"></div>
+                        <div class="panel-content" id="societyContent"></div>
+                        <div class="panel-content" id="technologyContent"></div>
+                        <div class="panel-content" id="charactersContent"></div>
+                        <div class="panel-content" id="factionsContent"></div>
+                        <div class="panel-content" id="bestiaryContent"></div>
+                        <div class="panel-content" id="itemsContent"></div>
+                        <div class="panel-content" id="alchemyContent"></div>
+                        <div class="panel-content" id="locationsContent"></div>
+                    </div><!-- /.hub-content-area -->
+
+                </div><!-- /.hub-main-area -->
+
+            </section><!-- /.world-hub -->
         </main>
+    </div>
 
-        <!-- Article Modal -->
-        <div id="modalOverlay" class="modal-overlay">
-            <div class="article-modal" id="articleModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 id="modalTitle">Article Title</h2>
-                        <button class="close-btn" id="closeModalBtn">&times;</button>
-                    </div>
-                    <div class="modal-body" id="modalBody">
-                        <!-- Article content will be loaded here -->
-                    </div>
+    <!-- ===== JOURNAL MODAL ===== -->
+    <div id="journalModalOverlay" class="modal-overlay">
+        <div class="journal-modal" id="journalModal">
+            <div class="journal-modal-content">
+                <div class="modal-header journal-modal-header">
+                    <h2>Journal</h2>
+                    <button class="close-btn" id="closeJournalBtn">&times;</button>
                 </div>
+                <div class="journal-modal-body" id="journalModalBody"></div>
             </div>
         </div>
+    </div>
 
-        <!-- JavaScript files -->
-        <script src="config.js"></script>
-        <script src="script.js"></script>
-        <script src="article_viewer.js"></script>
-        <script src="quest_viewer.js"></script>
-        <script src="atlas_viewer.js"></script>
+    <!-- ===== CALENDAR MODAL ===== -->
+    <div id="calendarModalOverlay" class="modal-overlay">
+        <div class="calendar-modal" id="calendarModal">
+            <div class="calendar-modal-content">
+                <div class="modal-header">
+                    <h2>Calendar</h2>
+                    <button class="close-btn" id="closeCalendarBtn">&times;</button>
+                </div>
+                <div class="calendar-modal-body" id="calendarModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CAMPAIGN LOG (RECAPS) MODAL ===== -->
+    <div id="recapsModalOverlay" class="modal-overlay">
+        <div class="recaps-modal" id="recapsModal">
+            <div class="recaps-modal-content">
+                <div class="modal-header recaps-modal-header">
+                    <h2>Campaign Log</h2>
+                    <button class="close-btn" id="closeRecapsBtn">&times;</button>
+                </div>
+                <div class="recaps-modal-body" id="recapsModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ARTICLE MODAL ===== -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="article-modal" id="articleModal">
+            <div class="modal-content">
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+                <button class="edit-btn" id="editArticleBtn" title="Edit article">&#9998;</button>
+                <div class="modal-header">
+                    <h2 id="modalTitle">Article Title</h2>
+                </div>
+                <div class="modal-body" id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript files -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+    <script src="article_viewer.js"></script>
+    <script src="quest_viewer.js"></script>
+    <script src="atlas_viewer.js"></script>
 </body>
 </html>

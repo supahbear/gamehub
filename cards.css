@@ -62,10 +62,6 @@
     animation-delay: 0.2s;
 }
 
-#worldHub.entering > .hub-panels-container {
-    animation-delay: 0.3s;
-}
-
 /* ========== PANEL BACKGROUND VIDEOS ========== */
 .panel-bg-video {
     position: absolute;
@@ -78,13 +74,6 @@
     opacity: 1;
     z-index: 0;
 }
-
-/* Atlas video — shift focus toward the map imagery */
-.hub-panel[data-panel="atlas"] .panel-bg-video {
-    object-position: center 30%;
-}
-
-/* Bestiary video — no override needed, default center is fine */
 
 /* ========== WORLD CARDS ========== */
 .worlds-grid {
@@ -127,15 +116,6 @@
     }
 }
 
-@keyframes overlayFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 .world-card:hover {
     transform: translateY(-6px) scale(1.02) translateZ(0); /* Keep GPU rendering */
     border-color: var(--text-accent);
@@ -166,23 +146,19 @@
 .world-card.loading .world-name {
     color: #ffffff;
     text-transform: uppercase;
-    letter-spacing: 1px;
     font-weight: 900;
     font-size: 2.2rem;
-    font-family: 'Cinzel', serif;
+    font-family: 'Fjalla One', sans-serif;
     animation: textFadeIn 1.2s ease-out forwards;
 }
 
 .world-card.loading .world-overlay {
-    display: none; /* Hide overlay for loading card - only show when real data loads */
+    opacity: 1;
 }
 
 .world-card.loading .world-description {
-    color: #ffffff !important;
-}
-
-.world-card.loading .world-system {
-    color: #ffffff !important;
+    opacity: 1;
+    animation: none;
 }
 
 .world-video {
@@ -234,8 +210,7 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    opacity: 0;
-    animation: overlayFadeIn 1.2s ease-out 0.3s forwards;
+    opacity: 1;
 }
 
 .world-name {
@@ -245,6 +220,7 @@
     transform: translate(-50%, -50%);
     width: calc(100% - 40px);
     text-align: center;
+    font-family: 'Fjalla One', sans-serif;
     font-weight: 900;
     font-size: 2.2rem;
     color: #ffffff;
@@ -252,34 +228,33 @@
     line-height: 1.1;
     z-index: 3;
     pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     opacity: 0;
     animation: textFadeIn 1.2s ease-out forwards;
 }
 
 .world-description {
-    color: #e0e0e0;
+    position: absolute;
+    top: calc(50% + 2rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    text-align: center;
     font-size: 0.9rem;
     font-weight: var(--font-weight-normal);
-    margin-bottom: 8px;
+    color: #ffffff;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
     line-height: 1.3;
-}
-
-.world-system {
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-bold);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    animation: textFadeIn 1.2s ease-out 0.3s forwards;
 }
 
 .world-card[data-world-id="breach"] .world-name {
-    font-family: 'Cinzel', serif;
+    font-family: 'Fjalla One', sans-serif;
     font-weight: 900;
-}
-
-.world-card[data-world-id="breach"] .world-system {
-    color: #b19cd9; /* Changed from #c9a961 to purple */
 }
 
 .world-card[data-world-id="breach"]:hover {
@@ -291,15 +266,17 @@
 /* ========== ARTICLE CARDS ========== */
 .articles-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, 200px);
     gap: 12px;
-    max-width: 1200px;
+    width: fit-content;
+    max-width: 100%;
     margin: 0 auto;
     padding: 0;
 }
 
 .article-card {
     position: relative;
+    width: 200px;
     height: 370px;
     border-radius: 12px;
     overflow: hidden;
@@ -312,19 +289,6 @@
 .article-card:hover {
     transform: translateY(-6px) scale(1.02);
     filter: saturate(1); /* NEW: Full saturation on hover */
-}
-
-/* Compact header for article cards */
-.card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-}
-
-/* Top-right badges container - REMOVE from top */
-.article-card .card-top-bar {
-    display: none; /* Hide the top bar completely */
 }
 
 /* Tag-based styling */
@@ -417,23 +381,6 @@
     width: 100%;
 }
 
-.card-tag {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 3;
-    padding: 3px 8px;
-    border-radius: 15px;
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-bold);
-    font-size: 10px;
-    text-transform: capitalize;
-    background: rgba(201, 181, 230, 0.9);
-    color: #2c2c3e;
-    border: none;
-    backdrop-filter: blur(6px);
-}
-
 .card-summary {
     font-family: var(--font-family);
     font-weight: var(--font-weight-bold);
@@ -449,14 +396,52 @@
     overflow: hidden;
 }
 
-.card-meta {
-    font-family: var(--font-family);
-    font-weight: var(--font-weight-normal);
-    font-size: 0.65rem;
-    color: var(--text-secondary);
-    margin-top: 6px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+/* ========== TAG-GROUPED LOCATIONS VIEW ========== */
+.tag-grouped-view {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
-/* No changes needed unless you have badge order overrides here. 
-   The theme's flex-direction: column-reverse will handle the order for Breach. */
+.tag-group-section {
+    margin-bottom: 28px;
+}
+
+.tag-group-header {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-heavy);
+    font-size: 1rem;
+    color: rgba(201, 181, 230, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0 0 10px;
+    margin: 0 0 14px;
+    border-bottom: 1px solid rgba(201, 181, 230, 0.18);
+}
+
+.articles-grid--compact {
+    grid-template-columns: repeat(auto-fill, 200px);
+    gap: 12px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+}
+
+.articles-grid--compact .article-card {
+    width: 200px;
+    height: 220px;
+}
+
+.articles-grid--compact .card-overlay {
+    min-height: 65px;
+    padding: 10px 12px;
+}
+
+.articles-grid--compact .card-title {
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.articles-grid--compact .card-summary {
+    display: none;
+}

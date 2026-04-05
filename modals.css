@@ -84,12 +84,19 @@
     background: rgba(44, 44, 62, 0.95); /* Darker purple background instead of light purple tint */
 }
 
-.modal-header h2 {
+.modal-header h2,
+.modal-header h1 {
     margin: 0;
-    color: #b19cd9; /* Purple color for title - changed from #c9b5e6 */
+    color: #b19cd9;
     font-family: var(--font-family);
     font-weight: var(--font-weight-heavy);
     font-size: 1.8rem;
+    letter-spacing: 0.02em;
+    /* Block breach-theme h1 gradient in headers */
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #b19cd9 !important;
+    background-clip: unset !important;
 }
 
 /* Article modal: use Cinzel for header with glow and center */
@@ -99,7 +106,7 @@
 }
 
 .article-modal .modal-header h2 {
-    font-family: 'Cinzel', serif !important;
+    font-family: var(--font-ui) !important;
     font-weight: var(--font-weight-heavy);
     font-size: 2rem;
     text-align: center;
@@ -109,8 +116,36 @@
 }
 
 .article-modal .close-btn {
-    position: absolute; /* Position close button absolutely */
-    right: 20px; /* Keep it on the right */
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    z-index: 10;
+}
+
+.article-modal .edit-btn {
+    position: absolute;
+    top: 12px;
+    right: 60px;
+    z-index: 10;
+    background: none;
+    border: none;
+    color: #c9b5e6;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    line-height: 1;
+    font-family: var(--font-family);
+}
+
+.article-modal .edit-btn:hover {
+    background: rgba(177, 156, 217, 0.2);
+    color: #ffffff;
+}
+
+.article-modal.article-mode .modal-header {
+    display: none;
 }
 
 .close-btn {
@@ -146,23 +181,46 @@
     flex-direction: column;
     line-height: 1.6;
     color: #ffffff; /* Changed to pure white */
-    font-family: 'Faculty Glyphic', var(--font-family); /* Changed to Faculty Glyphic */
+    font-family: var(--font-body); /* Changed to Faculty Glyphic */
     font-weight: var(--font-weight-normal);
 }
 
 .modal-body h1, .modal-body h2, .modal-body h3 {
-    color: #b19cd9; /* Purple headings */
-    margin-top: 6px;
+    color: #b19cd9;
+    margin-top: 14px;
     margin-bottom: 2px;
-    font-family: 'Cinzel', serif;
+    font-family: var(--font-ui);
     font-weight: var(--font-weight-bold);
 }
 
-.modal-body h2, .modal-body h3 {
-    font-family: 'Cormorant Garamond', serif !important;
+.modal-body h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+/* Tighten gap when a header immediately follows another header */
+.modal-body h1 + h2, .modal-body h1 + h3,
+.modal-body h2 + h3, .modal-body h2 + h2,
+.modal-body h3 + h2, .modal-body h3 + h3 {
+    margin-top: 2px;
+}
+
+.modal-body h2 {
+    font-family: var(--font-editorial) !important;
+    font-size: 1.55rem !important;
+    font-weight: 700;
     text-transform: none !important;
-    font-weight: 600;
     text-align: left;
+    letter-spacing: 0.01em;
+}
+
+.modal-body h3 {
+    font-family: var(--font-editorial) !important;
+    font-size: 1.3rem !important;
+    font-weight: 600;
+    text-transform: none !important;
+    text-align: left;
+    letter-spacing: 0.01em;
 }
 
 .modal-body p {
@@ -170,7 +228,7 @@
     color: #ffffff; /* Pure white text */
     font-size: 1rem;
     line-height: 1.6; /* Improved from 1.4 for better readability */
-    font-family: 'Faculty Glyphic', var(--font-family); /* Faculty Glyphic for paragraphs */
+    font-family: var(--font-body); /* Faculty Glyphic for paragraphs */
 }
 
 .article-image {
@@ -476,7 +534,7 @@ body.modal-active main {
 /* ========== ARTICLE MODAL TWO-COLUMN LAYOUT ========== */
 .article-modal-columns {
     display: grid;
-    grid-template-columns: 370px 1fr;
+    grid-template-columns: 440px 1fr;
     gap: 48px;
     align-items: flex-start;
     width: 100%;
@@ -490,12 +548,12 @@ body.modal-active main {
     gap: 0;
     min-width: 0;
     height: 100%;
-    width: 370px;
+    width: 440px;
     position: relative;
 }
 
 .article-modal-image-col .article-image {
-    width: 370px !important;
+    width: 440px !important;
     height: 0 !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -517,7 +575,7 @@ body.modal-active main {
     flex: 1 1 auto;
     height: 0;
     min-height: 0;
-    width: 370px;
+    width: 440px;
     position: relative;
     border-radius: 8px;
     overflow: hidden;
@@ -584,7 +642,7 @@ body.modal-active main {
     font-size: 0.95rem;
     line-height: 1.5;
     font-style: normal;
-    font-family: 'Faculty Glyphic', var(--font-family);
+    font-family: var(--font-body);
     margin: 0;
     min-height: 60px;
     max-height: 210px; /* 30% of 700px = 210px */
@@ -606,6 +664,27 @@ body.modal-active main {
     position: relative;
     height: 100%;
     min-height: 0;
+}
+
+.article-modal-title {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 2rem;
+    color: #b19cd9;
+    text-transform: uppercase;
+    /* Block breach-theme h1 gradient */
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #b19cd9 !important;
+    background-clip: unset !important;
+    text-shadow: 0 0 20px rgba(177, 156, 217, 0.8),
+                 0 0 40px rgba(177, 156, 217, 0.4),
+                 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin: 0 0 10px 0;
+    padding: 0;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
 }
 
 /* Article pages container */
@@ -633,7 +712,7 @@ body.modal-active main {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    font-family: 'Faculty Glyphic', var(--font-family);
+    font-family: var(--font-body);
     font-size: 0.9rem;
     line-height: 1.4;
 }
@@ -647,7 +726,7 @@ body.modal-active main {
 
 .article-meta-label {
     color: #b19cd9;
-    font-family: 'Cinzel', serif;
+    font-family: var(--font-ui);
     font-weight: 700;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -791,3 +870,587 @@ body.modal-active main {
         font-size: clamp(0.85rem, 2vw, 1rem);
     }
 }
+
+/* ========== JOURNAL MODAL ========== */
+#journalModalOverlay,
+#calendarModalOverlay,
+#recapsModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 44, 62, 0.85);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9998;
+    transition: opacity 0.3s ease;
+}
+
+#journalModalOverlay.show,
+#calendarModalOverlay.show,
+#recapsModalOverlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.journal-modal,
+.calendar-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    visibility: hidden;
+}
+
+.journal-modal.show,
+.calendar-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+/* Journal modal — wide, tall, holds the quest viewer layout */
+.journal-modal {
+    width: 92vw;
+    max-width: 1400px;
+    height: 82vh;
+}
+
+.journal-modal-content {
+    background: #2c2c3e;
+    border: 2px solid #b19cd9;
+    border-radius: 15px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3);
+}
+
+.journal-modal-header {
+    justify-content: space-between !important;
+}
+
+.journal-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Quest viewer inside journal modal fills the body */
+.journal-modal-body .quest-viewer,
+.journal-modal-body .quest-layout {
+    height: 100%;
+}
+
+/* ========== CALENDAR MODAL ========== */
+.calendar-modal {
+    width: 1040px;
+    max-width: 95vw;
+}
+
+.calendar-modal-content {
+    background: #16161f;
+    border: 2px solid #b19cd9;
+    border-radius: 15px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3);
+}
+
+/* Fix: world-breach h2 overrides for calendar header */
+.calendar-modal .modal-header h2 {
+    color: #b19cd9 !important;
+    font-family: var(--font-ui) !important;
+}
+
+.calendar-modal-body {
+    padding: 28px 36px 36px;
+    overflow: visible;
+    background: #16161f;
+}
+
+.calendar-widget {
+    font-family: var(--font-ui);
+}
+
+/* ── Month tab bar ── */
+.cal-tabs-row {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid rgba(177, 156, 217, 0.2);
+    margin-bottom: 18px;
+    padding-bottom: 0;
+    flex-wrap: nowrap;
+}
+
+.cal-month-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 9px 4px 8px;
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(201, 181, 230, 0.35);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+    white-space: nowrap;
+}
+
+.cal-month-tab:hover {
+    color: rgba(177, 156, 217, 0.75);
+    text-shadow: 0 0 10px rgba(177, 156, 217, 0.3);
+}
+
+.cal-month-tab.active {
+    color: #b19cd9;
+    border-bottom-color: #b19cd9;
+    text-shadow: 0 0 14px rgba(177, 156, 217, 0.5), 0 0 28px rgba(177, 156, 217, 0.2);
+}
+
+/* ── Year + description block ── */
+.cal-month-meta {
+    text-align: center;
+    margin-bottom: 18px;
+    transition: opacity 0.18s ease;
+}
+
+.cal-month-meta.fading {
+    opacity: 0;
+}
+
+.cal-month-desc-row {
+    margin-top: -10px;
+}
+
+.cal-year-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+}
+
+/* ── Month description subtitle ── */
+.cal-month-desc {
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-style: normal;
+    color: rgba(201, 181, 230, 0.55);
+    line-height: 1.5;
+    margin: 0;
+    padding: 0 12px;
+}
+
+/* ── Grid fade ── */
+.cal-grid-panel {
+    transition: opacity 0.18s ease;
+}
+
+.cal-grid-panel.fading {
+    opacity: 0;
+}
+
+/* ── 10-column grid table ── */
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.calendar-table th {
+    text-align: center;
+    padding: 8px 2px;
+    font-size: 0.68rem;
+    color: rgba(201, 181, 230, 0.65);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(177, 156, 217, 0.3);
+    font-family: var(--font-ui);
+}
+
+.calendar-table td {
+    border: 1px solid rgba(177, 156, 217, 0.12);
+    background: #1e1e2d;
+    position: relative;
+    vertical-align: top;
+    height: 88px;
+    padding: 28px 4px 6px;
+    text-align: center;
+}
+
+/* Day number — small, top-right corner */
+.cal-day-num {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 0.62rem;
+    font-family: var(--font-ui);
+    color: rgba(232, 224, 240, 0.65);
+    line-height: 1;
+}
+
+/* ========== RECAPS / CAMPAIGN LOG MODAL ========== */
+.recaps-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    visibility: hidden;
+    width: 92vw;
+    max-width: 1100px;
+    height: 82vh;
+}
+
+.recaps-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.recaps-modal-content {
+    background: #1a1510;
+    border: 2px solid #b19cd9;
+    border-radius: 15px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(177, 156, 217, 0.3);
+}
+
+.recaps-modal-header {
+    justify-content: space-between !important;
+    background: rgba(26, 21, 16, 0.98) !important;
+    border-bottom: 2px solid rgba(177, 156, 217, 0.25) !important;
+}
+
+.recaps-modal-header h2 {
+    color: #b19cd9 !important;
+    font-family: var(--font-ui) !important;
+    letter-spacing: 0.1em;
+}
+
+.recaps-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 80px 48px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.recaps-modal-body::-webkit-scrollbar { display: none; }
+
+/* ── Feed list ── */
+.recaps-list {
+    padding-top: 4px;
+}
+
+/* ── Individual entry ── */
+.recap-entry {
+    padding: 36px 0 4px;
+}
+
+.recap-entry-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    padding-right: 28px;
+}
+
+.recap-tag {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(201, 181, 230, 0.5);
+    margin-bottom: 2px;
+}
+
+.recap-title {
+    font-family: var(--font-editorial);
+    font-size: 2rem;
+    font-weight: 600;
+    color: #fff8f0;
+    margin: 0;
+    line-height: 1.15;
+    transition: color 0.2s ease;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+body.world-breach .recap-title {
+    color: #fff8f0 !important;
+    font-family: var(--font-editorial) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.recap-entry-header:hover .recap-title {
+    color: #ffffff;
+}
+
+/* Collapse/expand icon — rendered as +/- using pseudo-elements */
+.recap-collapse-icon {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+}
+
+.recap-collapse-icon::before,
+.recap-collapse-icon::after {
+    content: '';
+    position: absolute;
+    background: #c9b5e6;
+    border-radius: 2px;
+}
+
+/* Horizontal bar — always visible */
+.recap-collapse-icon::before {
+    width: 12px;
+    height: 2px;
+    top: 8px;
+    left: 3px;
+}
+
+/* Vertical bar — hidden when expanded, revealed when collapsed */
+.recap-collapse-icon::after {
+    width: 2px;
+    height: 12px;
+    top: 3px;
+    left: 8px;
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
+.recap-entry-header[aria-expanded="false"] .recap-collapse-icon::after {
+    transform: scaleY(1);
+}
+
+.recap-entry-header:hover .recap-collapse-icon {
+    opacity: 0.65;
+}
+
+/* ── Body ── */
+.recap-body {
+    margin-top: 16px;
+    overflow: hidden;
+    max-height: 3000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
+    opacity: 1;
+}
+
+.recap-body--collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.recap-preview,
+.recap-full {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.75;
+    color: rgba(255, 248, 240, 0.85);
+    margin: 0 0 10px;
+}
+
+.recap-read-more {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-editorial);
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #c9963a;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    letter-spacing: 0.02em;
+}
+
+.recap-read-more:hover {
+    color: #e0b055;
+}
+
+/* ── Divider ── */
+.recap-divider {
+    border: none;
+    border-top: 1px solid rgba(177, 156, 217, 0.1);
+    margin: 8px 0 0;
+}
+
+/* ── Empty / loading states ── */
+.recaps-loading,
+.recaps-empty {
+    padding: 48px 0;
+    color: rgba(201, 181, 230, 0.45);
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    text-align: center;
+    letter-spacing: 0.12em;
+}
+
+.cal-today {
+    background: rgba(177, 156, 217, 0.12);
+    border: 1px solid #b19cd9 !important;
+    box-shadow:
+        inset 0 0 8px rgba(177, 156, 217, 0.25),
+        0 0 8px rgba(177, 156, 217, 0.35),
+        0 0 18px rgba(177, 156, 217, 0.18);
+}
+
+.cal-today .cal-day-num {
+    color: #d4bef5;
+    font-weight: 700;
+}
+
+/* ── Event dots ── */
+.has-events {
+    cursor: default;
+}
+
+.cal-event-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #b19cd9;
+    margin: 2px 1.5px 0;
+    vertical-align: top;
+}
+
+/* ── Event tooltip (fixed, escapes modal bounds) ── */
+#_calFloatTooltip {
+    display: none;
+    position: fixed;
+    min-width: 220px;
+    max-width: 420px;
+    background: #000000;
+    border: 1px solid rgba(177, 156, 217, 0.55);
+    border-radius: 8px;
+    padding: 10px 14px;
+    z-index: 10100;
+    pointer-events: auto;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.8);
+    text-align: left;
+}
+
+.cal-tooltip-entry {
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+    color: #ffffff;
+    line-height: 1.55;
+}
+
+.cal-tooltip-entry + .cal-tooltip-entry {
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(177, 156, 217, 0.25);
+}
+
+.cal-tooltip-entry strong {
+    display: block;
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.cal-tooltip-entry span {
+    font-family: Arial, sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-style: normal;
+}
+
+.cal-tooltip-readmore {
+    display: block;
+    margin-top: 8px;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    color: #b19cd9;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+}
+
+.cal-tooltip-readmore:hover {
+    color: #d4bef5;
+}
+
+/* ========== ARTICLE CROSS-LINK SYSTEM ========== */
+
+/* [[WikiLink]] converted to clickable spans in article text */
+.article-link {
+    color: #b19cd9;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+.article-link:hover {
+    color: #d4bef5;
+    text-shadow: 0 0 8px rgba(177, 156, 217, 0.4);
+}
+
+/* Full-screen backdrop for stacked article layers */
+.article-layer-wrap {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 32, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 10200; /* overridden inline per layer depth */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.article-layer-wrap.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Stacked modal: slight offset to give a layered-card depth cue */
+.article-modal-layer {
+    transform: translate(calc(-50% + 14px), calc(-50% - 14px));
+}
+

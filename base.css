@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lobster:wght@400&family=Cinzel:wght@400;600;900&family=Fjalla+One:wght@400&family=Faculty+Glyphic&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Fjalla+One:wght@400&family=Faculty+Glyphic&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
 
 /* ========== CSS VARIABLES ========== */
 :root {
@@ -13,11 +13,16 @@
     --button-bg: rgba(255, 255, 255, 0.8);
     --button-hover: rgba(255, 255, 255, 0.9);
     
-    /* Typography */
+    /* Typography — base (non-themed) defaults */
     --font-family: Arial, sans-serif;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
     --font-weight-heavy: 900;
+
+    /* Semantic font roles — override these per theme */
+    --font-ui:        'Cinzel', serif; /* nav, labels, badges, buttons */
+    --font-body:      Arial, sans-serif;         /* article/modal body text */
+    --font-editorial: Arial, sans-serif;         /* in-article headings (h2/h3) */
     
     /* Card system colors - purple theme */
     --card-border-operator: #b19cd9;
@@ -64,29 +69,29 @@ body {
     position: relative;
 }
 
-/* When world-hub is active, prevent scrolling */
-body:has(.world-hub[style*="display: block"]) {
+/* When world-hub is active, prevent body scrolling */
+body:has(.world-hub:not([style*="display: none"])) {
     overflow: hidden;
 }
 
 /* Hide background video layer in hub — replaced by dark gradient */
-body:has(.world-hub[style*="display: block"]) .world-background-layer {
+body:has(.world-hub:not([style*="display: none"])) .world-background-layer {
     opacity: 0;
     transition: opacity 0.8s ease;
 }
 
 /* Dark gradient background for hub */
-body:has(.world-hub[style*="display: block"]) {
+body:has(.world-hub:not([style*="display: none"])) {
     background: linear-gradient(160deg, #0d0a12 0%, #1a1028 40%, #0f0c18 100%);
 }
 
 /* Hide landing screen when world-hub is visible */
-body:has(.world-hub[style*="display: block"]) .landing-screen {
+body:has(.world-hub:not([style*="display: none"])) .landing-screen {
     display: none;
 }
 
 /* Hide container header when world-hub is visible */
-body:has(.world-hub[style*="display: block"]) > .container > header {
+body:has(.world-hub:not([style*="display: none"])) > .container > header {
     display: none;
 }
 
@@ -149,7 +154,7 @@ h1 {
 }
 
 h2 {
-    font-family: 'Fjalla One', sans-serif !important; 
+    font-family: var(--font-ui) !important; 
     font-weight: 400;
     font-size: 2.5rem;
     margin-bottom: 30px;
@@ -164,27 +169,4 @@ h2 {
     font-size: 1.2rem;
     color: var(--text-secondary);
     font-weight: var(--font-weight-normal);
-}
-
-/* ========== ANIMATIONS ========== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }

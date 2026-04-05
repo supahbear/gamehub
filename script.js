@@ -8,34 +8,39 @@ class TTRPGHub {
     this._sheetCache = null;     // Prefetched sheet data, keyed by sheet name
     this._sheetPrefetch = null; // In-flight prefetch promise
     
-    this.activeBackgroundWorld = 'neutral'; // Changed from 'breach' to 'neutral'
+    this.activeBackgroundWorld = 'neutral';
     this.backgroundVideos = {};
+
+    this._panelIdMap = {
+      nations:    'nationsContent',
+      species:    'speciesContent',
+      deities:    'deitiesContent',
+      history:    'historyContent',
+      literature: 'literatureContent',
+      society:    'societyContent',
+      technology: 'technologyContent',
+      characters: 'charactersContent',
+      factions:   'factionsContent',
+      bestiary:   'bestiaryContent',
+      items:      'itemsContent',
+      alchemy:    'alchemyContent',
+      locations:  'locationsContent'
+    };
 
     this.init();
   }
 
   async init() {
-    this.setupEventListeners();
-    
     await this.loadWorlds();
     this.renderWorlds();
+    this._prefetchAllSheets();
     
     Config.log('TTRPG Hub initialized');
   }
 
-  // ========== Event Listeners ==========
-  setupEventListeners() {
-    // Logo click handler reloads the page via onclick in HTML
-  }
-
   // ========== Data Loading ==========
   async loadWorlds() {
-    try {
-      await this.loadWorldsFromAppsScript();
-    } catch (error) {
-      Config.warn('Apps Script connection failed, using fallback data:', error.message);
-      this.useFallbackWorlds();
-    }
+    this.useFallbackWorlds();
   }
 
   // ========== JSONP Helper ==========
@@ -95,18 +100,13 @@ class TTRPGHub {
     });
   }
 
-  async loadWorldsFromAppsScript() {
-    // World list is not served by the sheet-based backend — always use fallback
-    throw new Error('World list not available from sheet backend');
-  }
-
   useFallbackWorlds() {
     // Single world - The Breach
     this.worlds = [
       {
         id: 'breach',
         name: 'Beyond the Vale',
-        description: 'Becoming a hero is no easy feat. Saving the world might be a good place to start.',
+        description: 'Saving the world is no easy feat. Saving yourself might be a good place to start.',
         system: 'D&D 5e',
         video_url: 'assets/videos/breach-loopv2.mp4'
       }
@@ -135,81 +135,15 @@ class TTRPGHub {
       
       // Update text content of the card
       const worldNameEl = loadingCard.querySelector('.world-name');
-      const descriptionEl = loadingCard.querySelector('.world-description');
-      const systemEl = loadingCard.querySelector('.world-system');
-      const overlayEl = loadingCard.querySelector('.world-overlay');
-      
-      if (worldNameEl) {
-        worldNameEl.textContent = world.name;
-        // Restart animation by removing and re-adding it
-        worldNameEl.style.animation = 'none';
-        // Force reflow to restart animation
-        void worldNameEl.offsetWidth;
-        worldNameEl.style.animation = '';
-      }
-      if (descriptionEl) descriptionEl.textContent = world.description;
-      if (systemEl) systemEl.textContent = `System: ${world.system}`;
-      
-      // Restart overlay animation
-      if (overlayEl) {
-        overlayEl.style.animation = 'none';
-        void overlayEl.offsetWidth;
-        overlayEl.style.animation = '';
-      }
-      
-      // Remove loading indicators
-      loadingCard.removeAttribute('data-loading');
-      loadingCard.classList.remove('loading');
+
+      if (worldNameEl) worldNameEl.textContent = world.name;
+      // loading class stays on — _revealWorldCard() removes it once the prefetch is done
     }
     
     this.setupCardListeners();
     this.setupWorldBackgrounds();
 
     Config.log(`Rendered ${this.worlds.length} worlds`);
-  }
-
-  renderWorldCard(world) {
-    // This method is kept for compatibility but is no longer used in renderWorlds()
-    // The loading card is updated in place instead of being replaced
-    const hasVideo = world.video_url && world.video_url.trim();
-    const videoElement = hasVideo ? 
-      `<video class="world-video" muted loop playsinline>
-         <source src="${world.video_url}" type="video/mp4">
-         <div class="world-video-placeholder"></div>
-       </video>` :
-      `<div class="world-video-placeholder"></div>`;
-
-    return `
-      <div class="world-card" data-world-id="${world.id}">
-        ${videoElement}
-        <div class="world-name">${world.name}</div>
-        <div class="world-overlay">
-          <div class="world-description">${world.description}</div>
-          <div class="world-system">System: ${world.system}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderLoadingCard() {
-    return `
-      <div class="world-card loading" data-loading="true">
-        <div class="world-video-placeholder"></div>
-        <div class="world-name">Loading</div>
-        <div class="world-overlay">
-          <div class="world-description">Preparing to enter The Breach...</div>
-          <div class="world-system">System: D&D 5e</div>
-        </div>
-      </div>
-    `;
-  }
-
-  showError(message) {
-    const worldsGrid = document.getElementById('worldsGrid');
-    if (worldsGrid) {
-      worldsGrid.innerHTML = `<div class="world-card loading" style="color: #ff6b6b;">${message}</div>`;
-    }
-    Config.error(message);
   }
 
   // ========== World Theme Management ==========
@@ -251,312 +185,779 @@ class TTRPGHub {
     // Keep currentWorld so the card re-entry skips re-init
     this.currentMode = 'explore';
     this.clearWorldTheme();
+    // Reset hub back to selection grid for clean re-entry
+    this._resetHubToSelection();
+  }
+
+  _resetHubToSelection() {
+    this.currentSelectedPanel = null;
+    const titleText   = document.getElementById('hubTitleText');
+    const panelNav    = document.getElementById('hubPanelNav');
+    const selection   = document.getElementById('hubSelection');
+    const contentArea = document.getElementById('hubContentArea');
+    if (titleText)   { titleText.style.display = ''; titleText.style.opacity = '1'; }
+    if (panelNav)    panelNav.style.display = 'none';
+    if (selection)   { selection.style.display = ''; selection.style.opacity = '1'; }
+    if (contentArea) contentArea.style.display = 'none';
   }
 
   showWorldHub() {
     this.setPageVisibility('hub');
-    
-    // Trigger fade-in animation for world hub and its children
+
+    // Fade-in animation
     const worldHub = document.getElementById('worldHub');
     if (worldHub) {
       worldHub.classList.remove('entering');
-      // Force reflow to restart animation
       void worldHub.offsetWidth;
       worldHub.classList.add('entering');
     }
-    
+
     this.currentMode = 'explore';
-    this.currentSelectedPanel = this.currentSelectedPanel || 'encyclopedia';
+    this.currentSelectedPanel = null; // Always start at selection grid
     this.initModalHandlers();
     this.initializePanels();
-    // Prefetch all sheets in the background so panels open instantly
-    this._prefetchAllSheets();
-    Config.log('showWorldHub: About to activate breach background');
-    this.activateWorldBackground('breach');
+    this.activateWorldBackground(this.currentWorld?.id ?? 'breach');
   }
 
   // ========== Global Modal Handlers ==========
   initModalHandlers() {
+    // Article modal
     const closeBtn = document.getElementById('closeModalBtn');
     const overlay  = document.getElementById('modalOverlay');
     const modal    = document.getElementById('articleModal');
-
     if (closeBtn && !closeBtn._hubClose) {
       closeBtn.addEventListener('click', () => this.closeModal());
       closeBtn._hubClose = true;
     }
     if (overlay && !overlay._hubOverlay) {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) this.closeModal();
-      });
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) this.closeModal(); });
       overlay._hubOverlay = true;
     }
     if (modal && !modal._hubModal) {
       modal.addEventListener('click', (e) => e.stopPropagation());
       modal._hubModal = true;
     }
+
+    // Journal modal
+    const closeJournalBtn     = document.getElementById('closeJournalBtn');
+    const journalOverlay      = document.getElementById('journalModalOverlay');
+    const journalModal        = document.getElementById('journalModal');
+    if (closeJournalBtn && !closeJournalBtn._hubClose) {
+      closeJournalBtn.addEventListener('click', () => this.closeJournalModal());
+      closeJournalBtn._hubClose = true;
+    }
+    if (journalOverlay && !journalOverlay._hubOverlay) {
+      journalOverlay.addEventListener('click', (e) => { if (e.target === journalOverlay) this.closeJournalModal(); });
+      journalOverlay._hubOverlay = true;
+    }
+    if (journalModal && !journalModal._hubModal) {
+      journalModal.addEventListener('click', (e) => e.stopPropagation());
+      journalModal._hubModal = true;
+    }
+
+    // Calendar modal
+    const closeCalendarBtn    = document.getElementById('closeCalendarBtn');
+    const calendarOverlay     = document.getElementById('calendarModalOverlay');
+    const calendarModal       = document.getElementById('calendarModal');
+    if (closeCalendarBtn && !closeCalendarBtn._hubClose) {
+      closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
+      closeCalendarBtn._hubClose = true;
+    }
+    if (calendarOverlay && !calendarOverlay._hubOverlay) {
+      calendarOverlay.addEventListener('click', (e) => { if (e.target === calendarOverlay) this.closeCalendarModal(); });
+      calendarOverlay._hubOverlay = true;
+    }
+    if (calendarModal && !calendarModal._hubModal) {
+      calendarModal.addEventListener('click', (e) => e.stopPropagation());
+      calendarModal._hubModal = true;
+    }
+
+    // Recaps modal
+    const closeRecapsBtn  = document.getElementById('closeRecapsBtn');
+    const recapsOverlay   = document.getElementById('recapsModalOverlay');
+    const recapsModal     = document.getElementById('recapsModal');
+    if (closeRecapsBtn && !closeRecapsBtn._hubClose) {
+      closeRecapsBtn.addEventListener('click', () => this.closeRecapsModal());
+      closeRecapsBtn._hubClose = true;
+    }
+    if (recapsOverlay && !recapsOverlay._hubOverlay) {
+      recapsOverlay.addEventListener('click', (e) => { if (e.target === recapsOverlay) this.closeRecapsModal(); });
+      recapsOverlay._hubOverlay = true;
+    }
+    if (recapsModal && !recapsModal._hubModal) {
+      recapsModal.addEventListener('click', (e) => e.stopPropagation());
+      recapsModal._hubModal = true;
+    }
+
+    // Escape key closes whichever modal is open
     if (!this._hubEscBound) {
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.body.classList.contains('modal-active')) {
-          this.closeModal();
+        if (e.key !== 'Escape') return;
+        if (document.body.classList.contains('modal-active')) {
+          if (this._activeArticleViewer?._articleStack?.length > 0) {
+            this._activeArticleViewer.closeTopLayer();
+          } else {
+            this.closeModal();
+          }
+          return;
         }
+        if (document.body.classList.contains('journal-modal-active')) { this.closeJournalModal(); return; }
+        if (document.body.classList.contains('calendar-modal-active')) { this.closeCalendarModal(); return; }
+        if (document.body.classList.contains('recaps-modal-active')) this.closeRecapsModal();
       });
       this._hubEscBound = true;
     }
   }
 
   closeModal() {
+    while (this._activeArticleViewer?._articleStack?.length > 0) {
+      this._activeArticleViewer.closeTopLayer();
+    }
     const modal   = document.getElementById('articleModal');
     const overlay = document.getElementById('modalOverlay');
     if (modal)   modal.classList.remove('show');
+    if (modal)   modal.classList.remove('article-mode');
     if (overlay) overlay.classList.remove('show');
     document.body.classList.remove('modal-active');
-    // Clean up per-open listeners from viewers
-    if (this.articleViewer?._arrowKeyHandler) {
-      document.removeEventListener('keydown', this.articleViewer._arrowKeyHandler);
-      this.articleViewer._arrowKeyHandler = null;
+    if (this._activeArticleViewer?._arrowKeyHandler) {
+      document.removeEventListener('keydown', this._activeArticleViewer._arrowKeyHandler);
+      this._activeArticleViewer._arrowKeyHandler = null;
     }
     if (this.atlasViewer) this.atlasViewer._lightboxOpen = false;
   }
 
-  setPageVisibility(activePage) {
-    const pages = {
-      landing: document.querySelector('.landing-screen'),
-      hub: document.getElementById('worldHub')
-    };
+  // ── Journal modal ──────────────────────────────────────────────
+  async openJournalModal() {
+    const overlay = document.getElementById('journalModalOverlay');
+    const modal   = document.getElementById('journalModal');
+    const body    = document.getElementById('journalModalBody');
+    if (!overlay || !modal || !body) return;
 
-    Object.entries(pages).forEach(([page, element]) => {
-      if (element) {
-        element.style.display = page === activePage ? 'block' : 'none';
+    if (!body.dataset.loaded) {
+      if (!this.questViewer) {
+        this.questViewer = new QuestViewer(this);
+        window.questViewer = this.questViewer;
+      }
+      body.innerHTML = '<div style="padding:20px;color:#c9b5e6;">Loading...</div>';
+      overlay.classList.add('show');
+      modal.classList.add('show');
+      document.body.classList.add('journal-modal-active');
+
+      const content = await this.questViewer.renderQuestMode(this.currentWorld?.id);
+      body.innerHTML = content;
+      body.dataset.loaded = 'true';
+      this.questViewer.setupEventListeners();
+      return;
+    }
+
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('journal-modal-active');
+  }
+
+  closeJournalModal() {
+    document.getElementById('journalModalOverlay')?.classList.remove('show');
+    document.getElementById('journalModal')?.classList.remove('show');
+    document.body.classList.remove('journal-modal-active');
+  }
+
+  // ── Calendar modal ─────────────────────────────────────────────
+  async openCalendarModal() {
+    const overlay = document.getElementById('calendarModalOverlay');
+    const modal   = document.getElementById('calendarModal');
+    const body    = document.getElementById('calendarModalBody');
+    if (!overlay || !modal) return;
+
+    // Default to current in-world date on first open
+    if (this._calCurrentMonth === undefined) {
+      this._calCurrentMonth = Config.CURRENT_DATE.monthIndex;
+      this._calCurrentYear  = Config.CURRENT_DATE.year;
+    }
+
+    // Load events once; reuse cache on subsequent opens
+    if (!this._calEvents) {
+      try {
+        this._calEvents = await this.loadSheets([Config.SHEETS.CALENDAR]);
+      } catch (e) {
+        Config.warn('Calendar sheet not available:', e);
+        this._calEvents = [];
+      }
+    }
+
+    if (body) {
+      body.innerHTML = this.renderCalendarWidget(this._calEvents, this._calCurrentMonth, this._calCurrentYear);
+      this.setupCalendarNavigation(this._calEvents);
+    }
+
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('calendar-modal-active');
+  }
+
+  closeCalendarModal() {
+    document.getElementById('calendarModalOverlay')?.classList.remove('show');
+    document.getElementById('calendarModal')?.classList.remove('show');
+    document.body.classList.remove('calendar-modal-active');
+  }
+
+  // ── Recaps / Campaign Log modal ────────────────────────────────
+  async openRecapsModal() {
+    const overlay = document.getElementById('recapsModalOverlay');
+    const modal   = document.getElementById('recapsModal');
+    const body    = document.getElementById('recapsModalBody');
+    if (!overlay || !modal || !body) return;
+
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('recaps-modal-active');
+
+    if (body.dataset.loaded) return;
+
+    body.innerHTML = '<div class="recaps-loading">Loading…</div>';
+    try {
+      const entries = await this.loadSheets([Config.SHEETS.RECAPS]);
+      body.innerHTML = this.renderRecapsList(entries);
+      body.dataset.loaded = 'true';
+      this._setupRecapsInteractions(body);
+    } catch (e) {
+      body.innerHTML = '<div class="recaps-loading">Could not load campaign log.</div>';
+      Config.warn('Recaps load error:', e);
+    }
+  }
+
+  closeRecapsModal() {
+    document.getElementById('recapsModalOverlay')?.classList.remove('show');
+    document.getElementById('recapsModal')?.classList.remove('show');
+    document.body.classList.remove('recaps-modal-active');
+  }
+
+  renderRecapsList(entries) {
+    const WORD_LIMIT = 60;
+    if (!entries || entries.length === 0) {
+      return '<div class="recaps-empty">No entries found in the Campaign Log.</div>';
+    }
+    // Sheet order is oldest-first; reverse so newest appears at the top
+    const sorted = [...entries].reverse();
+    const items = sorted.map((entry, i) => {
+      const tag     = (entry.tag     || '').trim();
+      const title   = (entry.title   || '').trim();
+      const content = (entry.content || '').trim();
+      const words   = content.split(/\s+/).filter(Boolean);
+      const isTruncated = words.length > WORD_LIMIT;
+      const preview     = isTruncated ? words.slice(0, WORD_LIMIT).join(' ') + '\u2026' : content;
+      return `
+        <article class="recap-entry" data-index="${i}">
+          <div class="recap-entry-header" role="button" tabindex="0" aria-expanded="true">
+            ${tag ? `<span class="recap-tag">${tag}</span>` : ''}
+            <h2 class="recap-title">${title}</h2>
+            <span class="recap-collapse-icon" aria-hidden="true"></span>
+          </div>
+          <div class="recap-body">
+            <p class="recap-preview">${preview}</p>
+            ${isTruncated ? `<p class="recap-full" hidden>${content}</p>` : ''}
+            ${isTruncated ? `<button class="recap-read-more">Read More</button>` : ''}
+          </div>
+        </article>
+        <hr class="recap-divider" />`;
+    }).join('');
+    return `<div class="recaps-list">${items}</div>`;
+  }
+
+  _setupRecapsInteractions(body) {
+    body.addEventListener('click', (e) => {
+      const readMoreBtn = e.target.closest('.recap-read-more');
+      if (readMoreBtn) {
+        const entry   = readMoreBtn.closest('.recap-entry');
+        const preview = entry.querySelector('.recap-preview');
+        const full    = entry.querySelector('.recap-full');
+        if (full && preview) {
+          preview.hidden = true;
+          full.hidden    = false;
+          readMoreBtn.hidden = true;
+        }
+        return;
+      }
+      const header = e.target.closest('.recap-entry-header');
+      if (header) {
+        const entry    = header.closest('.recap-entry');
+        const bodyEl   = entry.querySelector('.recap-body');
+        const expanded = header.getAttribute('aria-expanded') !== 'false';
+        header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        bodyEl.classList.toggle('recap-body--collapsed', expanded);
       }
     });
+    body.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const header = e.target.closest('.recap-entry-header');
+      if (header) { e.preventDefault(); header.click(); }
+    });
+  }
+
+  renderCalendarWidget(events = [], monthIndex = 1, year = 1344) {
+    const MONTHS = [
+      { name: 'Thawmarch',   desc: 'The heavy snow retreats grudgingly, inch by inch, leaving behind mud, dead grass, and the things that didn\'t survive.' },
+      { name: 'Mossdew',     desc: 'Color returns in wet, cautious increments, and the air carries the relief of people who weren\'t sure it ever would.' },
+      { name: 'Springcrest', desc: 'The Breach tips into warmth and stays there, long days spilling over into longer evenings that nobody wants to end.' },
+      { name: 'Eventide',    desc: 'The sun is at its fullest and the days burn long and generous before the slow turn begins.' },
+      { name: 'Sunwake',     desc: 'The light starts pulling back as green wilts away, and the air tells tales of the cold to come.' },
+      { name: 'Duskbreak',   desc: 'The warmth slumbers in stages: first the evenings, then the mornings. All prepare for the following stillness.' },
+      { name: 'Stillwatch',  desc: 'Winter arrives without bargain, settling over everything like a judgment. The world goes still, dead, and cold.' },
+    ];
+
+    const DAYS_PER_WEEK   = 10;
+    const WEEKS_PER_MONTH = 5;
+    const TODAY_MONTH = Config.CURRENT_DATE.monthIndex;
+    const TODAY_DAY   = Config.CURRENT_DATE.day;
+    const TODAY_YEAR  = Config.CURRENT_DATE.year;
+
+    const month = MONTHS[monthIndex];
+
+    // Build event lookup keyed by day number for this month/year
+    const eventMap = {};
+    events.forEach(ev => {
+      const evDay = parseInt(ev.day, 10);
+      if (isNaN(evDay)) return;
+      const evMonthRaw = (ev.month || '').trim();
+      const matchName  = evMonthRaw.toLowerCase() === month.name.toLowerCase();
+      const matchIdx   = parseInt(evMonthRaw, 10) === (monthIndex + 1);
+      if (!matchName && !matchIdx) return;
+      if (ev.year && parseInt(ev.year, 10) !== year) return;
+      if (!eventMap[evDay]) eventMap[evDay] = [];
+      eventMap[evDay].push({ title: ev.title || '', content: ev.content || '', article: ev.article || '' });
+    });
+
+    const colHeaders = Array.from({ length: DAYS_PER_WEEK }, (_, i) =>
+      `<th>${i + 1}</th>`
+    ).join('');
+
+    let rows = '';
+    for (let week = 0; week < WEEKS_PER_MONTH; week++) {
+      let cells = '';
+      for (let col = 0; col < DAYS_PER_WEEK; col++) {
+        const day = week * DAYS_PER_WEEK + col + 1;
+        const isToday  = monthIndex === TODAY_MONTH && day === TODAY_DAY && year === TODAY_YEAR;
+        const dayEvents = eventMap[day] || [];
+
+        let dotsHtml = '';
+        if (dayEvents.length) {
+          dotsHtml = dayEvents.map(() => `<span class="cal-event-dot"></span>`).join('');
+        }
+        const evData = dayEvents.length ? ` data-cal-events='${JSON.stringify(dayEvents).replace(/'/g, '&#39;')}'` : '';
+
+        cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
+      }
+      rows += `<tr>${cells}</tr>`;
+    }
+
+    const tabs = MONTHS.map((m, i) => `
+      <button class="cal-month-tab${i === monthIndex ? ' active' : ''}" data-month="${i}" data-year="${year}">${m.name}</button>
+    `).join('');
+
+    return `
+      <div class="calendar-widget">
+        <div class="cal-month-meta">
+          <span class="cal-year-label">${year}</span>
+        </div>
+        <div class="cal-tabs-row">${tabs}</div>
+        <div class="cal-month-meta cal-month-desc-row">
+          <p class="cal-month-desc">${month.desc}</p>
+        </div>
+        <div class="cal-grid-panel" id="_calGridPanel">
+          <table class="calendar-table">
+            <thead><tr>${colHeaders}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  setupCalendarNavigation(events) {
+    const body = document.getElementById('calendarModalBody');
+    if (!body) return;
+
+    // Shared fixed tooltip element — created once on the document body
+    let tip = document.getElementById('_calFloatTooltip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = '_calFloatTooltip';
+      document.body.appendChild(tip);
+      // Keep tooltip open while mouse moves into it
+      tip.addEventListener('mouseenter', () => clearTimeout(tip._hideTimer));
+      tip.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+      // Read more click
+      tip.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cal-tooltip-readmore');
+        if (btn) {
+          tip.style.display = 'none';
+          this.openCalendarLinkedArticle(btn.dataset.article);
+        }
+      });
+    }
+
+    const showTip = (cell) => {
+      let evList;
+      try { evList = JSON.parse(cell.dataset.calEvents || '[]'); } catch { return; }
+      if (!evList.length) return;
+      tip.innerHTML = evList.map(ev => `
+        <div class="cal-tooltip-entry">
+          <strong>${ev.title}</strong>
+          ${ev.content ? `<span>${ev.content}</span>` : ''}
+          ${ev.article ? `<button class="cal-tooltip-readmore" data-article="${ev.article}">Read more →</button>` : ''}
+        </div>`).join('');
+      // Show offscreen first to measure
+      tip.style.visibility = 'hidden';
+      tip.style.display    = 'block';
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+      const rect = cell.getBoundingClientRect();
+      // Prefer above; fall back to below if not enough room
+      let top = rect.top - th - 8;
+      if (top < 8) top = rect.bottom + 8;
+      // Horizontally center over cell, clamped to viewport
+      let left = rect.left + rect.width / 2 - tw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+      tip.style.top        = top + 'px';
+      tip.style.left       = left + 'px';
+      tip.style.visibility = 'visible';
+    };
+
+    const scheduleHideTip = () => {
+      tip._hideTimer = setTimeout(() => { tip.style.display = 'none'; }, 120);
+    };
+
+    // Delegated hover on the body — re-applied each render so stale cells don't accumulate handlers
+    if (body._calTipEnter) body.removeEventListener('mouseenter', body._calTipEnter, true);
+    if (body._calTipLeave) body.removeEventListener('mouseleave', body._calTipLeave, true);
+    body._calTipEnter = (e) => {
+      const cell = e.target.closest('td.has-events');
+      if (cell) { clearTimeout(tip._hideTimer); showTip(cell); }
+    };
+    body._calTipLeave = (e) => { if (e.target.closest('td.has-events')) scheduleHideTip(); };
+    body.addEventListener('mouseenter', body._calTipEnter, true);
+    body.addEventListener('mouseleave', body._calTipLeave, true);
+
+    // Hide tooltip when modal closes
+    const overlay = document.getElementById('calendarModalOverlay');
+    if (overlay && !overlay._calTipHide) {
+      overlay._calTipHide = true;
+      overlay.addEventListener('click', () => { tip.style.display = 'none'; });
+    }
+    const closeBtn = document.getElementById('closeCalendarBtn');
+    if (closeBtn && !closeBtn._calTipHide) {
+      closeBtn._calTipHide = true;
+      closeBtn.addEventListener('click', () => { tip.style.display = 'none'; });
+    }
+
+    body.querySelectorAll('.cal-month-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const month = parseInt(tab.dataset.month, 10);
+        const year  = parseInt(tab.dataset.year, 10);
+        if (month === this._calCurrentMonth && year === this._calCurrentYear) return;
+
+        const panel   = document.getElementById('_calGridPanel');
+        const descRow = body.querySelector('.cal-month-desc-row');
+
+        // Update active tab immediately
+        body.querySelectorAll('.cal-month-tab').forEach(t => t.classList.toggle('active', t === tab));
+
+        const fadeOut = panel ? panel : null;
+        if (fadeOut)  fadeOut.classList.add('fading');
+        if (descRow)  descRow.classList.add('fading');
+
+        setTimeout(() => {
+          this._calCurrentMonth = month;
+          this._calCurrentYear  = year;
+          // Re-render only the inner content, keeping the tabs intact
+          const MONTHS = [
+            { name: 'Thawmarch', desc: 'The heavy snow retreats grudgingly, inch by inch, leaving behind mud, dead grass, and the things that didn\'t survive.' },
+            { name: 'Mossdew', desc: 'Color returns in wet, cautious increments, and the air carries the relief of people who weren\'t sure it ever would.' },
+            { name: 'Springcrest', desc: 'The Breach tips into warmth and stays there, long days spilling over into longer evenings that nobody wants to end.' },
+            { name: 'Eventide', desc: 'The sun is at its fullest and the days burn long and generous before the slow turn begins.' },
+            { name: 'Sunwake', desc: 'The light starts pulling back as green wilts away, and the air tells tales of the cold to come.' },
+            { name: 'Duskbreak', desc: 'The warmth slumbers in stages: first the evenings, then the mornings. All prepare for the following stillness.' },
+            { name: 'Stillwatch', desc: 'Winter arrives without bargain, settling over everything like a judgment. The world goes still, dead, and cold.' },
+          ];
+          const m = MONTHS[month];
+          const TODAY_MONTH = Config.CURRENT_DATE.monthIndex;
+          const TODAY_DAY   = Config.CURRENT_DATE.day;
+          const TODAY_YEAR  = Config.CURRENT_DATE.year;
+
+          const eventMap = {};
+          events.forEach(ev => {
+            const evDay = parseInt(ev.day, 10);
+            if (isNaN(evDay)) return;
+            const evMonthRaw = (ev.month || '').trim();
+            if (evMonthRaw.toLowerCase() !== m.name.toLowerCase() && parseInt(evMonthRaw, 10) !== (month + 1)) return;
+            if (ev.year && parseInt(ev.year, 10) !== year) return;
+            if (!eventMap[evDay]) eventMap[evDay] = [];
+            eventMap[evDay].push({ title: ev.title || '', content: ev.content || '', article: ev.article || '' });
+          });
+
+          const colHeaders = Array.from({ length: 10 }, (_, i) => `<th>${i + 1}</th>`).join('');
+          let rows = '';
+          for (let week = 0; week < 5; week++) {
+            let cells = '';
+            for (let col = 0; col < 10; col++) {
+              const day = week * 10 + col + 1;
+              const isToday  = month === TODAY_MONTH && day === TODAY_DAY && year === TODAY_YEAR;
+              const dayEvents = eventMap[day] || [];
+              let dotsHtml = dayEvents.map(() => `<span class="cal-event-dot"></span>`).join('');
+              const evData = dayEvents.length ? ` data-cal-events='${JSON.stringify(dayEvents).replace(/'/g, '&#39;')}'` : '';
+              cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
+            }
+            rows += `<tr>${cells}</tr>`;
+          }
+
+          if (descRow) {
+            descRow.innerHTML = `<p class="cal-month-desc">${m.desc}</p>`;
+            descRow.classList.remove('fading');
+          }
+          const newPanel = document.getElementById('_calGridPanel');
+          if (newPanel) {
+            newPanel.innerHTML = `<table class="calendar-table"><thead><tr>${colHeaders}</tr></thead><tbody>${rows}</tbody></table>`;
+            newPanel.classList.remove('fading');
+          }
+        }, 180);
+      });
+    });
+  }
+
+  async openCalendarLinkedArticle(articleName) {
+    // Keep calendar open behind the article modal.
+    // Search ALL article sheets so any sheet can be referenced from a calendar event.
+    if (!this._viewer_calArticles) {
+      const articleSheets = Object.values(Config.SHEETS);
+      this._viewer_calArticles = new ArticleViewer(this, articleSheets, articleSheets[0]);
+    }
+    const viewer = this._viewer_calArticles;
+    if (viewer.currentArticles.length === 0) {
+      await viewer.loadArticleData();
+    }
+    const article = viewer.currentArticles.find(
+      a => (a.name || '').toLowerCase() === articleName.toLowerCase()
+    );
+    if (article) {
+      viewer.openArticle(article._uid, article._category);
+    } else {
+      Config.warn('Calendar: linked article not found across any sheet:', articleName);
+    }
+  }
+
+  setPageVisibility(activePage) {
+    const landing = document.querySelector('.landing-screen');
+    const hub     = document.getElementById('worldHub');
+    if (landing) landing.style.display = activePage === 'landing' ? 'block' : 'none';
+    // world-hub uses flex layout — must not use 'block'
+    if (hub) hub.style.display = activePage === 'hub' ? 'flex' : 'none';
   }
 
   // ========== Panel Management ==========
   async initializePanels() {
-    // Setup panel selector click listeners
-    document.querySelectorAll('.hub-panel').forEach(panel => {
-      const enterBtn = panel.querySelector('.enter-btn');
-      if (enterBtn) {
-        enterBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          this.selectPanel(panel.dataset.panel);
-        });
-      }
-      // Also allow clicking anywhere on the panel to enter
-      panel.addEventListener('click', (e) => {
-        if (e.target === panel || e.target.closest('.panel-selector')) {
-          this.selectPanel(panel.dataset.panel);
-        }
-      });
-      // Sync pill glow with panel hover
-      panel.addEventListener('mouseenter', () => {
-        const pill = document.querySelector(`.panel-pill[data-panel="${panel.dataset.panel}"]`);
-        if (pill) pill.classList.add('panel-hovered');
-      });
-      panel.addEventListener('mouseleave', () => {
-        const pill = document.querySelector(`.panel-pill[data-panel="${panel.dataset.panel}"]`);
-        if (pill) pill.classList.remove('panel-hovered');
-      });
+    // Tile click listeners
+    document.querySelectorAll('.hub-tile').forEach(tile => {
+      if (tile._tileClick) return; // prevent duplicate bindings on re-entry
+      tile.addEventListener('click', () => this.selectPanel(tile.dataset.panel));
+      tile._tileClick = true;
     });
 
-    // Setup panel pill button listeners
-    document.querySelectorAll('.panel-pill').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this.selectPanel(e.currentTarget.dataset.panel);
-      });
-      // Sync panel glow with pill hover
-      btn.addEventListener('mouseenter', () => {
-        const panel = document.querySelector(`.hub-panel[data-panel="${btn.dataset.panel}"]`);
-        if (panel) panel.classList.add('pill-hovered');
-      });
-      btn.addEventListener('mouseleave', () => {
-        const panel = document.querySelector(`.hub-panel[data-panel="${btn.dataset.panel}"]`);
-        if (panel) panel.classList.remove('pill-hovered');
-      });
-    });
+    // Back-to-hub button
+    const backBtn = document.getElementById('hubBackBtn');
+    if (backBtn && !backBtn._backClick) {
+      backBtn.addEventListener('click', () => this.showHubSelection());
+      backBtn._backClick = true;
+    }
 
-    // Panels start collapse to show selectors
+    // Journal / Calendar header buttons
+    const journalBtn  = document.getElementById('journalBtn');
+    const calendarBtn = document.getElementById('calendarBtn');
+    if (journalBtn && !journalBtn._jClick) {
+      journalBtn.addEventListener('click', () => this.openJournalModal());
+      journalBtn._jClick = true;
+    }
+    if (calendarBtn && !calendarBtn._cClick) {
+      calendarBtn.addEventListener('click', () => this.openCalendarModal());
+      calendarBtn._cClick = true;
+    }
+    const recapsBtn = document.getElementById('recapsBtn');
+    if (recapsBtn && !recapsBtn._rClick) {
+      recapsBtn.addEventListener('click', () => this.openRecapsModal());
+      recapsBtn._rClick = true;
+    }
+
     this.currentSelectedPanel = null;
   }
 
-  async selectPanel(panelName) {
-    // Toggle off if already active — reinstate 3-split view
-    if (this.currentSelectedPanel === panelName) {
-      this.currentSelectedPanel = null;
-      const container = document.getElementById('hubPanelsContainer');
-      const collapsedHeader = document.getElementById('hubCollapsedHeader');
-      container.removeAttribute('data-expanded');
-      document.querySelectorAll('.hub-panel').forEach(p => {
-        p.classList.remove('expanded');
-        // Hide content, restore selector so panels look correct in 3-split
-        const content = p.querySelector('.panel-content');
-        const selector = p.querySelector('.panel-selector');
-        if (content) content.style.display = 'none';
-        if (selector) selector.style.display = '';
-        // Restore and resume bg video
-        const video = p.querySelector('.panel-bg-video');
-        if (video) {
-          video.style.transition = 'opacity 0.3s ease';
-          video.style.opacity = '1';
-          video.play().catch(() => {});
+  showHubSelection() {
+    this.currentSelectedPanel = null;
+    const titleText   = document.getElementById('hubTitleText');
+    const panelNav    = document.getElementById('hubPanelNav');
+    const selection   = document.getElementById('hubSelection');
+    const contentArea = document.getElementById('hubContentArea');
+    const mainArea    = document.getElementById('hubMainArea');
+
+    // Fade out content area
+    if (contentArea && contentArea.style.display !== 'none') {
+      contentArea.style.transition = 'opacity 0.2s ease';
+      contentArea.style.opacity = '0';
+      setTimeout(() => {
+        contentArea.style.display = 'none';
+        contentArea.style.opacity = '1';
+        // Fade selection back in
+        if (selection) {
+          selection.style.display = '';
+          selection.style.opacity = '0';
+          requestAnimationFrame(() => {
+            selection.style.transition = 'opacity 0.3s ease';
+            selection.style.opacity = '1';
+          });
         }
-      });
-      document.querySelectorAll('.panel-pill').forEach(btn => btn.classList.remove('active'));
-      collapsedHeader.style.display = 'flex';
-      return;
+      }, 220);
+    } else if (selection) {
+      selection.style.display = '';
+      selection.style.opacity = '1';
     }
 
+    if (titleText) { titleText.style.display = ''; }
+    if (panelNav)  { panelNav.style.display = 'none'; }
+    if (mainArea)  { mainArea.scrollTop = 0; }
+  }
+
+  async selectPanel(panelName) {
     this.currentSelectedPanel = panelName;
-    
-    const container = document.getElementById('hubPanelsContainer');
-    const collapsedHeader = document.getElementById('hubCollapsedHeader');
-    const panels = document.querySelectorAll('.hub-panel');
-    
-    // Update pill button active state
-    document.querySelectorAll('.panel-pill').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.panel === panelName);
-    });
 
-    // Step 1: instantly kill the expanding panel's video — no transition,
-    // so there is nothing visible to stretch when the wipe starts.
-    // Also pause it since it will be hidden under the panel content.
-    panels.forEach(panel => {
-      const video = panel.querySelector('.panel-bg-video');
-      if (!video) return;
-      if (panel.dataset.panel === panelName) {
-        video.style.transition = 'none';
-        video.style.opacity = '0';
-        video.pause();
-      }
-    });
+    // Update header nav
+    const titleText        = document.getElementById('hubTitleText');
+    const panelNav         = document.getElementById('hubPanelNav');
+    const activePanelTitle = document.getElementById('hubActivePanelTitle');
+    if (titleText)        titleText.style.display = 'none';
+    if (panelNav)         panelNav.style.display = 'flex';
+    if (activePanelTitle) activePanelTitle.textContent =
+      panelName.charAt(0).toUpperCase() + panelName.slice(1);
 
-    // Step 2: defer the actual wipe until the browser has committed the
-    // opacity change to the compositor (two rAF = paint + composite).
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    const selection   = document.getElementById('hubSelection');
+    const contentArea = document.getElementById('hubContentArea');
+    const mainArea    = document.getElementById('hubMainArea');
 
-      // Drive the directional wipe via data attribute on container
-      if (panelName) {
-        container.setAttribute('data-expanded', panelName);
-      } else {
-        container.removeAttribute('data-expanded');
-      }
+    // Fade out selection grid
+    if (selection && selection.style.display !== 'none') {
+      selection.style.transition = 'opacity 0.2s ease';
+      selection.style.opacity = '0';
+      await new Promise(r => setTimeout(r, 220));
+      selection.style.display = 'none';
+      selection.style.opacity = '1';
+    }
 
-      // Mark expanded class for content/video logic; show/hide content vs selector
-      panels.forEach(panel => {
-        const isExpanded = panel.dataset.panel === panelName;
-        panel.classList.toggle('expanded', isExpanded);
-        const content = panel.querySelector('.panel-content');
-        const selector = panel.querySelector('.panel-selector');
-        if (isExpanded) {
-          if (content) content.style.display = '';
-          if (selector) selector.style.display = 'none';
-        }
+    // Show content area, hide all panel slots, then reveal the right one
+    if (contentArea) {
+      contentArea.style.display = 'block';
+      contentArea.querySelectorAll('.panel-content').forEach(el => {
+        el.style.display = 'none';
       });
+    }
 
-      // Show/hide collapsed header based on whether any panel is selected
-      if (panelName) {
-        collapsedHeader.style.display = 'flex';
+    const idMap = {
+      nations:    'nationsContent',
+      species:    'speciesContent',
+      deities:    'deitiesContent',
+      history:    'historyContent',
+      literature: 'literatureContent',
+      society:    'societyContent',
+      technology: 'technologyContent',
+      characters: 'charactersContent',
+      factions:   'factionsContent',
+      bestiary:   'bestiaryContent',
+      items:      'itemsContent',
+      alchemy:    'alchemyContent',
+      locations:  'locationsContent'
+    };
+    const contentEl = document.getElementById(idMap[panelName]);
+    if (contentEl) {
+      contentEl.style.display = 'block';
+      contentEl.style.opacity = '0';
+      if (mainArea) mainArea.scrollTop = 0;
+      // Show skeleton immediately so there's feedback during async load
+      if (contentEl.dataset.loaded !== 'true') {
+        contentEl.innerHTML = `
+          <div class="article-viewer">
+            <div class="article-filters">
+              <div class="filter-group">
+                <input type="text" id="articleSearch" placeholder="Search articles..." value="" disabled>
+              </div>
+              <div class="filter-group">
+                <select id="tagFilter" disabled><option value="">All Tags</option></select>
+              </div>
+              <button id="clearFilters" class="clear-btn" disabled>Clear All</button>
+            </div>
+            <div id="articlesGridContainer">
+              <div class="panel-skeleton">
+                ${Array.from({length: 12}).map(() => '<div class="skeleton-card"></div>').join('')}
+              </div>
+            </div>
+          </div>`;
       }
+      requestAnimationFrame(() => {
+        contentEl.style.transition = 'opacity 0.4s ease';
+        contentEl.style.opacity = '1';
+      });
+    }
 
-    })); // end requestAnimationFrame
-
-    // Load content for the selected panel if not already loaded
     await this.loadPanelContent(panelName);
   }
 
   // Fade out current content, swap HTML, fade back in.
   // Pass markLoaded=false to skip the permanent cache flag (e.g. empty state).
   async _fadeInContent(contentEl, html, markLoaded = true) {
-    contentEl.style.transition = 'opacity 0.2s ease';
-    contentEl.style.opacity    = '0';
-    await new Promise(r => setTimeout(r, 220));
-    contentEl.innerHTML        = html;
-    if (markLoaded) contentEl.dataset.loaded = 'true';
-    requestAnimationFrame(() => {
-      contentEl.style.transition = 'opacity 0.4s ease';
-      contentEl.style.opacity    = '1';
-    });
+    const existingGrid = contentEl.querySelector('#articlesGridContainer');
+    if (existingGrid) {
+      // Skeleton is showing — fade only the grid, leave the filter bar untouched
+      existingGrid.style.transition = 'opacity 0.2s ease';
+      existingGrid.style.opacity    = '0';
+      await new Promise(r => setTimeout(r, 220));
+      contentEl.innerHTML = html;
+      if (markLoaded) contentEl.dataset.loaded = 'true';
+      const newGrid = contentEl.querySelector('#articlesGridContainer');
+      if (newGrid) {
+        newGrid.style.opacity = '0';
+        requestAnimationFrame(() => {
+          newGrid.style.transition = 'opacity 0.4s ease';
+          newGrid.style.opacity    = '1';
+        });
+      }
+    } else {
+      // No skeleton yet — fade the whole panel (initial entry)
+      contentEl.style.transition = 'opacity 0.2s ease';
+      contentEl.style.opacity    = '0';
+      await new Promise(r => setTimeout(r, 220));
+      contentEl.innerHTML        = html;
+      if (markLoaded) contentEl.dataset.loaded = 'true';
+      requestAnimationFrame(() => {
+        contentEl.style.transition = 'opacity 0.4s ease';
+        contentEl.style.opacity    = '1';
+      });
+    }
   }
 
   async loadPanelContent(panelName) {
-    const idMap = {
-      encyclopedia: 'encyclopediaContent',
-      journal:      'journalContent',
-      atlas:        'atlasContent',
-      bestiary:     'bestiaryContent',
-      alchemy:      'alchemyContent',
-      literature:   'literatureContent'
-    };
-    const contentEl = document.getElementById(idMap[panelName]);
-    if (!contentEl) return;
+    const contentEl = document.getElementById(this._panelIdMap[panelName]);
+    if (!contentEl || contentEl.dataset.loaded === 'true') return;
 
-    // Already loaded — selectPanel already faded it in, nothing more to do
-    if (contentEl.dataset.loaded === 'true') return;
+    // Sheet name matches panel name with capital first letter (Nations, Species, etc.)
+    const sheetName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
+    const viewerKey = `_viewer_${panelName}`;
 
     try {
-      // contentEl is already showing the loading text (set by selectPanel)
-
-      if (panelName === 'encyclopedia') {
-        if (!this.articleViewer) {
-          this.articleViewer = new ArticleViewer(this, ['Characters', 'Factions', 'Religion', 'Items'], 'Characters');
-          window.articleViewer = this.articleViewer;
-          Config.log('Created ArticleViewer for encyclopedia');
+      if (!this[viewerKey]) {
+        this[viewerKey] = new ArticleViewer(this, [sheetName], sheetName);
+        if (panelName === 'locations') {
+          this[viewerKey].tagGrouped = true;
         }
-        const content = await this.articleViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content, this.articleViewer.currentArticles.length > 0);
-        this.articleViewer.setupEventListeners();
-
-      } else if (panelName === 'journal') {
-        if (!this.questViewer) {
-          this.questViewer = new QuestViewer(this);
-          window.questViewer = this.questViewer;
-          Config.log('Created QuestViewer for journal');
-        }
-        const content = await this.questViewer.renderQuestMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
-        this.questViewer.setupEventListeners();
-
-      } else if (panelName === 'atlas') {
-        if (!this.atlasViewer) {
-          this.atlasViewer = new AtlasViewer(this);
-          window.atlasViewer = this.atlasViewer;
-          Config.log('Created AtlasViewer for atlas');
-        }
-        const content = await this.atlasViewer.renderAtlasMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content);
-        this.atlasViewer.setupEventListeners();
-
-      } else if (panelName === 'bestiary') {
-        if (!this.bestiaryViewer) {
-          this.bestiaryViewer = new ArticleViewer(this, ['Bestiary'], 'Bestiary');
-          window.bestiaryViewer = this.bestiaryViewer;
-          Config.log('Created ArticleViewer for bestiary');
-        }
-        const content = await this.bestiaryViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content, this.bestiaryViewer.currentArticles.length > 0);
-        this.bestiaryViewer.setupEventListeners();
-
-      } else if (panelName === 'alchemy') {
-        if (!this.alchemyViewer) {
-          this.alchemyViewer = new ArticleViewer(this, ['Alchemy'], 'Alchemy');
-          window.alchemyViewer = this.alchemyViewer;
-          Config.log('Created ArticleViewer for alchemy');
-        }
-        const content = await this.alchemyViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content, this.alchemyViewer.currentArticles.length > 0);
-        this.alchemyViewer.setupEventListeners();
-
-      } else if (panelName === 'literature') {
-        if (!this.literatureViewer) {
-          this.literatureViewer = new ArticleViewer(this, ['Literature'], 'Literature');
-          window.literatureViewer = this.literatureViewer;
-          Config.log('Created ArticleViewer for literature');
-        }
-        const content = await this.literatureViewer.renderReadMode(this.currentWorld.id);
-        await this._fadeInContent(contentEl, content, this.literatureViewer.currentArticles.length > 0);
-        this.literatureViewer.setupEventListeners();
+        Config.log(`Created ArticleViewer for ${panelName}`);
       }
+      const viewer  = this[viewerKey];
+      const content = await viewer.renderReadMode(this.currentWorld?.id);
+      await this._fadeInContent(contentEl, content, viewer.currentArticles.length > 0);
+      viewer.setupEventListeners();
     } catch (error) {
       await this._fadeInContent(contentEl, `<div class="error">Error loading ${panelName}: ${error.message}</div>`);
       Config.error(`Error loading ${panelName}:`, error);
@@ -564,11 +965,12 @@ class TTRPGHub {
   }
 
   // ========== Data Loading ==========
-  // Fetch all sheets in one JSONP call and cache by sheet name.
+  // Fetch all content sheets in one JSONP call and cache by sheet name.
   // Subsequent loadSheets() calls are served instantly from cache.
   async _prefetchAllSheets() {
     if (this._sheetCache || this._sheetPrefetch) return; // Already done or in flight
-    const allSheets = Object.values(Config.SHEETS);
+    // All content sheets (excludes Journal which is loaded on demand)
+    const allSheets = Object.values(Config.SHEETS).filter(s => s !== 'Journal');
     this._sheetPrefetch = this.jsonp(Config.getSheetUrl(allSheets));
     try {
       const data = await this._sheetPrefetch;
@@ -591,7 +993,22 @@ class TTRPGHub {
       Config.warn('Sheet prefetch error:', e.message);
     } finally {
       this._sheetPrefetch = null;
+      this._revealWorldCard();
     }
+  }
+
+  // Remove the loading state from the world card and animate it in.
+  _revealWorldCard() {
+    const loadingCard = document.querySelector('.world-card.loading');
+    if (!loadingCard) return; // Already revealed or not present
+    // Write real description just before revealing so it's in place when the overlay fades in
+    const world = this.worlds[0];
+    if (world) {
+      const descriptionEl = loadingCard.querySelector('.world-description');
+      if (descriptionEl) descriptionEl.textContent = world.description;
+    }
+    loadingCard.removeAttribute('data-loading');
+    loadingCard.classList.remove('loading');
   }
 
   // Fetches one or more sheet names in a single JSONP request.

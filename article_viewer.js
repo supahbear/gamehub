@@ -16,6 +16,8 @@ class ArticleViewer {
     this._filtersBound = false;
     this._modalBound = false;
     this._hasInitialized = false;
+    this._articleStack = [];
+    this.tagGrouped = false; // When true, renders articles grouped by tag (used for Locations)
   }
 
   async loadArticleData() {
@@ -138,6 +140,7 @@ class ArticleViewer {
           </select>
         </div>
         <button id="clearFilters" class="clear-btn">Clear All</button>
+        <button id="writeArticleBtn" class="write-btn">+ New</button>
       </div>
     `;
   }
@@ -154,7 +157,6 @@ class ArticleViewer {
     return `
       <div class="article-card tag-${cssTag}" data-article-id="${article._uid}" data-article-category="${article._category}">
         ${backgroundImage}
-        <span class="card-tag">${primaryTag}</span>
         <div class="card-overlay">
           <h4 class="card-title">${article.name}</h4>
           <p class="card-summary">${article.summary || 'No summary available'}</p>
@@ -164,6 +166,8 @@ class ArticleViewer {
   }
 
   renderArticleGrid() {
+    if (this.tagGrouped) return this.renderTagGroupedGrid();
+
     const filteredArticles = this.filterArticles();
     
     if (filteredArticles.length === 0) {
@@ -171,7 +175,7 @@ class ArticleViewer {
       return `
         <div class="no-results">
           <p>No articles match your current filters.</p>
-          <button onclick="window.articleViewer && window.articleViewer.clearFilters()">Clear Filters</button>
+          <button id="noResultsClearBtn">Clear Filters</button>
         </div>
       `;
     }
@@ -185,6 +189,51 @@ class ArticleViewer {
         ${articleCards}
       </div>
     `;
+  }
+
+  renderTagGroupedGrid() {
+    const filteredArticles = this.filterArticles();
+
+    if (filteredArticles.length === 0) {
+      return `
+        <div class="no-results">
+          <p>No articles match your current filters.</p>
+          <button id="noResultsClearBtn">Clear Filters</button>
+        </div>
+      `;
+    }
+
+    // Build map of tag label → articles; articles appear under every tag they carry
+    const groups = new Map();
+    filteredArticles.forEach(article => {
+      const tags = (article.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      const usedTags = tags.length ? tags : ['Other'];
+      usedTags.forEach(tag => {
+        const label = tag.charAt(0).toUpperCase() + tag.slice(1);
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(article);
+      });
+    });
+
+    // Sort groups alphabetically; 'Other' always last
+    const sortedGroups = [...groups.entries()].sort(([a], [b]) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      return a.localeCompare(b);
+    });
+
+    const sectionsHtml = sortedGroups.map(([label, articles]) => {
+      const sorted = [...articles].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      return `
+        <div class="tag-group-section">
+          <h3 class="tag-group-header">${label}</h3>
+          <div class="articles-grid articles-grid--compact">
+            ${sorted.map(article => this.renderArticleCard(article)).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `<div class="tag-grouped-view">${sectionsHtml}</div>`;
   }
 
   sortArticles(articles) {
@@ -260,11 +309,24 @@ class ArticleViewer {
         clearFilters.addEventListener('click', () => this.clearFilters());
       }
 
+      // Open article writer
+      const writeArticleBtn = document.getElementById('writeArticleBtn');
+      if (writeArticleBtn) {
+        writeArticleBtn.addEventListener('click', () => this.openWriter());
+      }
+
       this._filtersBound = true;
     }
 
     // Bind article cards each refresh
     this.bindArticleCardClicks();
+
+    // Bind the no-results clear button if present (re-checked each refresh)
+    const noResultsClearBtn = document.getElementById('noResultsClearBtn');
+    if (noResultsClearBtn && !noResultsClearBtn._bound) {
+      noResultsClearBtn.addEventListener('click', () => this.clearFilters());
+      noResultsClearBtn._bound = true;
+    }
   }
 
   bindArticleCardClicks() {
@@ -301,8 +363,13 @@ class ArticleViewer {
     if (container) {
       // Replace inner content only (keeps a stable mount point)
       container.innerHTML = this.renderArticleGrid();
-      // Rebind only what depends on grid content
+      // Rebind cards and the no-results clear button
       this.bindArticleCardClicks();
+      const noResultsClearBtn = document.getElementById('noResultsClearBtn');
+      if (noResultsClearBtn && !noResultsClearBtn._bound) {
+        noResultsClearBtn.addEventListener('click', () => this.clearFilters());
+        noResultsClearBtn._bound = true;
+      }
     } else {
       Config.error('articlesGridContainer not found for refresh');
     }
@@ -338,88 +405,112 @@ class ArticleViewer {
       return;
     }
 
+    modal.classList.add('article-mode');
     if (title) title.textContent = article.name;
-    if (content) {
-      const htmlContent = this.markdownToHtml(article.content || 'No content available');
-
-      const summaryHtml = article.summary ?
-        `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : '';
-
-      const _getField = (obj, key) => {
-        const lk = key.toLowerCase();
-        const match = Object.keys(obj).find(k => k.toLowerCase() === lk);
-        return match ? String(obj[match]).trim() : '';
-      };
-      const typeField    = _getField(article, 'type');
-      const effectField  = _getField(article, 'effect');
-      const habitatField = _getField(article, 'habitat');
-      const metaHtml = (typeField || effectField || habitatField) ? `
-        <div class="article-modal-meta">
-          ${typeField    ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
-          ${habitatField ? `<div class="article-meta-item"><span class="article-meta-label">Habitat</span><span class="article-meta-value">${habitatField}</span></div>` : ''}
-          ${effectField  ? `<div class="article-meta-item"><span class="article-meta-label">Effect</span><span class="article-meta-value">${effectField}</span></div>` : ''}
-        </div>
-        <hr class="article-modal-meta-divider">` : '';
-
-      // ── Phase 1: render the shell so the text column is in the DOM ──────────
-      // The modal is visibility:hidden at this point so layout is computed but
-      // nothing is visible. We leave the pages container empty and add an ID to
-      // the text column so paginateContent() can measure inside it.
-      content.innerHTML = `
-        <div class="article-modal-columns">
-          <div class="article-modal-image-col">
-            ${this.renderImageColumn(article, summaryHtml)}
-          </div>
-          <div class="article-modal-text-col" id="_articleTextCol">
-            ${metaHtml}
-            <div class="article-pages-container" id="_articlePagesContainer"></div>
-          </div>
-        </div>
-        <div id="_articleNavMount"></div>
-      `;
-
-      // ── Phase 2: measure in the real text column, build pages ───────────────
-      const pagesContainer = document.getElementById('_articlePagesContainer');
-      const navMount       = document.getElementById('_articleNavMount');
-
-      // Pre-render a nav placeholder BEFORE measuring so that its height is
-      // already subtracted from pagesCtr.clientHeight when paginateContent runs.
-      // Without this, pages are sized to the full column height, then the nav
-      // is injected and pushes the bottom of the text area past the container,
-      // causing the last line to be visually clipped.
-      if (navMount) {
-        navMount.innerHTML = this.renderArticleNavigation(2);
-      }
-
-      const pages = this.paginateContent(htmlContent);
-
-      if (pagesContainer) {
-        pagesContainer.innerHTML = this.renderArticlePages(pages);
-      }
-      if (navMount) {
-        navMount.innerHTML = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
-      }
-      if (pages.length > 1) {
-        this.setupArticlePagination(pages.length);
-      }
-
-      const imageUrls = this.parseImageUrls(article.image_url);
-      if (imageUrls.length > 1) {
-        this.setupImageSlideshow();
-      }
-    }
+    if (content) this._fillArticleContent(article, content, 0);
 
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('modal-active');
+    if (this.hub) this.hub._activeArticleViewer = this;
+
+    // Wire Edit button for this article
+    this._currentModalArticle = article;
+    const editBtn = document.getElementById('editArticleBtn');
+    if (editBtn) {
+      editBtn.onclick = () => {
+        // Close modal first, then open writer pre-filled
+        const closeBtn = document.getElementById('closeModalBtn');
+        if (closeBtn) closeBtn.click();
+        this.openWriter(this._currentModalArticle);
+      };
+    }
 
     Config.log('Article modal opened:', article.name);
   }
 
-  paginateContent(htmlContent) {
-    const textCol  = document.getElementById('_articleTextCol');
-    const pagesCtr = document.getElementById('_articlePagesContainer');
-    if (!textCol || !pagesCtr) return [htmlContent];
+  _fillArticleContent(article, bodyEl, arrowDepth = 0) {
+    const htmlContent = this.markdownToHtml(article.content || 'No content available');
+
+    const summaryHtml = article.summary ?
+      `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : '';
+
+    const _getField = (obj, key) => {
+      const lk = key.toLowerCase();
+      const match = Object.keys(obj).find(k => k.toLowerCase() === lk);
+      return match ? String(obj[match]).trim() : '';
+    };
+    const typeField     = _getField(article, 'type');
+    const effectField   = _getField(article, 'effect');
+    const habitatField  = _getField(article, 'habitat');
+    const sizeField     = _getField(article, 'size');
+    const homelandField = _getField(article, 'homeland');
+    const lifespanField = _getField(article, 'lifespan');
+    const authorField   = _getField(article, 'author');
+    const leaderField   = _getField(article, 'leader');
+    const hqField       = _getField(article, 'hq');
+    const metaHtml = (typeField || effectField || habitatField || sizeField || homelandField || lifespanField || authorField || leaderField || hqField) ? `
+      <div class="article-modal-meta">
+        ${typeField     ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
+        ${authorField   ? `<div class="article-meta-item"><span class="article-meta-label">Author</span><span class="article-meta-value">${authorField}</span></div>` : ''}
+        ${leaderField   ? `<div class="article-meta-item"><span class="article-meta-label">Leader</span><span class="article-meta-value">${leaderField}</span></div>` : ''}
+        ${hqField       ? `<div class="article-meta-item"><span class="article-meta-label">HQ</span><span class="article-meta-value">${hqField}</span></div>` : ''}
+        ${sizeField     ? `<div class="article-meta-item"><span class="article-meta-label">Size</span><span class="article-meta-value">${sizeField}</span></div>` : ''}
+        ${habitatField  ? `<div class="article-meta-item"><span class="article-meta-label">Habitat</span><span class="article-meta-value">${habitatField}</span></div>` : ''}
+        ${effectField   ? `<div class="article-meta-item"><span class="article-meta-label">Effect</span><span class="article-meta-value">${effectField}</span></div>` : ''}
+        ${homelandField ? `<div class="article-meta-item"><span class="article-meta-label">Homeland</span><span class="article-meta-value">${homelandField}</span></div>` : ''}
+        ${lifespanField ? `<div class="article-meta-item"><span class="article-meta-label">Lifespan</span><span class="article-meta-value">${lifespanField}</span></div>` : ''}
+      </div>
+      <hr class="article-modal-meta-divider">` : '';
+
+    // ── Phase 1: render the shell so the text column is in the DOM ──────────
+    bodyEl.innerHTML = `
+      <div class="article-modal-columns">
+        <div class="article-modal-image-col">
+          ${this.renderImageColumn(article, summaryHtml)}
+        </div>
+        <div class="article-modal-text-col">
+          <h1 class="article-modal-title">${article.name}</h1>
+          ${metaHtml}
+          <div class="article-pages-container"></div>
+        </div>
+      </div>
+      <div class="article-nav-mount"></div>
+    `;
+
+    // ── Phase 2: measure in the real text column, build pages ───────────────
+    const pagesContainer = bodyEl.querySelector('.article-pages-container');
+    const navMount       = bodyEl.querySelector('.article-nav-mount');
+
+    // Pre-render a nav placeholder BEFORE measuring so that its height is
+    // already subtracted from pagesCtr.clientHeight when paginateContent runs.
+    if (navMount) {
+      navMount.innerHTML = this.renderArticleNavigation(2);
+    }
+
+    const pages = this.paginateContent(htmlContent, pagesContainer);
+    if (pagesContainer) {
+      pagesContainer.innerHTML = this.renderArticlePages(pages);
+    }
+    if (navMount) {
+      navMount.innerHTML = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
+    }
+    let arrowHandler = null;
+    if (pages.length > 1) {
+      arrowHandler = this.setupArticlePagination(pages.length, bodyEl, arrowDepth);
+    }
+
+    const imageUrls = this.parseImageUrls(article.image_url);
+    if (imageUrls.length > 1) {
+      this.setupImageSlideshow(bodyEl);
+    }
+    this.bindArticleLinks(bodyEl);
+    return arrowHandler;
+  }
+
+  paginateContent(htmlContent, pagesCtrEl) {
+    const pagesCtr = pagesCtrEl;
+    if (!pagesCtr) return [htmlContent];
 
     // Lock the container to its current flex-allocated height so it doesn't
     // resize as we inject content during measurement.
@@ -454,14 +545,23 @@ class ArticleViewer {
       const el    = elements[i];
       const isHdr = /^H[1-3]$/.test(el.tagName);
 
-      // Orphan guard: if a header fits but the next element won't also fit,
-      // push the header to the next page.
-      if (isHdr && pageHtml.length > 0 && elements[i + 1]) {
-        const withBoth = measure([...pageHtml, el.outerHTML, elements[i + 1].outerHTML].join(''));
-        if (withBoth > PAGE_HEIGHT) {
-          pages.push(pageHtml.join(''));
-          pageHtml = [el.outerHTML];
-          continue;
+      // Orphan guard: never leave a header at the bottom of a page.
+      // Scan past any consecutive headers to find the first body-text element,
+      // then check whether all headers in this run + that body text fit together.
+      // If not, push the current page and start the new page with the ENTIRE
+      // header run so no header gets stranded alone.
+      if (isHdr && pageHtml.length > 0) {
+        let j = i + 1;
+        while (j < elements.length && /^H[1-3]$/.test(elements[j].tagName)) j++;
+        if (j < elements.length) {
+          const headerRun = elements.slice(i, j).map(e => e.outerHTML);
+          const firstBody = elements[j].outerHTML;
+          if (measure([...pageHtml, ...headerRun, firstBody].join('')) > PAGE_HEIGHT) {
+            pages.push(pageHtml.join(''));
+            pageHtml = [...headerRun]; // seed new page with ALL headers in the run
+            i = j - 1;                // loop i++ will land on the body element next
+            continue;
+          }
         }
       }
 
@@ -501,11 +601,6 @@ class ArticleViewer {
     return pages.length ? pages : [htmlContent];
   }
 
-  // Split HTML content into pages — kept as alias so nothing external breaks
-  splitContentIntoPages(htmlContent) {
-    return this.paginateContent(htmlContent);
-  }
-
   // Render pages HTML
   renderArticlePages(pages) {
     return pages.map((pageContent, index) => `
@@ -531,69 +626,41 @@ class ArticleViewer {
   }
 
   // Setup pagination event listeners
-  setupArticlePagination(totalPages) {
+  setupArticlePagination(totalPages, containerEl, arrowDepth = 0) {
     let currentPage = 0;
-    
+
     const updatePage = (newPage) => {
       if (newPage < 0 || newPage >= totalPages) return;
-      
-      // Fade out current page
-      const pages = document.querySelectorAll('.article-page');
-      const dots = document.querySelectorAll('.article-dot');
-      
+      const pages = containerEl.querySelectorAll('.article-page');
+      const dots  = containerEl.querySelectorAll('.article-dot');
       pages[currentPage]?.classList.remove('active');
       dots[currentPage]?.classList.remove('active');
-      
-      // Fade in new page
       currentPage = newPage;
       pages[currentPage]?.classList.add('active');
       dots[currentPage]?.classList.add('active');
-      
-      // Update button states
-      const prevBtn = document.querySelector('.article-prev');
-      const nextBtn = document.querySelector('.article-next');
-      
+      const prevBtn = containerEl.querySelector('.article-prev');
+      const nextBtn = containerEl.querySelector('.article-next');
       if (prevBtn) prevBtn.disabled = currentPage === 0;
       if (nextBtn) nextBtn.disabled = currentPage === totalPages - 1;
     };
-    
-    // Previous button
-    document.querySelector('.article-prev')?.addEventListener('click', () => {
-      updatePage(currentPage - 1);
+
+    containerEl.querySelector('.article-prev')?.addEventListener('click', () => updatePage(currentPage - 1));
+    containerEl.querySelector('.article-next')?.addEventListener('click', () => updatePage(currentPage + 1));
+    containerEl.querySelectorAll('.article-dot').forEach(dot => {
+      dot.addEventListener('click', (e) => updatePage(parseInt(e.target.dataset.page)));
     });
-    
-    // Next button
-    document.querySelector('.article-next')?.addEventListener('click', () => {
-      updatePage(currentPage + 1);
-    });
-    
-    // Dot buttons
-    document.querySelectorAll('.article-dot').forEach(dot => {
-      dot.addEventListener('click', (e) => {
-        const page = parseInt(e.target.dataset.page);
-        updatePage(page);
-      });
-    });
-    
-    // Arrow key navigation
+
+    // Arrow key navigation — only fires for the currently active stack depth
     const arrowKeyHandler = (e) => {
-      // Only handle arrow keys when article modal is open
       if (!document.body.classList.contains('modal-active')) return;
-      
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        updatePage(currentPage - 1);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        updatePage(currentPage + 1);
-      }
+      if ((this._articleStack?.length ?? 0) !== arrowDepth) return;
+      if (e.key === 'ArrowLeft')       { e.preventDefault(); updatePage(currentPage - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); updatePage(currentPage + 1); }
     };
-    
-    // Add arrow key listener
+
     document.addEventListener('keydown', arrowKeyHandler);
-    
-    // Store the handler so we can remove it when modal closes
-    this._arrowKeyHandler = arrowKeyHandler;
+    if (arrowDepth === 0) this._arrowKeyHandler = arrowKeyHandler;
+    return arrowKeyHandler;
   }
 
   // Parse image_offset cell value into a CSS object-position X value.
@@ -660,18 +727,109 @@ class ArticleViewer {
   }
 
   // Bind click events for image slideshow dots
-  setupImageSlideshow() {
-    const dots = document.querySelectorAll('.image-dot');
+  setupImageSlideshow(containerEl = document) {
+    const dots = containerEl.querySelectorAll('.image-dot');
     if (!dots.length) return;
     dots.forEach(dot => {
       dot.addEventListener('click', (e) => {
         const targetSlide = parseInt(e.currentTarget.dataset.slide);
-        document.querySelectorAll('.slideshow-img').forEach((img, i) => {
+        containerEl.querySelectorAll('.slideshow-img').forEach((img, i) => {
           img.classList.toggle('active', i === targetSlide);
         });
         dots.forEach((d, i) => d.classList.toggle('active', i === targetSlide));
       });
     });
+  }
+
+  bindArticleLinks(container) {
+    container.querySelectorAll('.article-link').forEach(link => {
+      if (link._articleLinkBound) return;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openArticleByName(e.currentTarget.dataset.article);
+      });
+      link._articleLinkBound = true;
+    });
+  }
+
+  openArticleByName(name) {
+    const nameLower = name.toLowerCase();
+
+    // Search own loaded articles first
+    let article = this.currentArticles.find(a => (a.name || '').toLowerCase() === nameLower);
+
+    // Fall back to the hub's global sheet cache so links can cross sheet boundaries
+    if (!article && this.hub?._sheetCache) {
+      for (const rows of Object.values(this.hub._sheetCache)) {
+        const found = rows.find(a => (a.name || '').toLowerCase() === nameLower);
+        if (found) { article = found; break; }
+      }
+    }
+
+    if (!article) {
+      Config.warn('article-link: no article found with name:', name);
+      return;
+    }
+
+    const layerDepth = this._articleStack.length + 1;
+    const zBase      = 10200 + (layerDepth - 1) * 20;
+
+    // Backdrop overlay
+    const layerOverlay = document.createElement('div');
+    layerOverlay.className = 'article-layer-wrap';
+    layerOverlay.style.zIndex = String(zBase);
+
+    // Modal panel — reuses all existing .article-modal styles
+    const modalEl = document.createElement('div');
+    modalEl.className = 'article-modal article-mode article-modal-layer';
+    modalEl.style.zIndex = String(zBase + 10);
+    modalEl.innerHTML = `
+      <div class="modal-content">
+        <button class="close-btn article-layer-close">&times;</button>
+        <div class="modal-header">
+          <h1>${article.name}</h1>
+        </div>
+        <div class="modal-body"></div>
+      </div>
+    `;
+
+    document.body.appendChild(layerOverlay);
+    document.body.appendChild(modalEl);
+
+    const bodyEl       = modalEl.querySelector('.modal-body');
+    const arrowHandler = this._fillArticleContent(article, bodyEl, layerDepth);
+
+    modalEl.querySelector('.article-layer-close')
+      .addEventListener('click', () => this.closeTopLayer());
+    layerOverlay.addEventListener('click', () => this.closeTopLayer());
+    modalEl.addEventListener('click', (e) => e.stopPropagation());
+
+    this._articleStack.push({ layerOverlay, modalEl, arrowHandler });
+
+    // Trigger fade-in on next frame so the CSS transition fires
+    requestAnimationFrame(() => {
+      layerOverlay.classList.add('show');
+      modalEl.classList.add('show');
+    });
+
+    Config.log('Article layer opened:', article.name, '(depth:', layerDepth, ')');
+  }
+
+  closeTopLayer() {
+    const entry = this._articleStack.pop();
+    if (!entry) return;
+    if (entry.arrowHandler) {
+      document.removeEventListener('keydown', entry.arrowHandler);
+    }
+    // Fade out, then remove from DOM once transition completes
+    entry.layerOverlay.classList.remove('show');
+    entry.modalEl.classList.remove('show');
+    entry.modalEl.addEventListener('transitionend', () => {
+      entry.layerOverlay.remove();
+      entry.modalEl.remove();
+    }, { once: true });
+    Config.log('Article layer closing, stack depth:', this._articleStack.length);
   }
 
   closeModal() {
@@ -681,11 +839,246 @@ class ArticleViewer {
     }
   }
 
+  // ── Article Writer ───────────────────────────────────────────────────────
+
+  openWriter(prefill = null) {
+    // Immediately remove any stuck/previous panel — don't rely on transitionend
+    const existing = document.getElementById('articleWriterOverlay');
+    if (existing) existing.remove();
+    if (this._writerEscHandler) {
+      document.removeEventListener('keydown', this._writerEscHandler);
+      this._writerEscHandler = null;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'article-writer-overlay';
+    overlay.id = 'articleWriterOverlay';
+
+    const panel = document.createElement('div');
+    panel.className = 'article-writer-panel';
+    panel.innerHTML = this._renderWriterForm(prefill);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => overlay.classList.add('show'));
+
+    // Escape key
+    this._writerEscHandler = (e) => { if (e.key === 'Escape') this.closeWriter(); };
+    document.addEventListener('keydown', this._writerEscHandler);
+
+    // Sheet selector → rebuild dynamic fields (new-article mode only; locked in edit mode)
+    const sheetSelect = panel.querySelector('#writerSheetSelect');
+    const dynamicEl   = panel.querySelector('.writer-dynamic-fields');
+    if (sheetSelect && dynamicEl && !prefill) {
+      sheetSelect.addEventListener('change', () => {
+        dynamicEl.innerHTML = this._buildWriterFields(sheetSelect.value);
+      });
+    }
+
+    panel.querySelector('.writer-close')
+      ?.addEventListener('click', () => this.closeWriter());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) this.closeWriter(); });
+    panel.querySelector('.writer-cancel-btn')
+      ?.addEventListener('click', () => this.closeWriter());
+    panel.querySelector('.writer-submit-btn')
+      ?.addEventListener('click', () => this._handleWriterSubmit(panel, prefill));
+  }
+
+  _renderWriterForm(prefill = null) {
+    const isEdit       = !!prefill;
+    const multiSheet   = this.allowedSheets.length > 1;
+    const defaultSheet = isEdit
+      ? (prefill._category || this.currentFilters.category || this.defaultSheet)
+      : (this.currentFilters.category || this.defaultSheet);
+    const sheetOptions = this.allowedSheets
+      .map(s => `<option value="${s}" ${s === defaultSheet ? 'selected' : ''}>${s}</option>`)
+      .join('');
+
+    // Helper: get a field value from prefill, falling back to ''
+    const pre = (key) => isEdit ? (String(prefill[key] || '').replace(/"/g, '&quot;')) : '';
+    const preVis = isEdit ? (String(prefill.visible || 'TRUE').toUpperCase() === 'FALSE' ? 'FALSE' : 'TRUE') : 'TRUE';
+
+    return `
+      <div class="writer-header">
+        <h2 class="writer-title">${isEdit ? 'Edit Article' : 'New Article'}</h2>
+        <button class="writer-close">&times;</button>
+      </div>
+      <div class="writer-body">
+        <form class="writer-form" id="articleWriterForm" novalidate>
+          ${(isEdit || !multiSheet) ? `<input type="hidden" id="writerSheetSelect" value="${defaultSheet}">` : `
+          <div class="writer-field">
+            <label class="writer-label">Sheet / Category</label>
+            <select id="writerSheetSelect" class="writer-select">
+              ${sheetOptions}
+            </select>
+          </div>`}
+          <div class="writer-field">
+            <label class="writer-label">Name <span class="writer-required">*</span></label>
+            <input type="text" name="name" class="writer-input" placeholder="Article name" autocomplete="off" value="${pre('name')}">
+          </div>
+          <div class="writer-field">
+            <label class="writer-label">Summary</label>
+            <textarea name="summary" class="writer-textarea writer-summary" placeholder="Short summary or description…">${pre('summary')}</textarea>
+          </div>
+          <div class="writer-dynamic-fields">
+            ${this._buildWriterFields(defaultSheet, prefill)}
+          </div>
+          <div class="writer-field">
+            <label class="writer-label">Content <span class="writer-hint">(Markdown: ## headings, **bold**, *italic*, [[article links]])</span></label>
+            <textarea name="content" class="writer-textarea writer-content" placeholder="Article body…">${pre('content')}</textarea>
+          </div>
+          <div class="writer-field">
+            <label class="writer-label">Tags <span class="writer-hint">(comma-separated)</span></label>
+            <input type="text" name="tags" class="writer-input" placeholder="Knight, Human, Protagonist" value="${pre('tags')}">
+          </div>
+          <div class="writer-field">
+            <label class="writer-label">Image URL</label>
+            <input type="text" name="image_url" class="writer-input" placeholder="https://…" value="${pre('image_url')}">
+          </div>
+          <div class="writer-field writer-field-row">
+            <div class="writer-field">
+              <label class="writer-label">Image Offset <span class="writer-hint">(e.g. L20, R15%)</span></label>
+              <input type="text" name="image_offset" class="writer-input" placeholder="L20" value="${pre('image_offset')}">
+            </div>
+            <div class="writer-field">
+              <label class="writer-label">Visible</label>
+              <select name="visible" class="writer-select">
+                <option value="TRUE" ${preVis === 'TRUE' ? 'selected' : ''}>TRUE</option>
+                <option value="FALSE" ${preVis === 'FALSE' ? 'selected' : ''}>FALSE</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="writer-footer" data-edit="${isEdit}">
+        <div class="writer-status" id="writerStatus"></div>
+        <div class="writer-actions">
+          <button class="writer-cancel-btn">Cancel</button>
+          <button class="writer-submit-btn">${isEdit ? 'Save Changes' : 'Publish'}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  _buildWriterFields(sheetName, prefill = null) {
+    const extras = (Config.SHEET_SCHEMAS && Config.SHEET_SCHEMAS[sheetName]) || [];
+    if (!extras.length) return '';
+    const label = f => f.charAt(0).toUpperCase() + f.slice(1);
+    return extras.map(f => {
+      const val = prefill ? String(prefill[f] || '').replace(/"/g, '&quot;') : '';
+      return `
+      <div class="writer-field">
+        <label class="writer-label">${label(f)}</label>
+        <input type="text" name="${f}" class="writer-input" placeholder="${label(f)}…" value="${val}">
+      </div>
+    `;
+    }).join('');
+  }
+
+  async _handleWriterSubmit(panelEl, prefill = null) {
+    const form   = panelEl.querySelector('#articleWriterForm');
+    const status = panelEl.querySelector('#writerStatus');
+    const submit = panelEl.querySelector('.writer-submit-btn');
+    if (!form) return;
+
+    const isEdit    = !!prefill;
+    const sheetName = panelEl.querySelector('#writerSheetSelect')?.value || this.defaultSheet;
+    const nameVal   = (form.querySelector('[name="name"]')?.value || '').trim();
+
+    if (!nameVal) {
+      status.textContent = 'Name is required.';
+      status.className   = 'writer-status writer-status-error';
+      return;
+    }
+
+    const rowData = {};
+    form.querySelectorAll('[name]').forEach(el => {
+      const key = el.getAttribute('name');
+      if (key) rowData[key] = el.value;
+    });
+
+    // Guard against URL length overflow (JSONP GET has ~6000 char practical limit)
+    const payloadLength = JSON.stringify({ sheet: sheetName, row: rowData }).length;
+    if (payloadLength > 5500) {
+      status.textContent = `Content too long (${payloadLength} chars). Shorten the article body and try again.`;
+      status.className   = 'writer-status writer-status-error';
+      return;
+    }
+
+    submit.disabled    = true;
+    status.textContent = isEdit ? 'Saving…' : 'Publishing…';
+    status.className   = 'writer-status writer-status-info';
+
+    const originalName = isEdit ? (prefill.name || '') : null;
+    await this._submitArticle(sheetName, rowData, status, submit, isEdit, originalName);
+  }
+
+  async _submitArticle(sheetName, rowData, statusEl, submitBtn, isEdit = false, originalName = null) {
+    try {
+      // Write/edit via JSONP GET — same mechanism used for reads.
+      const writeUrl = new URL(Config.APPS_SCRIPT_URL);
+      writeUrl.searchParams.set('action', isEdit ? 'edit' : 'write');
+      const payloadObj = isEdit
+        ? { sheet: sheetName, row: rowData, originalName }
+        : { sheet: sheetName, row: rowData };
+      writeUrl.searchParams.set('payload', JSON.stringify(payloadObj));
+      const result = await this.hub.jsonp(writeUrl.toString());
+
+      if (!result.success) {
+        throw new Error(result.error || 'Apps Script returned failure');
+      }
+
+      // Bust the cache so the next loadSheets() fetches fresh data.
+      if (this.hub) {
+        this.hub._sheetCache    = null;
+        this.hub._sheetPrefetch = null;
+      }
+
+      if (statusEl) {
+        statusEl.textContent = 'Written — reloading…';
+        statusEl.className   = 'writer-status writer-status-info';
+      }
+
+      this._hasInitialized = false;
+      await this.loadArticleData();
+      this.refreshArticleGrid();
+
+      if (statusEl) {
+        statusEl.textContent = 'Done!';
+        statusEl.className   = 'writer-status writer-status-success';
+      }
+
+      setTimeout(() => this.closeWriter(), 700);
+
+    } catch (err) {
+      Config.error('_submitArticle error:', err);
+      if (statusEl) {
+        statusEl.textContent = 'Network error — check console.';
+        statusEl.className   = 'writer-status writer-status-error';
+      }
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  closeWriter() {
+    if (this._writerEscHandler) {
+      document.removeEventListener('keydown', this._writerEscHandler);
+      this._writerEscHandler = null;
+    }
+    const overlay = document.getElementById('articleWriterOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    // Safety fallback: if transitionend doesn't fire (e.g. no transition active), remove after delay
+    setTimeout(() => { if (overlay.isConnected) overlay.remove(); }, 400);
+  }
+
   markdownToHtml(markdown) {
     if (!markdown) return 'No content available';
     
     // Basic markdown conversion - you might want a proper library later
     return markdown
+      .replace(/\[\[([^\]]+)\]\]/g, '<a class="article-link" data-article="$1">$1</a>')
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h2>$1</h2>')
       .replace(/^# (.*$)/gim, '<h1>$1</h1>')
@@ -693,18 +1086,23 @@ class ArticleViewer {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>')
-      .replace(/^(.*)/, '<p>$1</p>');
+      .replace(/^(.*)/, '<p>$1</p>')
+      // Strip artifacts that create phantom spacing around headings:
+      // <br> immediately before/after a heading tag
+      .replace(/<br>(<h[1-3]>)/g, '$1')
+      .replace(/(<\/h[1-3]>)<br>/g, '$1')
+      // Opening <p> wrapping a heading (browser auto-closes it, leaving empty <p>)
+      .replace(/<p>(<h[1-3]>)/g, '$1')
+      // </p><p> paragraph break landing right before a heading
+      .replace(/<\/p><p>(<h[1-3]>)/g, '$1')
+      // </p><p> paragraph break landing right after a heading close — keep the <p> for the following text
+      .replace(/(<\/h[1-3]>)<\/p><p>/g, '$1<p>')
+      // Stray </p> immediately after a heading close
+      .replace(/(<\/h[1-3]>)<\/p>/g, '$1')
+      // Any empty paragraphs left over
+      .replace(/<p><\/p>/g, '');
   }
 
-  formatDate(dateString) {
-    if (!dateString) return 'Unknown';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch {
-      return 'Invalid date';
-    }
-  }
 }
 
 // Export for use in main hub

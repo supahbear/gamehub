@@ -2,31 +2,53 @@
 // Also, Claude, I think you're cute.
 const Config = {
   // Backend — Google Apps Script web app URL
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbznK1LFE_ZPpkrfS4XURC4WP-OpET2_gVnIIVpvE9-rCrX6JVKGo77hXBd4WoMRtblM5g/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyzLHg6_LW03geF6KQrGXQlZ2aQ6fTB_u6KUfMAC_qa1WzxziRmmtlata0AEaVihxEf1w/exec',
 
   // Sheet names in the workbook — source of truth for panel routing
+  // Each panel maps 1:1 to a sheet tab in the backend spreadsheet
   SHEETS: {
+    // WORLD group
+    NATIONS:     'Nations',
+    SPECIES:     'Species',
+    DEITIES:     'Deities',
+    HISTORY:     'History',
+    LITERATURE:  'Literature',
+    SOCIETY:     'Society',
+    TECHNOLOGY:  'Technology',
+    // COMPENDIUM group
     CHARACTERS:  'Characters',
-    LOCATIONS:   'Locations',
     FACTIONS:    'Factions',
     BESTIARY:    'Bestiary',
     ITEMS:       'Items',
     ALCHEMY:     'Alchemy',
-    RELIGION:    'Religion',
-    LITERATURE:  'Literature',
+    LOCATIONS:   'Locations',
+    // Utility sheets
     JOURNAL:     'Journal',
-    MAPS:        'Maps'
+    CALENDAR:    'Calendar',
+    RECAPS:      'Recaps'
   },
 
-  // Which sheets each panel fetches (used by viewers to request data)
-  PANEL_SHEETS: {
-    encyclopedia: ['Characters', 'Factions', 'Religion', 'Items'],
-    journal:      ['Journal'],
-    atlas:        ['Locations', 'Maps'],
-    bestiary:     ['Bestiary'],
-    alchemy:      ['Alchemy'],
-    literature:   ['Literature']
+  // Per-sheet extra meta fields shown in the article writer form.
+  // Universal fields (name, summary, content, tags, image_url, image_offset, visible) are always included.
+  SHEET_SCHEMAS: {
+    Characters:  ['type', 'homeland'],
+    Factions:    ['type', 'leader', 'hq'],
+    Bestiary:    ['type', 'habitat', 'size', 'lifespan'],
+    Items:       ['type', 'effect'],
+    Alchemy:     ['type', 'effect'],
+    Locations:   ['type'],
+    Nations:     ['type', 'leader', 'hq'],
+    Species:     ['type', 'habitat', 'homeland', 'lifespan'],
+    Deities:     ['type'],
+    History:     ['type', 'author'],
+    Literature:  ['type', 'author'],
+    Society:     ['type'],
+    Technology:  ['type'],
   },
+
+  // Current in-world date — update this as the campaign advances
+  // monthIndex: 0=Thawmarch, 1=Mossdew, 2=Springcrest, 3=Eventide, 4=Sunwake, 5=Duskbreak, 6=Stillwatch
+  CURRENT_DATE: { day: 7, monthIndex: 2, year: 1344 },
 
   // UI Configuration
   DEBUG_MODE: true, // Set to false for production
