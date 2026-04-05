@@ -111,18 +111,28 @@
         min-height: 60px;
     }
 
-    /* Article filter bar stacks vertically */
+    /* Article filter bar: full width, stacked vertically */
     .article-filters {
         flex-direction: column;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .filter-group {
         width: 100%;
     }
 
+    /* Grid aligns to filter bar width — remove desktop indent */
+    .article-viewer .articles-grid {
+        padding: 0;
+        width: 100%;
+    }
+
     /* ========== MODALS ========== */
-    /* Fix centering: take full viewport width, let margin auto center the content */
-    .article-modal, .tour-modal {
+    /* All fixed-position modals: stretch to full viewport width so centering
+       works reliably on mobile (parent has no defined width otherwise) */
+    .article-modal, .tour-modal,
+    .journal-modal, .calendar-modal, .recaps-modal {
         left: 0;
         right: 0;
         width: 100%;
@@ -162,6 +172,72 @@
         max-height: 160px;
     }
 
+    /* ========== CAMPAIGN LOG (RECAPS) ========== */
+    .recaps-modal-body {
+        padding: 0 18px 28px;
+    }
+
+    .recap-entry {
+        padding: 18px 0 4px;
+    }
+
+    .recap-title {
+        font-size: 1.3rem;
+    }
+
+    /* ========== CALENDAR ========== */
+    .calendar-modal-body {
+        padding: 14px 10px 20px;
+    }
+
+    /* Month tabs: scrollable single row so all 7 months fit */
+    .cal-tabs-row {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        gap: 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 1px;
+    }
+
+    .cal-tabs-row::-webkit-scrollbar { display: none; }
+
+    .cal-month-tab {
+        flex: 0 0 auto;
+        font-size: 0.6rem;
+        padding: 7px 8px 6px;
+        letter-spacing: 0.8px;
+    }
+
+    /* Shorter day cells on mobile */
+    .calendar-table td {
+        height: 52px;
+        padding: 18px 2px 4px;
+    }
+
+    /* ========== JOURNAL ========== */
+    /* Single-column layout: sidebar list on top, detail below */
+    .quest-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .quest-sidebar {
+        position: static;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+
+    .quest-content {
+        min-height: 260px;
+    }
+
+    .quest-viewer {
+        padding: 0 4px;
+    }
+
+    /* ========== EXPLORE TOGGLE ========== */
     /* Explore toggle mobile layout */
     .explore-toggle-bar {
         flex-direction: column;
