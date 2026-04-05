@@ -220,12 +220,18 @@
 
     .article-modal-image-col {
         justify-content: center;
-        margin-bottom: 12px;
+        margin-bottom: 0;
+        height: auto !important;
+        min-height: 0 !important;
     }
 
     .article-modal-image-col .article-image {
-        max-width: 100%;
-        max-height: 160px;
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: unset !important;  /* kill portrait 9:16 on phones */
+        max-width: 100% !important;
+        max-height: 200px !important;
+        flex: none !important;
     }
 
     /* ========== CAMPAIGN LOG (RECAPS) ========== */

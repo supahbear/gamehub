@@ -843,10 +843,11 @@ body.modal-active main {
         width: 100%;
     }
     .article-modal-image-col .article-image {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 9 / 16; /* Maintain 9:16 on mobile */
-        max-height: 500px;
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 9 / 16; /* Portrait on tablet */
+        max-height: 300px !important;
+        flex: none !important;
     }
     .article-modal-text-col {
         min-width: 0;
