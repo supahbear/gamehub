@@ -17,20 +17,63 @@
         height: 60px;
     }
 
-    /* Hub header: shrink padding and buttons to fit in a single row */
+    /* Hub header: two-row layout on mobile.
+       Row 1: back button + panel title (or centre logo on hub home)
+       Row 2: Campaign Log / Journal / Calendar buttons full-width */
     .hub-header {
-        padding: 0 10px;
+        padding: 6px 10px 0;
         height: auto;
-        min-height: 52px;
+        min-height: auto;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0;
     }
 
+    /* Start (empty on hub home, empty on panel view) — don't grow */
+    .hub-header-start {
+        flex: 0 0 auto;
+    }
+
+    /* Center takes the remaining space in row 1 */
+    .hub-header-center {
+        flex: 1;
+        min-width: 0;
+        justify-content: flex-start;
+    }
+
+    /* Panel nav: back btn + title next to each other, title truncates if needed */
+    .hub-panel-nav {
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .hub-panel-nav-title {
+        font-size: 0.78rem;
+        letter-spacing: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .hub-back-btn {
+        flex-shrink: 0;
+        padding: 4px 10px;
+        font-size: 0.68rem;
+    }
+
+    /* Row 2: action buttons span full width, centered, with top separator */
     .hub-header-end {
-        gap: 5px;
+        flex: 0 0 100%;
+        justify-content: center;
+        gap: 6px;
+        padding: 5px 0 6px;
+        border-top: 1px solid rgba(177, 156, 217, 0.12);
+        margin-top: 5px;
     }
 
     .hub-action-btn {
-        padding: 5px 8px;
-        font-size: 0.68rem;
+        padding: 5px 10px;
+        font-size: 0.65rem;
         letter-spacing: 0;
         white-space: nowrap;
     }
