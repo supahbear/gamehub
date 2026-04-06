@@ -139,7 +139,6 @@ class ArticleViewer {
             ${tagOptions}
           </select>
         </div>
-        <button id="clearFilters" class="clear-btn">Clear All</button>
         <button id="writeArticleBtn" class="write-btn">+ New</button>
       </div>
     `;

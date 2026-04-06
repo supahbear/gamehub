@@ -120,6 +120,13 @@
     top: 12px;
     right: 16px;
     z-index: 10;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+}
+
+.article-modal .close-btn:hover {
+    background: rgba(177, 156, 217, 0.3);
 }
 
 .article-modal .edit-btn {
@@ -127,13 +134,14 @@
     top: 12px;
     right: 60px;
     z-index: 10;
-    background: none;
+    background: rgba(0, 0, 0, 0.45);
     border: none;
     color: #c9b5e6;
     font-size: 20px;
     cursor: pointer;
     padding: 5px 8px;
-    border-radius: 5px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
     transition: all 0.3s ease;
     line-height: 1;
     font-family: var(--font-family);
@@ -700,10 +708,9 @@ body.modal-active main {
 /* ========== ARTICLE META (Type / Effect fields) ========== */
 .article-modal-meta {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     padding-bottom: 10px;
     text-align: left;
 }
@@ -715,13 +722,6 @@ body.modal-active main {
     font-family: var(--font-body);
     font-size: 0.9rem;
     line-height: 1.4;
-}
-
-.article-meta-item + .article-meta-item::before {
-    content: '|';
-    color: rgba(177, 156, 217, 0.4);
-    margin: 0 10px;
-    font-weight: 300;
 }
 
 .article-meta-label {

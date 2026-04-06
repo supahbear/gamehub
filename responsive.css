@@ -162,9 +162,12 @@
         min-height: 60px;
     }
 
-    /* Article filter bar: full width, stacked vertically */
+    /* Article filter bar: keep row layout so buttons sit beside each other;
+       filter-groups are 100% wide so they still stack, but the action buttons
+       (clear / +new) share the last row since they have no explicit width */
     .article-filters {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         width: 100%;
         box-sizing: border-box;
     }
@@ -279,7 +282,7 @@
     /* Article modal: two columns collapse to single column */
     .article-modal-columns {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 6px;
     }
 
     .article-modal-image-col {
