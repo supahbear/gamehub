@@ -24,7 +24,8 @@ class TTRPGHub {
       bestiary:   'bestiaryContent',
       items:      'itemsContent',
       alchemy:    'alchemyContent',
-      locations:  'locationsContent'
+      locations:  'locationsContent',
+      calendar:   'calendarContent'
     };
 
     this.init();
@@ -527,7 +528,7 @@ class TTRPGHub {
       if (!matchName && !matchIdx) return;
       if (ev.year && parseInt(ev.year, 10) !== year) return;
       if (!eventMap[evDay]) eventMap[evDay] = [];
-      eventMap[evDay].push({ title: ev.title || '', content: ev.content || '', article: ev.article || '' });
+      eventMap[evDay].push({ title: ev.name || '', summary: ev.summary || '', article: ev.article || (String(ev.content || '').trim() ? ev.name || '' : '') });
     });
 
     const colHeaders = Array.from({ length: DAYS_PER_WEEK }, (_, i) =>
@@ -606,7 +607,7 @@ class TTRPGHub {
       tip.innerHTML = evList.map(ev => `
         <div class="cal-tooltip-entry">
           <strong>${ev.title}</strong>
-          ${ev.content ? `<span>${ev.content}</span>` : ''}
+          ${ev.summary ? `<span>${ev.summary}</span>` : ''}
           ${ev.article ? `<button class="cal-tooltip-readmore" data-article="${ev.article}">Read more →</button>` : ''}
         </div>`).join('');
       // Show offscreen first to measure
@@ -695,7 +696,7 @@ class TTRPGHub {
             if (evMonthRaw.toLowerCase() !== m.name.toLowerCase() && parseInt(evMonthRaw, 10) !== (month + 1)) return;
             if (ev.year && parseInt(ev.year, 10) !== year) return;
             if (!eventMap[evDay]) eventMap[evDay] = [];
-            eventMap[evDay].push({ title: ev.title || '', content: ev.content || '', article: ev.article || '' });
+            eventMap[evDay].push({ title: ev.name || '', summary: ev.summary || '', article: ev.article || (String(ev.content || '').trim() ? ev.name || '' : '') });
           });
 
           const colHeaders = Array.from({ length: 10 }, (_, i) => `<th>${i + 1}</th>`).join('');
@@ -728,23 +729,28 @@ class TTRPGHub {
   }
 
   async openCalendarLinkedArticle(articleName) {
-    // Keep calendar open behind the article modal.
-    // Search ALL article sheets so any sheet can be referenced from a calendar event.
-    if (!this._viewer_calArticles) {
-      const articleSheets = Object.values(Config.SHEETS);
-      this._viewer_calArticles = new ArticleViewer(this, articleSheets, articleSheets[0]);
+    // Reuse the Calendar panel viewer if it's already loaded — same sheet, same cache.
+    // Fall back to a dedicated single-sheet viewer if the panel hasn't been opened yet.
+    // Restricting to Calendar only ensures we always hit the prefetch cache and never
+    // trigger a slow cross-sheet JSONP request.
+    let viewer = this._viewer_calendar;
+    if (!viewer || viewer.currentArticles.length === 0) {
+      if (!this._viewer_calArticles) {
+        this._viewer_calArticles = new ArticleViewer(this, [Config.SHEETS.CALENDAR], Config.SHEETS.CALENDAR);
+      }
+      viewer = this._viewer_calArticles;
+      if (viewer.currentArticles.length === 0) {
+        await viewer.loadArticleData();
+      }
     }
-    const viewer = this._viewer_calArticles;
-    if (viewer.currentArticles.length === 0) {
-      await viewer.loadArticleData();
-    }
+    const nameLower = articleName.toLowerCase();
     const article = viewer.currentArticles.find(
-      a => (a.name || '').toLowerCase() === articleName.toLowerCase()
+      a => (a.name || '').toLowerCase() === nameLower
     );
     if (article) {
       viewer.openArticle(article._uid, article._category);
     } else {
-      Config.warn('Calendar: linked article not found across any sheet:', articleName);
+      Config.warn('Calendar: linked article not found:', articleName);
     }
   }
 
@@ -873,7 +879,8 @@ class TTRPGHub {
       bestiary:   'bestiaryContent',
       items:      'itemsContent',
       alchemy:    'alchemyContent',
-      locations:  'locationsContent'
+      locations:  'locationsContent',
+      calendar:   'calendarContent'
     };
     const contentEl = document.getElementById(idMap[panelName]);
     if (contentEl) {
@@ -974,8 +981,8 @@ class TTRPGHub {
   // Subsequent loadSheets() calls are served instantly from cache.
   async _prefetchAllSheets() {
     if (this._sheetCache || this._sheetPrefetch) return; // Already done or in flight
-    // All content sheets (excludes Journal which is loaded on demand)
-    const allSheets = Object.values(Config.SHEETS).filter(s => s !== 'Journal');
+    // All content sheets (excludes Journal and Recaps which are loaded on demand)
+    const allSheets = Object.values(Config.SHEETS).filter(s => s !== 'Journal' && s !== 'Recaps');
     this._sheetPrefetch = this.jsonp(Config.getSheetUrl(allSheets));
     try {
       const data = await this._sheetPrefetch;

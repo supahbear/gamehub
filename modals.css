@@ -770,9 +770,9 @@ body.modal-active main {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0; /* Reduced from 16px */
-    margin-top: 16px; /* Reduced from 20px */
+    position: relative;
+    padding: 12px 52px; /* reserve room for the pinned arrow buttons */
+    margin-top: 16px;
     border-top: 1px solid rgba(177, 156, 217, 0.2);
 }
 
@@ -790,7 +790,13 @@ body.modal-active main {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
+
+.article-prev { left: 0; }
+.article-next { right: 0; }
 
 .article-nav-btn:hover:not(:disabled) {
     background: rgba(177, 156, 217, 0.3);
@@ -806,6 +812,7 @@ body.modal-active main {
     display: flex;
     gap: 8px;
     align-items: center;
+    width: 100%;
 }
 
 .article-dot {

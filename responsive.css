@@ -264,14 +264,18 @@
         padding: 6px 0;
     }
 
-    /* Dots: single row, truncate overflow instead of wrapping */
+    /* Dots: scrollable single row — active dot is scrolled into center */
     .article-dots {
         flex-wrap: nowrap !important;
         min-width: 0;
         flex-shrink: 1;
-        overflow: hidden;
-        max-width: calc(100vw - 130px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+
+    .article-dots::-webkit-scrollbar { display: none; }
 
     .article-dot {
         flex-shrink: 0;

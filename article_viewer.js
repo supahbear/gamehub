@@ -25,7 +25,9 @@ class ArticleViewer {
       const rows = await this.hub.loadSheets(this.allowedSheets);
       // Assign a stable unique ID to every article by position so lookups
       // are never confused by _rowIndex collisions or missing values.
-      rows.forEach((row, i) => { row._uid = String(i); });
+      rows.forEach((row, i) => {
+        row._uid = String(i);
+      });
       this.currentArticles = rows;
 
       if (!this._hasInitialized) {
@@ -438,9 +440,6 @@ class ArticleViewer {
   _fillArticleContent(article, bodyEl, arrowDepth = 0) {
     const htmlContent = this.markdownToHtml(article.content || 'No content available');
 
-    const summaryHtml = article.summary ?
-      `<div class="article-modal-summary">${this.markdownToHtml(article.summary)}</div>` : '';
-
     const _getField = (obj, key) => {
       const lk = key.toLowerCase();
       const match = Object.keys(obj).find(k => k.toLowerCase() === lk);
@@ -455,8 +454,10 @@ class ArticleViewer {
     const authorField   = _getField(article, 'author');
     const leaderField   = _getField(article, 'leader');
     const hqField       = _getField(article, 'hq');
-    const metaHtml = (typeField || effectField || habitatField || sizeField || homelandField || lifespanField || authorField || leaderField || hqField) ? `
+    const dateField     = _getField(article, 'date');
+    const metaHtml = (typeField || effectField || habitatField || sizeField || homelandField || lifespanField || authorField || leaderField || hqField || dateField) ? `
       <div class="article-modal-meta">
+        ${dateField     ? `<div class="article-meta-item"><span class="article-meta-label">Date</span><span class="article-meta-value">${dateField}</span></div>` : ''}
         ${typeField     ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
         ${authorField   ? `<div class="article-meta-item"><span class="article-meta-label">Author</span><span class="article-meta-value">${authorField}</span></div>` : ''}
         ${leaderField   ? `<div class="article-meta-item"><span class="article-meta-label">Leader</span><span class="article-meta-value">${leaderField}</span></div>` : ''}
@@ -473,7 +474,7 @@ class ArticleViewer {
     bodyEl.innerHTML = `
       <div class="article-modal-columns">
         <div class="article-modal-image-col">
-          ${this.renderImageColumn(article, summaryHtml)}
+          ${this.renderImageColumn(article, '')}
         </div>
         <div class="article-modal-text-col">
           <h1 class="article-modal-title">${article.name}</h1>
@@ -644,6 +645,8 @@ class ArticleViewer {
       currentPage = newPage;
       pages[currentPage]?.classList.add('active');
       dots[currentPage]?.classList.add('active');
+      // Scroll active dot into view (handles overflow on mobile)
+      dots[currentPage]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       const prevBtn = containerEl.querySelector('.article-prev');
       const nextBtn = containerEl.querySelector('.article-next');
       if (prevBtn) prevBtn.disabled = currentPage === 0;

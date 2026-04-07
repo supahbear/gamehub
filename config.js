@@ -44,6 +44,7 @@ const Config = {
     Literature:  ['type', 'author'],
     Society:     ['type'],
     Technology:  ['type'],
+    Calendar:    ['date'],
   },
 
   // Current in-world date — update this as the campaign advances

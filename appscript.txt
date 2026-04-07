@@ -15,7 +15,7 @@ const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 // Sheets that may be written to — used by handleWrite and handleEdit
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
-  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations'
+  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar'
 ];
 
 // ---------------------------------------------------------------------------
