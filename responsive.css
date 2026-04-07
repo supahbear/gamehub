@@ -215,29 +215,39 @@
         max-height: calc(90vh - 50px);
     }
 
-    /* Article modal: body stays clipped; columns area scrolls internally;
-       nav-mount is always pinned at the bottom as a flex sibling */
+    /* Article modal: image fixed, title pinned, only page content scrolls.
+       columns → flex column; image-col fixed 180px; text-col fills rest as flex column;
+       pages-container scrolls inside text-col. Nothing above the divider ever moves. */
     .article-modal .modal-body {
         overflow: hidden;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     .article-modal-columns {
+        display: flex !important;
+        flex-direction: column !important;
         flex: 1 !important;
         min-height: 0 !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
+        overflow: hidden !important;
+        align-items: stretch !important;
     }
 
     .article-modal-text-col {
-        height: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
         min-height: 0 !important;
         min-width: 0 !important;
+        overflow: hidden !important;
     }
 
     .article-pages-container {
-        flex: none !important;
+        flex: 1 !important;
+        min-height: 0 !important;
         height: auto !important;
-        overflow: visible !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     /* Hide inactive pages via display so they occupy zero height */
@@ -286,22 +296,25 @@
     /* Article modal: two columns collapse to single column */
     .article-modal-columns {
         grid-template-columns: 1fr;
-        gap: 6px;
+        gap: 0;
     }
 
     .article-modal-image-col {
         justify-content: center;
         margin-bottom: 0;
-        height: auto !important;
-        min-height: 0 !important;
+        flex-shrink: 0 !important;
+        height: 180px !important;
+        min-height: 180px !important;
+        overflow: hidden;
     }
 
     .article-modal-image-col .article-image {
         width: 100% !important;
-        height: auto !important;
-        aspect-ratio: unset !important;  /* kill portrait 9:16 on phones */
+        height: 180px !important;
+        aspect-ratio: unset !important;
         max-width: 100% !important;
-        max-height: 200px !important;
+        max-height: 180px !important;
+        object-fit: cover !important;
         flex: none !important;
     }
 

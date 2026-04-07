@@ -647,6 +647,8 @@ class ArticleViewer {
       dots[currentPage]?.classList.add('active');
       // Scroll active dot into view (handles overflow on mobile)
       dots[currentPage]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      // Reset page scroll to top on each page change
+      containerEl.querySelector('.article-pages-container')?.scrollTo({ top: 0 });
       const prevBtn = containerEl.querySelector('.article-prev');
       const nextBtn = containerEl.querySelector('.article-next');
       if (prevBtn) prevBtn.disabled = currentPage === 0;
