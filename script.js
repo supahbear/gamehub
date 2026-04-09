@@ -5,8 +5,7 @@ class TTRPGHub {
     this.currentMode = 'explore'; // Always explore mode
     this.currentSelectedPanel = 'encyclopedia';
     this.worlds = [];
-    this._sheetCache = null;     // Prefetched sheet data, keyed by sheet name
-    this._sheetPrefetch = null; // In-flight prefetch promise
+    this._sheetCache = {};        // Demand-loaded sheet data, keyed by sheet name
     
     this.activeBackgroundWorld = 'neutral';
     this.backgroundVideos = {};
@@ -34,8 +33,9 @@ class TTRPGHub {
   async init() {
     await this.loadWorlds();
     this.renderWorlds();
-    this._prefetchAllSheets();
-    
+    this._revealWorldCard();
+    this._warmCache(['Journal', 'Recaps', 'Calendar']);
+
     Config.log('TTRPG Hub initialized');
   }
 
@@ -138,7 +138,6 @@ class TTRPGHub {
       const worldNameEl = loadingCard.querySelector('.world-name');
 
       if (worldNameEl) worldNameEl.textContent = world.name;
-      // loading class stays on — _revealWorldCard() removes it once the prefetch is done
     }
     
     this.setupCardListeners();
@@ -977,36 +976,10 @@ class TTRPGHub {
   }
 
   // ========== Data Loading ==========
-  // Fetch all content sheets in one JSONP call and cache by sheet name.
-  // Subsequent loadSheets() calls are served instantly from cache.
-  async _prefetchAllSheets() {
-    if (this._sheetCache || this._sheetPrefetch) return; // Already done or in flight
-    // All content sheets (excludes Journal and Recaps which are loaded on demand)
-    const allSheets = Object.values(Config.SHEETS).filter(s => s !== 'Journal' && s !== 'Recaps');
-    this._sheetPrefetch = this.jsonp(Config.getSheetUrl(allSheets));
-    try {
-      const data = await this._sheetPrefetch;
-      if (data.success) {
-        // Index rows by _category for fast lookup
-        const cache = {};
-        (data.data || []).forEach(row => {
-          const cat = row._category;
-          if (cat) {
-            if (!cache[cat]) cache[cat] = [];
-            cache[cat].push(row);
-          }
-        });
-        this._sheetCache = cache;
-        Config.log('Sheet prefetch complete. Cached categories:', Object.keys(cache));
-      } else {
-        Config.warn('Sheet prefetch failed:', data.error);
-      }
-    } catch (e) {
-      Config.warn('Sheet prefetch error:', e.message);
-    } finally {
-      this._sheetPrefetch = null;
-      this._revealWorldCard();
-    }
+
+  // Background-warm the demand cache for specific sheets without blocking the UI.
+  _warmCache(sheetNames) {
+    this.loadSheets(sheetNames).catch(e => Config.warn('Cache warm failed:', e.message));
   }
 
   // Remove the loading state from the world card and animate it in.
@@ -1023,47 +996,32 @@ class TTRPGHub {
     loadingCard.classList.remove('loading');
   }
 
-  // Fetches one or more sheet names in a single JSONP request.
+  // Fetches one or more sheet names, serving from per-sheet demand cache on revisit.
   // Returns the flat array of row objects, each with a ._category field.
   async loadSheets(sheetNames) {
     try {
-      // Serve from prefetch cache when available — but only if every requested
-      // sheet is present in the cache. Sheets excluded from the prefetch (e.g.
-      // Journal) must fall through to a direct request instead of silently
-      // returning [].
-      if (this._sheetCache) {
-        const allCached = sheetNames.every(name => name in this._sheetCache);
-        if (allCached) {
-          const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
-          Config.log(`loadSheets served ${rows.length} rows from cache for:`, sheetNames);
-          return rows;
+      // Serve any already-cached sheets and only fetch the rest.
+      const uncached = sheetNames.filter(name => !(name in this._sheetCache));
+
+      if (uncached.length > 0) {
+        const url  = Config.getSheetUrl(uncached);
+        const data = await this.jsonp(url);
+        if (!data.success) {
+          Config.error('loadSheets failed:', data.error);
+          return [];
         }
-        Config.log('loadSheets: some sheets not in cache, fetching directly:', sheetNames);
+        // Populate the demand cache for each fetched sheet.
+        uncached.forEach(name => { this._sheetCache[name] = []; });
+        (data.data || []).forEach(row => {
+          const cat = row._category;
+          if (cat && cat in this._sheetCache) this._sheetCache[cat].push(row);
+        });
+        Config.log('loadSheets fetched and cached:', uncached);
       }
-      // Cache not ready — wait for in-flight prefetch if one exists.
-      // Isolate in its own try/catch so a prefetch failure still falls through
-      // to the direct request below instead of returning [] immediately.
-      if (this._sheetPrefetch) {
-        Config.log('loadSheets waiting for prefetch to complete...');
-        try { await this._sheetPrefetch; } catch (e) { Config.warn('Prefetch rejected, falling back to direct request:', e.message); }
-        if (this._sheetCache) {
-          const allCached = sheetNames.every(name => name in this._sheetCache);
-          if (allCached) {
-            const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
-            Config.log(`loadSheets served ${rows.length} rows from cache (after wait) for:`, sheetNames);
-            return rows;
-          }
-          Config.log('loadSheets: some sheets not in cache after wait, fetching directly:', sheetNames);
-        }
-      }
-      // Fall back to direct request
-      const url = Config.getSheetUrl(sheetNames);
-      const data = await this.jsonp(url);
-      if (!data.success) {
-        Config.error('loadSheets failed:', data.error);
-        return [];
-      }
-      return data.data || [];
+
+      const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
+      Config.log(`loadSheets served ${rows.length} rows for:`, sheetNames);
+      return rows;
     } catch (error) {
       Config.error('loadSheets error:', error);
       return [];
