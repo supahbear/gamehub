@@ -177,9 +177,13 @@ function readSheet(name, filterVisible) {
   if (!filterVisible) return rows;
 
   // Filter out rows where the `visible` column is explicitly FALSE
+  // Also filter out rows where the `prepared` column is explicitly 'x' (not yet ready to show)
   return rows.filter(row => {
     const v = String(row.visible || '').trim().toUpperCase();
-    return v !== 'FALSE' && v !== '0' && v !== 'NO';
+    if (v === 'FALSE' || v === '0' || v === 'NO') return false;
+    const p = String(row.prepared || '').trim().toLowerCase();
+    if (p === 'x') return false;
+    return true;
   });
 }
 
