@@ -161,8 +161,8 @@ function readSheet(name, filterVisible) {
 
   const [headerRow, ...dataRows] = range.getValues();
 
-  // Normalise header names: trim whitespace, lowercase for safe comparison
-  const headers = headerRow.map(h => String(h).trim());
+  // Normalise header names: trim whitespace and lowercase for safe comparison
+  const headers = headerRow.map(h => String(h).trim().toLowerCase());
 
   const rows = dataRows
     .filter(row => row.some(cell => String(cell).length > 0)) // skip blank rows
