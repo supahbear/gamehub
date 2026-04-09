@@ -1041,7 +1041,7 @@ class ArticleViewer {
 
       // Bust the cache so the next loadSheets() fetches fresh data.
       if (this.hub) {
-        this.hub._sheetCache    = null;
+        this.hub._sheetCache    = {};
         this.hub._sheetPrefetch = null;
       }
 
