@@ -17,7 +17,6 @@ class TTRPGHub {
       history:    'historyContent',
       literature: 'literatureContent',
       society:    'societyContent',
-      technology: 'technologyContent',
       characters: 'charactersContent',
       factions:   'factionsContent',
       bestiary:   'bestiaryContent',
@@ -872,7 +871,6 @@ class TTRPGHub {
       history:    'historyContent',
       literature: 'literatureContent',
       society:    'societyContent',
-      technology: 'technologyContent',
       characters: 'charactersContent',
       factions:   'factionsContent',
       bestiary:   'bestiaryContent',
@@ -954,11 +952,12 @@ class TTRPGHub {
 
     // Sheet name matches panel name with capital first letter (Nations, Species, etc.)
     const sheetName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
+    const sheetNames = panelName === 'society' ? ['Society', 'Technology'] : [sheetName];
     const viewerKey = `_viewer_${panelName}`;
 
     try {
       if (!this[viewerKey]) {
-        this[viewerKey] = new ArticleViewer(this, [sheetName], sheetName);
+        this[viewerKey] = new ArticleViewer(this, sheetNames, sheetName);
         if (panelName === 'locations') {
           this[viewerKey].tagGrouped = true;
         }
