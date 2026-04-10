@@ -288,6 +288,23 @@ class TTRPGHub {
       recapsModal._hubModal = true;
     }
 
+    // Inventory modal
+    const closeInventoryBtn  = document.getElementById('closeInventoryBtn');
+    const inventoryOverlay   = document.getElementById('inventoryModalOverlay');
+    const inventoryModal     = document.getElementById('inventoryModal');
+    if (closeInventoryBtn && !closeInventoryBtn._hubClose) {
+      closeInventoryBtn.addEventListener('click', () => this.closeInventoryModal());
+      closeInventoryBtn._hubClose = true;
+    }
+    if (inventoryOverlay && !inventoryOverlay._hubOverlay) {
+      inventoryOverlay.addEventListener('click', (e) => { if (e.target === inventoryOverlay) this.closeInventoryModal(); });
+      inventoryOverlay._hubOverlay = true;
+    }
+    if (inventoryModal && !inventoryModal._hubModal) {
+      inventoryModal.addEventListener('click', (e) => e.stopPropagation());
+      inventoryModal._hubModal = true;
+    }
+
     // Escape key closes whichever modal is open
     if (!this._hubEscBound) {
       document.addEventListener('keydown', (e) => {
@@ -302,7 +319,8 @@ class TTRPGHub {
         }
         if (document.body.classList.contains('journal-modal-active')) { this.closeJournalModal(); return; }
         if (document.body.classList.contains('calendar-modal-active')) { this.closeCalendarModal(); return; }
-        if (document.body.classList.contains('recaps-modal-active')) this.closeRecapsModal();
+        if (document.body.classList.contains('recaps-modal-active')) { this.closeRecapsModal(); return; }
+        if (document.body.classList.contains('inventory-modal-active')) this.closeInventoryModal();
       });
       this._hubEscBound = true;
     }
@@ -432,6 +450,431 @@ class TTRPGHub {
     document.getElementById('recapsModalOverlay')?.classList.remove('show');
     document.getElementById('recapsModal')?.classList.remove('show');
     document.body.classList.remove('recaps-modal-active');
+  }
+
+  // ── Inventory modal ────────────────────────────────────────────
+  async openInventoryModal() {
+    const overlay = document.getElementById('inventoryModalOverlay');
+    const modal   = document.getElementById('inventoryModal');
+    if (!overlay || !modal) return;
+
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('inventory-modal-active');
+
+    // If we already have cached data, render immediately then refresh in background
+    if (this._inventoryItems) {
+      this._renderInventory();
+      this._setupInventoryInteractions();
+      this._loadInventoryData().then(() => this._renderInventory());
+    } else {
+      await this._loadInventoryData();
+      this._renderInventory();
+      this._setupInventoryInteractions();
+    }
+  }
+
+  closeInventoryModal() {
+    document.getElementById('inventoryModalOverlay')?.classList.remove('show');
+    document.getElementById('inventoryModal')?.classList.remove('show');
+    document.body.classList.remove('inventory-modal-active');
+    // Reset form state
+    this._hideInventoryForm();
+    this._invEditingId = null;
+  }
+
+  async _loadInventoryData() {
+    const loadMsg = document.getElementById('inventoryLoadingMsg');
+    const table   = document.getElementById('inventoryTable');
+    if (!this._inventoryItems) {
+      if (loadMsg) loadMsg.style.display = '';
+      if (table)   table.style.display = 'none';
+    }
+
+    try {
+      // Fetch both sheets in a single request
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('sheets', `${Config.SHEETS.INVENTORY},${Config.SHEETS.PARTY_FUND}`);
+      url.searchParams.set('filter_visible', 'false');
+      const data = await this.jsonp(url.toString());
+      const rows = data.success ? data.data : [];
+      this._inventoryItems = rows.filter(r => r._category === Config.SHEETS.INVENTORY);
+      this._partyFund = rows.find(r => r._category === Config.SHEETS.PARTY_FUND) || { drakons: '0', scales: '0' };
+    } catch (e) {
+      Config.warn('Inventory load error:', e);
+      this._inventoryItems = this._inventoryItems || [];
+      this._partyFund = this._partyFund || { drakons: '0', scales: '0' };
+    }
+  }
+
+  _renderInventory() {
+    const loadMsg  = document.getElementById('inventoryLoadingMsg');
+    const table    = document.getElementById('inventoryTable');
+    const emptyMsg = document.getElementById('inventoryEmptyMsg');
+    const tbody    = document.getElementById('inventoryTableBody');
+    if (!tbody) return;
+
+    // Update fund display
+    this._updateFundDisplay();
+
+    // Determine active filter states
+    const activeTab  = document.querySelector('.inv-tab.active')?.dataset.category || 'all';
+    const activeChar = this._invCharFilter || 'all';
+
+    let items = this._inventoryItems || [];
+    if (activeTab !== 'all') items = items.filter(it => (it.category || '') === activeTab);
+    if (activeChar !== 'all') items = items.filter(it => (it.character || '') === activeChar);
+
+    // Rebuild character filter chips
+    this._renderCharFilter();
+
+    if (loadMsg) loadMsg.style.display = 'none';
+
+    if (items.length === 0) {
+      if (table)   table.style.display = 'none';
+      if (emptyMsg) emptyMsg.style.display = '';
+      return;
+    }
+
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    if (table)   table.style.display = '';
+
+    // Group by character, then render rows
+    const grouped = {};
+    items.forEach(it => {
+      const char = (it.character || 'Unassigned').trim();
+      if (!grouped[char]) grouped[char] = [];
+      grouped[char].push(it);
+    });
+
+    tbody.innerHTML = Object.keys(grouped).map(char => {
+      const rows = grouped[char].map(it => {
+        const id       = this._esc(String(it.id || ''));
+        const name     = this._esc(String(it.name || ''));
+        const category = this._esc(String(it.category || ''));
+        const qty      = this._esc(String(it.quantity || '1'));
+        const notes    = this._esc(String(it.notes || ''));
+        return `<tr class="inv-row" data-id="${id}">
+          <td class="inv-col-char inv-char-cell"></td>
+          <td class="inv-col-name">${name}</td>
+          <td class="inv-col-cat"><span class="inv-category-badge inv-cat-${category.toLowerCase().replace(/\s+/g, '-')}">${category}</span></td>
+          <td class="inv-col-qty">${qty}</td>
+          <td class="inv-col-notes inv-notes-cell">${notes}</td>
+          <td class="inv-col-actions">
+            <button class="inv-action-btn inv-edit-btn" data-id="${id}" title="Edit">&#9998;</button>
+            <button class="inv-action-btn inv-delete-btn" data-id="${id}" title="Delete">&times;</button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      return `<tr class="inv-char-header-row"><td colspan="6" class="inv-char-header">${this._esc(char)}</td></tr>${rows}`;
+    }).join('');
+  }
+
+  _renderCharFilter() {
+    const container = document.getElementById('inventoryCharFilter');
+    if (!container) return;
+
+    // Get unique characters from all items (unfiltered by tab)
+    const chars = [...new Set((this._inventoryItems || []).map(it => (it.character || 'Unassigned').trim()))].sort();
+    const active = this._invCharFilter || 'all';
+    const chips = [
+      `<button class="inv-char-chip ${active === 'all' ? 'active' : ''}" data-char="all">All</button>`,
+      ...chars.map(c => `<button class="inv-char-chip ${active === c ? 'active' : ''}" data-char="${this._esc(c)}">${this._esc(c)}</button>`)
+    ].join('');
+
+    container.innerHTML = chips.length > 28 ? chips : chips; // always show
+    // Rebuild character datalist in add form
+    this._rebuildCharDatalist();
+  }
+
+  _rebuildCharDatalist() {
+    const list = document.getElementById('invCharacterList');
+    if (!list) return;
+    const chars = [...new Set((this._inventoryItems || []).map(it => (it.character || '').trim()))].filter(Boolean).sort();
+    list.innerHTML = chars.map(c => `<option value="${this._esc(c)}"></option>`).join('');
+  }
+
+  _updateFundDisplay() {
+    const fund = this._partyFund || {};
+    const drakons = parseInt(fund.drakons, 10) || 0;
+    const scales  = parseInt(fund.scales,  10) || 0;
+    const dAmt = document.getElementById('fundDrakonsAmt');
+    const sAmt = document.getElementById('fundScalesAmt');
+    if (dAmt) dAmt.textContent = drakons.toLocaleString();
+    if (sAmt) sAmt.textContent = scales.toLocaleString();
+  }
+
+  _setupInventoryInteractions() {
+    if (this._invInteractionsSet) return;
+    this._invInteractionsSet = true;
+
+    // Category tab clicks
+    const tabs = document.getElementById('inventoryTabs');
+    if (tabs) {
+      tabs.addEventListener('click', (e) => {
+        const tab = e.target.closest('.inv-tab');
+        if (!tab) return;
+        tabs.querySelectorAll('.inv-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        this._renderInventory();
+      });
+    }
+
+    // Character filter chips
+    const charFilter = document.getElementById('inventoryCharFilter');
+    if (charFilter) {
+      charFilter.addEventListener('click', (e) => {
+        const chip = e.target.closest('.inv-char-chip');
+        if (!chip) return;
+        this._invCharFilter = chip.dataset.char;
+        this._renderInventory();
+      });
+    }
+
+    // Add item button
+    const addBtn = document.getElementById('inventoryAddBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        this._invEditingId = null;
+        this._showInventoryForm();
+      });
+    }
+
+    // Form save/cancel
+    const saveBtn   = document.getElementById('invFormSaveBtn');
+    const cancelBtn = document.getElementById('invFormCancelBtn');
+    if (saveBtn)   saveBtn.addEventListener('click',   () => this._submitInventoryItem());
+    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+      this._hideInventoryForm();
+      this._invEditingId = null;
+    });
+
+    // Table row actions (edit/delete) — delegated
+    const tbody = document.getElementById('inventoryTableBody');
+    if (tbody) {
+      tbody.addEventListener('click', (e) => {
+        const editBtn   = e.target.closest('.inv-edit-btn');
+        const deleteBtn = e.target.closest('.inv-delete-btn');
+        if (editBtn)   this._startEditInventoryItem(editBtn.dataset.id);
+        if (deleteBtn) this._deleteInventoryItem(deleteBtn.dataset.id);
+      });
+    }
+
+    // Fund edit button
+    const fundEditBtn   = document.getElementById('fundEditBtn');
+    const fundSaveBtn   = document.getElementById('fundSaveBtn');
+    const fundCancelBtn = document.getElementById('fundCancelBtn');
+    if (fundEditBtn) {
+      fundEditBtn.addEventListener('click', () => this._openFundEditor());
+    }
+    if (fundSaveBtn)   fundSaveBtn.addEventListener('click',   () => this._saveFund());
+    if (fundCancelBtn) fundCancelBtn.addEventListener('click', () => this._closeFundEditor());
+  }
+
+  _showInventoryForm(prefill = null) {
+    const formRow = document.getElementById('inventoryFormRow');
+    if (!formRow) return;
+
+    this._rebuildCharDatalist();
+
+    if (prefill) {
+      const charEl = document.getElementById('invFormCharacter');
+      if (charEl) charEl.value = prefill.character || '';
+      const nameEl = document.getElementById('invFormName');
+      const catEl  = document.getElementById('invFormCategory');
+      const qtyEl  = document.getElementById('invFormQty');
+      const notesEl = document.getElementById('invFormNotes');
+      if (nameEl)  nameEl.value  = prefill.name     || '';
+      if (catEl)   catEl.value   = prefill.category || 'General';
+      if (qtyEl)   qtyEl.value   = prefill.quantity || 1;
+      if (notesEl) notesEl.value = prefill.notes    || '';
+    } else {
+      // Reset form
+      const charEl  = document.getElementById('invFormCharacter');
+      const nameEl  = document.getElementById('invFormName');
+      const qtyEl   = document.getElementById('invFormQty');
+      const notesEl = document.getElementById('invFormNotes');
+      if (charEl)  charEl.value  = '';
+      if (nameEl)  nameEl.value  = '';
+      if (qtyEl)   qtyEl.value   = 1;
+      if (notesEl) notesEl.value = '';
+      const catEl = document.getElementById('invFormCategory');
+      if (catEl) catEl.value = 'General';
+    }
+
+    const status = document.getElementById('invFormStatus');
+    if (status) status.textContent = '';
+
+    formRow.style.display = '';
+    document.getElementById('invFormName')?.focus();
+  }
+
+  _hideInventoryForm() {
+    const formRow = document.getElementById('inventoryFormRow');
+    if (formRow) formRow.style.display = 'none';
+  }
+
+  _startEditInventoryItem(id) {
+    const item = (this._inventoryItems || []).find(it => String(it.id) === String(id));
+    if (!item) return;
+    this._invEditingId = id;
+    this._showInventoryForm(item);
+  }
+
+  async _submitInventoryItem() {
+    const charSel = document.getElementById('invFormCharacter');
+    const nameEl  = document.getElementById('invFormName');
+    const catEl   = document.getElementById('invFormCategory');
+    const qtyEl   = document.getElementById('invFormQty');
+    const notesEl = document.getElementById('invFormNotes');
+    const status  = document.getElementById('invFormStatus');
+    const saveBtn = document.getElementById('invFormSaveBtn');
+
+    const character = (charSel?.value || '').trim();
+    const name      = (nameEl?.value  || '').trim();
+    const category  = catEl?.value  || 'General';
+    const quantity  = qtyEl?.value  || '1';
+    const notes     = notesEl?.value || '';
+
+    if (!name) {
+      if (status) { status.textContent = 'Item name is required.'; status.className = 'inv-form-status inv-status-error'; }
+      return;
+    }
+    if (!character) {
+      if (status) { status.textContent = 'Character is required.'; status.className = 'inv-form-status inv-status-error'; }
+      return;
+    }
+
+    if (saveBtn) saveBtn.disabled = true;
+    if (status) { status.textContent = 'Saving…'; status.className = 'inv-form-status inv-status-info'; }
+
+    const isEdit = !!this._invEditingId;
+    const rowId  = isEdit ? this._invEditingId : String(Date.now());
+
+    const rowData = { id: rowId, character, name, category, quantity, notes };
+    const url = new URL(Config.APPS_SCRIPT_URL);
+
+    try {
+      if (isEdit) {
+        url.searchParams.set('action', 'edit');
+        url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.INVENTORY, row: rowData, rowId }));
+      } else {
+        url.searchParams.set('action', 'write');
+        url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.INVENTORY, row: rowData }));
+      }
+      Config.log('Inventory write payload:', JSON.parse(url.searchParams.get('payload')));
+      const result = await this.jsonp(url.toString());
+      Config.log('Inventory write result:', result);
+      if (!result.success) throw new Error(result.error || 'Apps Script returned failure');
+
+      if (status) { status.textContent = 'Saved!'; status.className = 'inv-form-status inv-status-success'; }
+      if (saveBtn) saveBtn.disabled = false;
+
+      // Update local cache
+      if (isEdit) {
+        const idx = (this._inventoryItems || []).findIndex(it => String(it.id) === String(rowId));
+        if (idx !== -1) this._inventoryItems[idx] = { ...rowData, _category: Config.SHEETS.INVENTORY };
+      } else {
+        if (!this._inventoryItems) this._inventoryItems = [];
+        this._inventoryItems.push({ ...rowData, _category: Config.SHEETS.INVENTORY });
+      }
+
+      this._invEditingId = null;
+      setTimeout(() => {
+        this._hideInventoryForm();
+        this._renderInventory();
+      }, 500);
+
+    } catch (err) {
+      Config.error('Inventory save error:', err);
+      if (status) { status.textContent = 'Network error — check console.'; status.className = 'inv-form-status inv-status-error'; }
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  async _deleteInventoryItem(id) {
+    if (!confirm('Remove this item from the inventory?')) return;
+    const url = new URL(Config.APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'delete');
+    url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.INVENTORY, id }));
+    try {
+      const result = await this.jsonp(url.toString());
+      if (!result.success) throw new Error(result.error || 'Delete failed');
+      this._inventoryItems = (this._inventoryItems || []).filter(it => String(it.id) !== String(id));
+      this._renderInventory();
+    } catch (err) {
+      Config.error('Inventory delete error:', err);
+      alert('Could not delete item. Check console for details.');
+    }
+  }
+
+  _openFundEditor() {
+    const editor  = document.getElementById('fundEditor');
+    const dInput  = document.getElementById('fundDrakonsInput');
+    const sInput  = document.getElementById('fundScalesInput');
+    const fund    = this._partyFund || {};
+    if (dInput) dInput.value = parseInt(fund.drakons, 10) || 0;
+    if (sInput) sInput.value = parseInt(fund.scales,  10) || 0;
+    const status = document.getElementById('fundSaveStatus');
+    if (status) status.textContent = '';
+    if (editor) editor.style.display = '';
+  }
+
+  _closeFundEditor() {
+    const editor = document.getElementById('fundEditor');
+    if (editor) editor.style.display = 'none';
+  }
+
+  async _saveFund() {
+    const dInput  = document.getElementById('fundDrakonsInput');
+    const sInput  = document.getElementById('fundScalesInput');
+    const status  = document.getElementById('fundSaveStatus');
+    const saveBtn = document.getElementById('fundSaveBtn');
+
+    const drakons = String(parseInt(dInput?.value || '0', 10) || 0);
+    const scales  = String(parseInt(sInput?.value  || '0', 10) || 0);
+
+    if (saveBtn) saveBtn.disabled = true;
+    if (status) { status.textContent = 'Saving…'; status.style.color = '#c9b5e6'; }
+
+    const url = new URL(Config.APPS_SCRIPT_URL);
+    const fundExists = this._partyFund && (this._partyFund.drakons !== undefined);
+
+    try {
+      if (fundExists && this._partyFund.name) {
+        // Edit existing fund row (matched by name='fund')
+        url.searchParams.set('action', 'edit');
+        url.searchParams.set('payload', JSON.stringify({
+          sheet: Config.SHEETS.PARTY_FUND,
+          row: { name: 'fund', drakons, scales },
+          originalName: 'fund'
+        }));
+      } else {
+        // Write first-time row
+        url.searchParams.set('action', 'write');
+        url.searchParams.set('payload', JSON.stringify({
+          sheet: Config.SHEETS.PARTY_FUND,
+          row: { name: 'fund', drakons, scales }
+        }));
+      }
+      const result = await this.jsonp(url.toString());
+      if (!result.success) throw new Error(result.error || 'Fund save failed');
+
+      this._partyFund = { name: 'fund', drakons, scales };
+      this._updateFundDisplay();
+      if (status) { status.textContent = 'Saved!'; status.style.color = '#6fcf97'; }
+      setTimeout(() => this._closeFundEditor(), 800);
+    } catch (err) {
+      Config.error('Fund save error:', err);
+      if (status) { status.textContent = 'Error saving. Check console.'; status.style.color = '#eb5757'; }
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  _esc(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   renderRecapsList(entries) {
@@ -791,6 +1234,11 @@ class TTRPGHub {
     if (recapsBtn && !recapsBtn._rClick) {
       recapsBtn.addEventListener('click', () => this.openRecapsModal());
       recapsBtn._rClick = true;
+    }
+    const inventoryBtn = document.getElementById('inventoryBtn');
+    if (inventoryBtn && !inventoryBtn._iClick) {
+      inventoryBtn.addEventListener('click', () => this.openInventoryModal());
+      inventoryBtn._iClick = true;
     }
 
     this.currentSelectedPanel = null;

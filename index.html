@@ -74,6 +74,7 @@
                         <button class="hub-action-btn" id="recapsBtn">Campaign Log</button>
                         <button class="hub-action-btn" id="journalBtn">Journal</button>
                         <button class="hub-action-btn" id="calendarBtn">Calendar</button>
+                        <button class="hub-action-btn" id="inventoryBtn">Inventory</button>
                     </div>
                 </div>
 
@@ -229,6 +230,94 @@
                     <h2 id="modalTitle">Article Title</h2>
                 </div>
                 <div class="modal-body" id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== INVENTORY MODAL ===== -->
+    <div id="inventoryModalOverlay" class="modal-overlay">
+        <div class="inventory-modal" id="inventoryModal">
+            <div class="inventory-modal-content">
+                <div class="modal-header inventory-modal-header">
+                    <h2>Party Inventory</h2>
+                    <div class="inventory-fund-display" id="inventoryFundDisplay">
+                        <span class="fund-label">Party Fund</span>
+                        <span class="fund-value" id="fundDrakonsDisplay"><span class="fund-coin fund-drakon">◈</span><span id="fundDrakonsAmt">0</span> drakons</span>
+                        <span class="fund-sep">·</span>
+                        <span class="fund-value" id="fundScalesDisplay"><span class="fund-coin fund-scale">⊙</span><span id="fundScalesAmt">0</span> scales</span>
+                        <button class="fund-edit-btn" id="fundEditBtn" title="Edit party fund">&#9998;</button>
+                    </div>
+                    <button class="inv-add-btn" id="inventoryAddBtn">+ Add Item</button>
+                    <button class="close-btn" id="closeInventoryBtn">&times;</button>
+                </div>
+                <!-- Fund editor (inline, hidden by default) -->
+                <div class="fund-editor" id="fundEditor" style="display:none;">
+                    <label class="fund-editor-label">Edit Party Fund</label>
+                    <div class="fund-editor-fields">
+                        <div class="fund-field">
+                            <span class="fund-coin fund-drakon">◈</span>
+                            <input type="number" id="fundDrakonsInput" class="fund-input" min="0" placeholder="0">
+                            <span class="fund-denom">drakons</span>
+                        </div>
+                        <div class="fund-field">
+                            <span class="fund-coin fund-scale">⊙</span>
+                            <input type="number" id="fundScalesInput" class="fund-input" min="0" placeholder="0">
+                            <span class="fund-denom">scales</span>
+                        </div>
+                    </div>
+                    <div class="fund-editor-actions">
+                        <button class="inv-btn inv-btn-save" id="fundSaveBtn">Save</button>
+                        <button class="inv-btn inv-btn-cancel" id="fundCancelBtn">Cancel</button>
+                        <span class="fund-save-status" id="fundSaveStatus"></span>
+                    </div>
+                </div>
+                <!-- Character slot filter -->
+                <div class="inventory-char-filter" id="inventoryCharFilter"></div>
+                <!-- Category filter tabs -->
+                <div class="inventory-tabs" id="inventoryTabs">
+                    <button class="inv-tab active" data-category="all">All</button>
+                    <button class="inv-tab" data-category="General">General</button>
+                    <button class="inv-tab" data-category="Armor">Armor</button>
+                    <button class="inv-tab" data-category="Weapons">Weapons</button>
+                    <button class="inv-tab" data-category="Magic Items">Magic Items</button>
+                    <button class="inv-tab" data-category="Jewelry">Jewelry</button>
+                </div>
+                <!-- Add / Edit form (hidden by default) -->
+                <div class="inventory-form-row" id="inventoryFormRow" style="display:none;">
+                    <input type="text" class="inv-input" id="invFormCharacter" placeholder="Character name" list="invCharacterList" autocomplete="off">
+                    <datalist id="invCharacterList"></datalist>
+                    <input type="text" class="inv-input inv-input-wide" id="invFormName" placeholder="Item name">
+                    <select class="inv-input" id="invFormCategory">
+                        <option value="General">General</option>
+                        <option value="Armor">Armor</option>
+                        <option value="Weapons">Weapons</option>
+                        <option value="Magic Items">Magic Items</option>
+                        <option value="Jewelry">Jewelry</option>
+                    </select>
+                    <input type="number" class="inv-input inv-input-qty" id="invFormQty" min="1" value="1" placeholder="Qty">
+                    <input type="text" class="inv-input inv-input-wide" id="invFormNotes" placeholder="Notes (optional)">
+                    <button class="inv-btn inv-btn-save" id="invFormSaveBtn">Save</button>
+                    <button class="inv-btn inv-btn-cancel" id="invFormCancelBtn">Cancel</button>
+                    <span class="inv-form-status" id="invFormStatus"></span>
+                </div>
+                <!-- Inventory table -->
+                <div class="inventory-body" id="inventoryBody">
+                    <div class="inventory-loading" id="inventoryLoadingMsg">Loading inventory…</div>
+                    <table class="inventory-table" id="inventoryTable" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th class="inv-col-char">Character</th>
+                                <th class="inv-col-name">Item</th>
+                                <th class="inv-col-cat">Category</th>
+                                <th class="inv-col-qty">Qty</th>
+                                <th class="inv-col-notes">Notes</th>
+                                <th class="inv-col-actions"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody"></tbody>
+                    </table>
+                    <div class="inventory-empty" id="inventoryEmptyMsg" style="display:none;">No items found. Add one above!</div>
+                </div>
             </div>
         </div>
     </div>

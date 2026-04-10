@@ -12,10 +12,11 @@
 
 const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 
-// Sheets that may be written to — used by handleWrite and handleEdit
+// Sheets that may be written to — used by handleWrite, handleEdit, and handleDelete
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
-  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar'
+  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar',
+  'Inventory', 'PartyFund'
 ];
 
 // ---------------------------------------------------------------------------
@@ -29,9 +30,13 @@ function doGet(e) {
     if (e.parameter.action === 'write') {
       return handleWrite(e, callback);
     }
-    // Edit action — finds existing row by name and overwrites it
+    // Edit action — finds existing row by name (or id) and overwrites it
     if (e.parameter.action === 'edit') {
       return handleEdit(e, callback);
+    }
+    // Delete action — removes a row by its id field
+    if (e.parameter.action === 'delete') {
+      return handleDelete(e, callback);
     }
     const sheetsParam  = (e.parameter.sheets || '').trim();
     const filterVisible = (e.parameter.filter_visible || 'true') !== 'false';
@@ -71,7 +76,8 @@ function handleEdit(e, callback) {
     const payload   = JSON.parse(raw);
     const sheetName = payload.sheet;
     const rowData   = payload.row;
-    const origName  = payload.originalName; // the name before any edits
+    const origName  = payload.originalName; // for name-column matching
+    const rowId     = payload.rowId;         // for id-column matching (inventory)
 
     if (!sheetName || !ALLOWED_SHEETS.includes(sheetName)) {
       return jsonp(callback, { success: false, error: 'Invalid or missing sheet name' });
@@ -79,8 +85,8 @@ function handleEdit(e, callback) {
     if (!rowData || typeof rowData !== 'object') {
       return jsonp(callback, { success: false, error: 'Missing row data' });
     }
-    if (!origName) {
-      return jsonp(callback, { success: false, error: 'Missing originalName for row lookup' });
+    if (!origName && !rowId) {
+      return jsonp(callback, { success: false, error: 'Missing originalName or rowId for row lookup' });
     }
 
     const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
@@ -88,23 +94,73 @@ function handleEdit(e, callback) {
     if (!sheet) return jsonp(callback, { success: false, error: 'Sheet not found: ' + sheetName });
 
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
-    const nameCol = headers.indexOf('name');
-    if (nameCol === -1) return jsonp(callback, { success: false, error: 'No "name" column found in sheet' });
-
     const lastRow  = sheet.getLastRow();
-    const nameVals = sheet.getRange(2, nameCol + 1, lastRow - 1, 1).getValues();
-    const matchIdx = nameVals.findIndex(r => String(r[0]).trim().toLowerCase() === origName.trim().toLowerCase());
-    if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + origName });
+    let matchIdx   = -1;
 
-    const targetRow  = matchIdx + 2; // +1 for header, +1 for 1-based
-    const rowValues  = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
+    if (rowId) {
+      // Match by 'id' column — used for inventory rows
+      const idCol = headers.indexOf('id');
+      if (idCol === -1) return jsonp(callback, { success: false, error: 'No "id" column found in sheet' });
+      const idVals = sheet.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
+      matchIdx = idVals.findIndex(r => String(r[0]).trim() === String(rowId).trim());
+    } else {
+      // Match by 'name' column — used for articles and party fund
+      const nameCol = headers.indexOf('name');
+      if (nameCol === -1) return jsonp(callback, { success: false, error: 'No "name" column found in sheet' });
+      const nameVals = sheet.getRange(2, nameCol + 1, lastRow - 1, 1).getValues();
+      matchIdx = nameVals.findIndex(r => String(r[0]).trim().toLowerCase() === origName.trim().toLowerCase());
+    }
+
+    if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + (rowId || origName) });
+
+    const targetRow = matchIdx + 2; // +1 for header, +1 for 1-based
+    const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
     sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
 
-    console.log('Updated row in ' + sheetName + ': ' + (rowData.name || origName));
+    console.log('Updated row in ' + sheetName + ': ' + (rowData.name || rowId || origName));
     return jsonp(callback, { success: true });
 
   } catch (err) {
     console.error('handleEdit error:', err);
+    return jsonp(callback, { success: false, error: String(err) });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delete handler — removes a row matched by its id field
+// ---------------------------------------------------------------------------
+function handleDelete(e, callback) {
+  try {
+    const raw = e.parameter.payload;
+    if (!raw) return jsonp(callback, { success: false, error: 'Missing payload' });
+    const payload   = JSON.parse(raw);
+    const sheetName = payload.sheet;
+    const rowId     = payload.id;
+
+    if (!sheetName || !ALLOWED_SHEETS.includes(sheetName)) {
+      return jsonp(callback, { success: false, error: 'Invalid or missing sheet name' });
+    }
+    if (!rowId) return jsonp(callback, { success: false, error: 'Missing id for row deletion' });
+
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) return jsonp(callback, { success: false, error: 'Sheet not found: ' + sheetName });
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    const idCol   = headers.indexOf('id');
+    if (idCol === -1) return jsonp(callback, { success: false, error: 'No "id" column found in sheet' });
+
+    const lastRow = sheet.getLastRow();
+    const idVals  = sheet.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
+    const matchIdx = idVals.findIndex(r => String(r[0]).trim() === String(rowId).trim());
+    if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + rowId });
+
+    sheet.deleteRow(matchIdx + 2);
+    console.log('Deleted row in ' + sheetName + ' with id: ' + rowId);
+    return jsonp(callback, { success: true });
+
+  } catch (err) {
+    console.error('handleDelete error:', err);
     return jsonp(callback, { success: false, error: String(err) });
   }
 }

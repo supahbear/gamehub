@@ -25,7 +25,9 @@ const Config = {
     // Utility sheets
     JOURNAL:     'Journal',
     CALENDAR:    'Calendar',
-    RECAPS:      'Recaps'
+    RECAPS:      'Recaps',
+    INVENTORY:   'Inventory',
+    PARTY_FUND:  'PartyFund'
   },
 
   // Per-sheet extra meta fields shown in the article writer form.
