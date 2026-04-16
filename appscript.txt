@@ -16,7 +16,7 @@ const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
   'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar',
-  'Inventory', 'PartyFund'
+  'Inventory', 'PartyFund', 'Settings', 'Recaps', 'Journal'
 ];
 
 // ---------------------------------------------------------------------------
@@ -37,6 +37,14 @@ function doGet(e) {
     // Delete action — removes a row by its id field
     if (e.parameter.action === 'delete') {
       return handleDelete(e, callback);
+    }
+    // Get current in-world date from the Settings sheet
+    if (e.parameter.action === 'getDate') {
+      return handleGetDate(e, callback);
+    }
+    // Set current in-world date in the Settings sheet
+    if (e.parameter.action === 'setDate') {
+      return handleSetDate(e, callback);
     }
     const sheetsParam  = (e.parameter.sheets || '').trim();
     const filterVisible = (e.parameter.filter_visible || 'true') !== 'false';
@@ -104,11 +112,12 @@ function handleEdit(e, callback) {
       const idVals = sheet.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
       matchIdx = idVals.findIndex(r => String(r[0]).trim() === String(rowId).trim());
     } else {
-      // Match by 'name' column — used for articles and party fund
-      const nameCol = headers.indexOf('name');
-      if (nameCol === -1) return jsonp(callback, { success: false, error: 'No "name" column found in sheet' });
-      const nameVals = sheet.getRange(2, nameCol + 1, lastRow - 1, 1).getValues();
-      matchIdx = nameVals.findIndex(r => String(r[0]).trim().toLowerCase() === origName.trim().toLowerCase());
+      // Match by 'name' column, or 'title' if 'name' is absent (e.g. Recaps sheet)
+      let matchCol = headers.indexOf('name');
+      if (matchCol === -1) matchCol = headers.indexOf('title');
+      if (matchCol === -1) return jsonp(callback, { success: false, error: 'No "name" or "title" column found in sheet' });
+      const matchVals = sheet.getRange(2, matchCol + 1, lastRow - 1, 1).getValues();
+      matchIdx = matchVals.findIndex(r => String(r[0]).trim().toLowerCase() === origName.trim().toLowerCase());
     }
 
     if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + (rowId || origName) });
@@ -196,6 +205,78 @@ function handleWrite(e, callback) {
 
   } catch (err) {
     console.error('handleWrite error:', err);
+    return jsonp(callback, { success: false, error: String(err) });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Get / Set current in-world date — stored in the Settings sheet
+// Sheet layout: headers in row 1 (day | monthIndex | year), values in row 2
+// ---------------------------------------------------------------------------
+function handleGetDate(e, callback) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = spreadsheet.getSheetByName('Settings');
+    if (!sheet) return jsonp(callback, { success: false, error: 'Settings sheet not found' });
+    if (sheet.getLastRow() < 2) return jsonp(callback, { success: false, error: 'Settings sheet has no data row' });
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase());
+    const row     = sheet.getRange(2, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    const dayCol        = headers.indexOf('day');
+    const monthIndexCol = headers.indexOf('monthindex');
+    const yearCol       = headers.indexOf('year');
+
+    if (dayCol === -1 || monthIndexCol === -1 || yearCol === -1) {
+      return jsonp(callback, { success: false, error: 'Settings sheet missing day/monthIndex/year columns' });
+    }
+
+    const current_date = {
+      day:        Number(row[dayCol]),
+      monthIndex: Number(row[monthIndexCol]),
+      year:       Number(row[yearCol])
+    };
+    return jsonp(callback, { success: true, current_date });
+
+  } catch (err) {
+    console.error('handleGetDate error:', err);
+    return jsonp(callback, { success: false, error: String(err) });
+  }
+}
+
+function handleSetDate(e, callback) {
+  try {
+    const raw = e.parameter.payload;
+    if (!raw) return jsonp(callback, { success: false, error: 'Missing payload' });
+    const payload = JSON.parse(raw);
+    const { day, monthIndex, year } = payload;
+
+    if (day === undefined || monthIndex === undefined || year === undefined) {
+      return jsonp(callback, { success: false, error: 'Payload must include day, monthIndex, and year' });
+    }
+
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = spreadsheet.getSheetByName('Settings');
+    if (!sheet) return jsonp(callback, { success: false, error: 'Settings sheet not found' });
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase());
+    const dayCol        = headers.indexOf('day') + 1;        // 1-based
+    const monthIndexCol = headers.indexOf('monthindex') + 1;
+    const yearCol       = headers.indexOf('year') + 1;
+
+    if (!dayCol || !monthIndexCol || !yearCol) {
+      return jsonp(callback, { success: false, error: 'Settings sheet missing day/monthIndex/year columns' });
+    }
+
+    sheet.getRange(2, dayCol).setValue(day);
+    sheet.getRange(2, monthIndexCol).setValue(monthIndex);
+    sheet.getRange(2, yearCol).setValue(year);
+
+    console.log('Current date updated to:', day, monthIndex, year);
+    return jsonp(callback, { success: true });
+
+  } catch (err) {
+    console.error('handleSetDate error:', err);
     return jsonp(callback, { success: false, error: String(err) });
   }
 }

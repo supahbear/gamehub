@@ -71,7 +71,6 @@
                         </div>
                     </div>
                     <div class="hub-header-end">
-                        <button class="hub-action-btn" id="recapsBtn">Campaign Log</button>
                         <button class="hub-action-btn" id="journalBtn">Journal</button>
                         <button class="hub-action-btn" id="calendarBtn">Calendar</button>
                         <button class="hub-action-btn" id="inventoryBtn">Inventory</button>
@@ -186,10 +185,16 @@
         <div class="journal-modal" id="journalModal">
             <div class="journal-modal-content">
                 <div class="modal-header journal-modal-header">
-                    <h2>Journal</h2>
+                    <div class="journal-tab-bar">
+                        <button class="journal-tab active" data-tab="campaign-log">Campaign Log</button>
+                        <button class="journal-tab" data-tab="leads">Leads</button>
+                    </div>
                     <button class="close-btn" id="closeJournalBtn">&times;</button>
                 </div>
-                <div class="journal-modal-body" id="journalModalBody"></div>
+                <div class="journal-tab-panels">
+                    <div class="journal-tab-panel active" id="journalTabCampaignLog"></div>
+                    <div class="journal-tab-panel" id="journalTabLeads"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -203,19 +208,6 @@
                     <button class="close-btn" id="closeCalendarBtn">&times;</button>
                 </div>
                 <div class="calendar-modal-body" id="calendarModalBody"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== CAMPAIGN LOG (RECAPS) MODAL ===== -->
-    <div id="recapsModalOverlay" class="modal-overlay">
-        <div class="recaps-modal" id="recapsModal">
-            <div class="recaps-modal-content">
-                <div class="modal-header recaps-modal-header">
-                    <h2>Campaign Log</h2>
-                    <button class="close-btn" id="closeRecapsBtn">&times;</button>
-                </div>
-                <div class="recaps-modal-body" id="recapsModalBody"></div>
             </div>
         </div>
     </div>

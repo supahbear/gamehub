@@ -30,6 +30,7 @@ class TTRPGHub {
   }
 
   async init() {
+    await this.fetchCurrentDate();
     await this.loadWorlds();
     this.renderWorlds();
     this._revealWorldCard();
@@ -41,6 +42,39 @@ class TTRPGHub {
   // ========== Data Loading ==========
   async loadWorlds() {
     this.useFallbackWorlds();
+  }
+
+  // ========== Current Date ==========
+  // Reads the in-world current date from the Settings sheet, falling back to
+  // the hardcoded Config.CURRENT_DATE when the sheet is unavailable.
+  async fetchCurrentDate() {
+    try {
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('action', 'getDate');
+      const data = await this.jsonp(url.toString());
+      if (data.success && data.current_date) {
+        Config.CURRENT_DATE = data.current_date;
+        Config.log('Current date loaded from Settings sheet:', Config.CURRENT_DATE);
+      }
+    } catch (e) {
+      Config.warn('fetchCurrentDate failed, using config default:', e.message);
+    }
+  }
+
+  // Persists a new in-world current date to the Settings sheet and updates
+  // Config.CURRENT_DATE in memory so the rest of the app sees it immediately.
+  async setCurrentDate(day, monthIndex, year) {
+    const url = new URL(Config.APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'setDate');
+    url.searchParams.set('payload', JSON.stringify({ day, monthIndex, year }));
+    const data = await this.jsonp(url.toString());
+    if (data.success) {
+      Config.CURRENT_DATE = { day, monthIndex, year };
+      Config.log('Current date saved:', Config.CURRENT_DATE);
+    } else {
+      Config.error('setCurrentDate failed:', data.error);
+    }
+    return data;
   }
 
   // ========== JSONP Helper ==========
@@ -271,22 +305,6 @@ class TTRPGHub {
       calendarModal._hubModal = true;
     }
 
-    // Recaps modal
-    const closeRecapsBtn  = document.getElementById('closeRecapsBtn');
-    const recapsOverlay   = document.getElementById('recapsModalOverlay');
-    const recapsModal     = document.getElementById('recapsModal');
-    if (closeRecapsBtn && !closeRecapsBtn._hubClose) {
-      closeRecapsBtn.addEventListener('click', () => this.closeRecapsModal());
-      closeRecapsBtn._hubClose = true;
-    }
-    if (recapsOverlay && !recapsOverlay._hubOverlay) {
-      recapsOverlay.addEventListener('click', (e) => { if (e.target === recapsOverlay) this.closeRecapsModal(); });
-      recapsOverlay._hubOverlay = true;
-    }
-    if (recapsModal && !recapsModal._hubModal) {
-      recapsModal.addEventListener('click', (e) => e.stopPropagation());
-      recapsModal._hubModal = true;
-    }
 
     // Inventory modal
     const closeInventoryBtn  = document.getElementById('closeInventoryBtn');
@@ -319,7 +337,6 @@ class TTRPGHub {
         }
         if (document.body.classList.contains('journal-modal-active')) { this.closeJournalModal(); return; }
         if (document.body.classList.contains('calendar-modal-active')) { this.closeCalendarModal(); return; }
-        if (document.body.classList.contains('recaps-modal-active')) { this.closeRecapsModal(); return; }
         if (document.body.classList.contains('inventory-modal-active')) this.closeInventoryModal();
       });
       this._hubEscBound = true;
@@ -343,37 +360,73 @@ class TTRPGHub {
     if (this.atlasViewer) this.atlasViewer._lightboxOpen = false;
   }
 
-  // ── Journal modal ──────────────────────────────────────────────
+  // ── Journal modal (Campaign Log + Leads tabs) ─────────────────
   async openJournalModal() {
     const overlay = document.getElementById('journalModalOverlay');
     const modal   = document.getElementById('journalModal');
-    const body    = document.getElementById('journalModalBody');
-    if (!overlay || !modal || !body) return;
-
-    if (!body.dataset.loaded) {
-      if (!this.questViewer) {
-        this.questViewer = new QuestViewer(this);
-        window.questViewer = this.questViewer;
-      }
-      body.innerHTML = '<div style="padding:20px;color:#c9b5e6;">Loading...</div>';
-      overlay.classList.add('show');
-      modal.classList.add('show');
-      document.body.classList.add('journal-modal-active');
-
-      const content = await this.questViewer.renderQuestMode(this.currentWorld?.id);
-      body.innerHTML = content;
-      // Only mark loaded when we actually got data — prevents caching an empty
-      // state that would then stick permanently across re-opens.
-      if (this.questViewer.currentQuests.length > 0) {
-        body.dataset.loaded = 'true';
-      }
-      this.questViewer.setupEventListeners();
-      return;
-    }
+    if (!overlay || !modal) return;
 
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('journal-modal-active');
+
+    this._setupJournalTabs();
+
+    const campaignPanel = document.getElementById('journalTabCampaignLog');
+    const leadsPanel    = document.getElementById('journalTabLeads');
+
+    // Load campaign log tab if not yet populated
+    if (campaignPanel && !campaignPanel.dataset.loaded) {
+      campaignPanel.innerHTML = '<div class="recaps-loading">Loading\u2026</div>';
+      try {
+        const entries = await this.loadSheets([Config.SHEETS.RECAPS]);
+        campaignPanel.innerHTML = this.renderRecapsList(entries);
+        campaignPanel.dataset.loaded = 'true';
+        this._setupRecapsInteractions(campaignPanel);
+      } catch (e) {
+        campaignPanel.innerHTML = '<div class="recaps-loading">Could not load campaign log.</div>';
+        Config.warn('Campaign log load error:', e);
+      }
+    }
+
+    // Load leads tab if not yet populated
+    if (leadsPanel && !leadsPanel.dataset.loaded) {
+      leadsPanel.innerHTML = '<div class="recaps-loading">Loading\u2026</div>';
+      if (!this.leadsViewer) {
+        this.leadsViewer = new LeadsViewer(this);
+        window.leadsViewer = this.leadsViewer;
+      }
+      try {
+        const content = await this.leadsViewer.render();
+        leadsPanel.innerHTML = content;
+        this.leadsViewer.setupInteractions(leadsPanel);
+        if (this.leadsViewer.currentLeads.length > 0) {
+          leadsPanel.dataset.loaded = 'true';
+        }
+      } catch (e) {
+        leadsPanel.innerHTML = '<div class="recaps-loading">Could not load leads.</div>';
+        Config.warn('Leads load error:', e);
+      }
+    }
+  }
+
+  _setupJournalTabs() {
+    const tabs   = document.querySelectorAll('.journal-tab');
+    const panels = {
+      'campaign-log': document.getElementById('journalTabCampaignLog'),
+      'leads':        document.getElementById('journalTabLeads'),
+    };
+    tabs.forEach(tab => {
+      if (tab._jtClick) return;
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        Object.values(panels).forEach(p => p && p.classList.remove('active'));
+        tab.classList.add('active');
+        const panel = panels[tab.dataset.tab];
+        if (panel) panel.classList.add('active');
+      });
+      tab._jtClick = true;
+    });
   }
 
   closeJournalModal() {
@@ -419,37 +472,6 @@ class TTRPGHub {
     document.getElementById('calendarModalOverlay')?.classList.remove('show');
     document.getElementById('calendarModal')?.classList.remove('show');
     document.body.classList.remove('calendar-modal-active');
-  }
-
-  // ── Recaps / Campaign Log modal ────────────────────────────────
-  async openRecapsModal() {
-    const overlay = document.getElementById('recapsModalOverlay');
-    const modal   = document.getElementById('recapsModal');
-    const body    = document.getElementById('recapsModalBody');
-    if (!overlay || !modal || !body) return;
-
-    overlay.classList.add('show');
-    modal.classList.add('show');
-    document.body.classList.add('recaps-modal-active');
-
-    if (body.dataset.loaded) return;
-
-    body.innerHTML = '<div class="recaps-loading">Loading…</div>';
-    try {
-      const entries = await this.loadSheets([Config.SHEETS.RECAPS]);
-      body.innerHTML = this.renderRecapsList(entries);
-      body.dataset.loaded = 'true';
-      this._setupRecapsInteractions(body);
-    } catch (e) {
-      body.innerHTML = '<div class="recaps-loading">Could not load campaign log.</div>';
-      Config.warn('Recaps load error:', e);
-    }
-  }
-
-  closeRecapsModal() {
-    document.getElementById('recapsModalOverlay')?.classList.remove('show');
-    document.getElementById('recapsModal')?.classList.remove('show');
-    document.body.classList.remove('recaps-modal-active');
   }
 
   // ── Inventory modal ────────────────────────────────────────────
@@ -878,12 +900,14 @@ class TTRPGHub {
   }
 
   renderRecapsList(entries) {
-    const WORD_LIMIT = 60;
+    const WORD_LIMIT  = 60;
+    const CHARACTERS  = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
     if (!entries || entries.length === 0) {
       return '<div class="recaps-empty">No entries found in the Campaign Log.</div>';
     }
     // Sheet order is oldest-first; reverse so newest appears at the top
     const sorted = [...entries].reverse();
+    this._recapEntries = sorted; // stash for edit handler
     const items = sorted.map((entry, i) => {
       const tag     = (entry.tag     || '').trim();
       const title   = (entry.title   || '').trim();
@@ -891,17 +915,37 @@ class TTRPGHub {
       const words   = content.split(/\s+/).filter(Boolean);
       const isTruncated = words.length > WORD_LIMIT;
       const preview     = isTruncated ? words.slice(0, WORD_LIMIT).join(' ') + '\u2026' : content;
+
+      const tabBar = `
+        <div class="recap-char-tabs">
+          <button class="recap-char-tab active" data-char="recap">Recap</button>
+          ${CHARACTERS.map(c => `<button class="recap-char-tab" data-char="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('')}
+        </div>`;
+
+      const charPanels = CHARACTERS.map(c => {
+        const text = (entry[c] || '').trim();
+        return `<div class="recap-panel recap-panel--char" data-panel="${c}" hidden>
+          <div class="recap-char-view">
+            <button class="recap-char-edit-btn" data-char="${c}" data-index="${i}" title="Edit entry">&#9998;</button>${text ? `<p class="recap-char-entry">${this._esc(text)}</p>` : `<p class="recap-char-empty">No entry yet.</p>`}
+          </div>
+        </div>`;
+      }).join('');
+
       return `
         <article class="recap-entry" data-index="${i}">
-          <div class="recap-entry-header" role="button" tabindex="0" aria-expanded="true">
+          <div class="recap-entry-header" role="button" tabindex="0" aria-expanded="false">
             ${tag ? `<span class="recap-tag">${tag}</span>` : ''}
             <h2 class="recap-title">${title}</h2>
             <span class="recap-collapse-icon" aria-hidden="true"></span>
           </div>
-          <div class="recap-body">
-            <p class="recap-preview">${preview}</p>
-            ${isTruncated ? `<p class="recap-full" hidden>${content}</p>` : ''}
-            ${isTruncated ? `<button class="recap-read-more">Read More</button>` : ''}
+          <div class="recap-body recap-body--collapsed">
+            ${tabBar}
+            <div class="recap-panel" data-panel="recap">
+              <p class="recap-preview">${preview}</p>
+              ${isTruncated ? `<p class="recap-full" hidden>${content}</p>` : ''}
+              ${isTruncated ? `<button class="recap-read-more">Read More</button>` : ''}
+            </div>
+            ${charPanels}
           </div>
         </article>
         <hr class="recap-divider" />`;
@@ -910,7 +954,86 @@ class TTRPGHub {
   }
 
   _setupRecapsInteractions(body) {
-    body.addEventListener('click', (e) => {
+    body.addEventListener('click', async (e) => {
+      // ── Edit button ────────────────────────────────────────────
+      const editBtn = e.target.closest('.recap-char-edit-btn');
+      if (editBtn) {
+        const panel   = editBtn.closest('.recap-panel--char');
+        const viewEl  = panel.querySelector('.recap-char-view');
+        if (panel.querySelector('.recap-char-editor')) return; // already editing
+        const char    = editBtn.dataset.char;
+        const index   = parseInt(editBtn.dataset.index, 10);
+        const current = (this._recapEntries?.[index]?.[char] || '').trim();
+        viewEl.style.display = 'none';
+        const editor = document.createElement('div');
+        editor.className = 'recap-char-editor';
+        editor.innerHTML = `
+          <textarea class="recap-char-textarea">${this._esc(current)}</textarea>
+          <div class="recap-char-editor-actions">
+            <button class="recap-char-save-btn">Save</button>
+            <button class="recap-char-cancel-btn">Cancel</button>
+          </div>`;
+        panel.appendChild(editor);
+        editor.querySelector('textarea').focus();
+        return;
+      }
+
+      // ── Cancel edit ────────────────────────────────────────────
+      const cancelBtn = e.target.closest('.recap-char-cancel-btn');
+      if (cancelBtn) {
+        const panel  = cancelBtn.closest('.recap-panel--char');
+        const editor = panel.querySelector('.recap-char-editor');
+        const viewEl = panel.querySelector('.recap-char-view');
+        editor?.remove();
+        if (viewEl) viewEl.style.display = '';
+        return;
+      }
+
+      // ── Save edit ──────────────────────────────────────────────
+      const saveBtn = e.target.closest('.recap-char-save-btn');
+      if (saveBtn) {
+        const panel    = saveBtn.closest('.recap-panel--char');
+        const editor   = panel.querySelector('.recap-char-editor');
+        const viewEl   = panel.querySelector('.recap-char-view');
+        const textarea = editor.querySelector('textarea');
+        const char     = panel.dataset.panel;
+        const index    = parseInt(panel.closest('.recap-entry').dataset.index, 10);
+        const newText  = textarea.value.trim();
+        saveBtn.textContent = 'Saving…';
+        saveBtn.disabled = true;
+        const result = await this._saveRecapCharEntry(index, char, newText);
+        if (result?.success) {
+          // Update cached entry so re-edits see the latest text
+          if (this._recapEntries?.[index]) this._recapEntries[index][char] = newText;
+          const textEl = viewEl.querySelector('.recap-char-entry, .recap-char-empty');
+          if (textEl) {
+            textEl.className = 'recap-char-entry';
+            textEl.textContent = newText || '';
+          }
+          editor.remove();
+          viewEl.style.display = '';
+        } else {
+          saveBtn.textContent = 'Save';
+          saveBtn.disabled = false;
+          const err = editor.querySelector('.recap-save-error') || document.createElement('span');
+          err.className = 'recap-save-error';
+          err.textContent = 'Save failed. Try again.';
+          editor.querySelector('.recap-char-editor-actions').appendChild(err);
+        }
+        return;
+      }
+
+      // ── Character tab switching ────────────────────────────────
+      const charTab = e.target.closest('.recap-char-tab');
+      if (charTab) {
+        const entry = charTab.closest('.recap-entry');
+        const char  = charTab.dataset.char;
+        entry.querySelectorAll('.recap-char-tab').forEach(t => t.classList.toggle('active', t.dataset.char === char));
+        entry.querySelectorAll('.recap-panel').forEach(p => { p.hidden = p.dataset.panel !== char; });
+        return;
+      }
+
+      // ── Read more ──────────────────────────────────────────────
       const readMoreBtn = e.target.closest('.recap-read-more');
       if (readMoreBtn) {
         const entry   = readMoreBtn.closest('.recap-entry');
@@ -923,6 +1046,8 @@ class TTRPGHub {
         }
         return;
       }
+
+      // ── Collapse/expand ────────────────────────────────────────
       const header = e.target.closest('.recap-entry-header');
       if (header) {
         const entry    = header.closest('.recap-entry');
@@ -937,6 +1062,24 @@ class TTRPGHub {
       const header = e.target.closest('.recap-entry-header');
       if (header) { e.preventDefault(); header.click(); }
     });
+  }
+
+  async _saveRecapCharEntry(index, char, text) {
+    try {
+      const entry = this._recapEntries?.[index];
+      if (!entry) return { success: false, error: 'Entry not found' };
+      const rowData = { ...entry };
+      rowData[char] = text;
+      delete rowData._category;
+      const payload = JSON.stringify({ sheet: 'Recaps', originalName: entry.title, row: rowData });
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('action', 'edit');
+      url.searchParams.set('payload', payload);
+      return await this.jsonp(url.toString());
+    } catch (err) {
+      Config.error('_saveRecapCharEntry error:', err);
+      return { success: false, error: String(err) };
+    }
   }
 
   renderCalendarWidget(events = [], monthIndex = 1, year = 1344) {
@@ -990,7 +1133,7 @@ class TTRPGHub {
         }
         const evData = dayEvents.length ? ` data-cal-events='${JSON.stringify(dayEvents).replace(/'/g, '&#39;')}'` : '';
 
-        cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
+        cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}" data-day="${day}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
       }
       rows += `<tr>${cells}</tr>`;
     }
@@ -1007,6 +1150,15 @@ class TTRPGHub {
         <div class="cal-tabs-row">${tabs}</div>
         <div class="cal-month-meta cal-month-desc-row">
           <p class="cal-month-desc">${month.desc}</p>
+        </div>
+        <div class="cal-current-date-bar">
+          <span class="cal-current-date-label">Current Date</span>
+          <select id="_calSetDay" class="cal-date-select">${Array.from({length:50},(_,i)=>`<option value="${i+1}"${i+1===TODAY_DAY?' selected':''}>${i+1}</option>`).join('')}</select>
+          <select id="_calSetMonth" class="cal-date-select">${MONTHS.map((m,i)=>`<option value="${i}"${i===TODAY_MONTH?' selected':''}>${m.name}</option>`).join('')}</select>
+          <select id="_calSetYear" class="cal-date-select">
+            ${Array.from({length:21},(_,i)=>1344-10+i).map(y=>`<option value="${y}"${y===TODAY_YEAR?' selected':''}>${y}</option>`).join('')}
+          </select>
+          <button id="_calSetDateBtn" class="cal-set-date-btn">Set</button>
         </div>
         <div class="cal-grid-panel" id="_calGridPanel">
           <table class="calendar-table">
@@ -1095,6 +1247,37 @@ class TTRPGHub {
       closeBtn.addEventListener('click', () => { tip.style.display = 'none'; });
     }
 
+    // Click a day cell to set it as today's in-world date
+    if (body._calDayClick) body.removeEventListener('click', body._calDayClick);
+
+    // "Set" button — save the current date dropdowns to the Settings sheet
+    const setBtn = document.getElementById('_calSetDateBtn');
+    if (setBtn && !setBtn._calSet) {
+      setBtn._calSet = true;
+      setBtn.addEventListener('click', () => {
+        const day        = parseInt(document.getElementById('_calSetDay').value, 10);
+        const monthIndex = parseInt(document.getElementById('_calSetMonth').value, 10);
+        const year       = parseInt(document.getElementById('_calSetYear').value, 10);
+        setBtn.disabled = true;
+        setBtn.textContent = '…';
+        this.setCurrentDate(day, monthIndex, year).then(result => {
+          setBtn.disabled = false;
+          if (result.success) {
+            setBtn.textContent = '✓';
+            // Re-render so the today highlight updates
+            const calBody = document.getElementById('calendarModalBody');
+            if (calBody) {
+              calBody.innerHTML = this.renderCalendarWidget(this._calEvents, this._calCurrentMonth, this._calCurrentYear);
+              this.setupCalendarNavigation(this._calEvents);
+            }
+          } else {
+            setBtn.textContent = '!';
+            setTimeout(() => { setBtn.textContent = 'Set'; }, 2000);
+          }
+        });
+      });
+    }
+
     body.querySelectorAll('.cal-month-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const month = parseInt(tab.dataset.month, 10);
@@ -1150,7 +1333,7 @@ class TTRPGHub {
               const dayEvents = eventMap[day] || [];
               let dotsHtml = dayEvents.map(() => `<span class="cal-event-dot"></span>`).join('');
               const evData = dayEvents.length ? ` data-cal-events='${JSON.stringify(dayEvents).replace(/'/g, '&#39;')}'` : '';
-              cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
+              cells += `<td class="cal-day${isToday ? ' cal-today' : ''}${dayEvents.length ? ' has-events' : ''}" data-day="${day}"${evData}><span class="cal-day-num">${day}</span>${dotsHtml}</td>`;
             }
             rows += `<tr>${cells}</tr>`;
           }
@@ -1229,11 +1412,6 @@ class TTRPGHub {
     if (calendarBtn && !calendarBtn._cClick) {
       calendarBtn.addEventListener('click', () => this.openCalendarModal());
       calendarBtn._cClick = true;
-    }
-    const recapsBtn = document.getElementById('recapsBtn');
-    if (recapsBtn && !recapsBtn._rClick) {
-      recapsBtn.addEventListener('click', () => this.openRecapsModal());
-      recapsBtn._rClick = true;
     }
     const inventoryBtn = document.getElementById('inventoryBtn');
     if (inventoryBtn && !inventoryBtn._iClick) {
