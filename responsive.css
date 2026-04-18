@@ -363,6 +363,17 @@
     }
 
     /* ========== JOURNAL ========== */
+    /* Reduce the 80px side padding on campaign log / leads tabs to fit mobile */
+    #journalTabCampaignLog {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    #journalTabLeads {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
     /* Release the height:100% constraints that cause sidebar/detail overlap
        in single-column mode, then let the body scroll naturally */
     .journal-modal-body {
