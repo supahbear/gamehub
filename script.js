@@ -918,7 +918,7 @@ class TTRPGHub {
 
       const tabBar = `
         <div class="recap-char-tabs">
-          <button class="recap-char-tab active" data-char="recap">Recap</button>
+          <button class="recap-char-tab active" data-char="recap">Summary</button>
           ${CHARACTERS.map(c => `<button class="recap-char-tab" data-char="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('')}
         </div>`;
 
@@ -934,8 +934,8 @@ class TTRPGHub {
       return `
         <article class="recap-entry" data-index="${i}">
           <div class="recap-entry-header" role="button" tabindex="0" aria-expanded="false">
-            ${tag ? `<span class="recap-tag">${tag}</span>` : ''}
             <h2 class="recap-title">${title}</h2>
+            ${tag ? `<span class="recap-tag">${tag}</span>` : ''}
             <span class="recap-collapse-icon" aria-hidden="true"></span>
           </div>
           <div class="recap-body recap-body--collapsed">
