@@ -1384,6 +1384,9 @@ class TTRPGHub {
     if (landing) landing.style.display = activePage === 'landing' ? 'block' : 'none';
     // world-hub uses flex layout — must not use 'block'
     if (hub) hub.style.display = activePage === 'hub' ? 'flex' : 'none';
+    // hub-active class is a :has() fallback for browsers (e.g. older Safari) that
+    // don't reliably support complex :has() selectors
+    document.body.classList.toggle('hub-active', activePage === 'hub');
   }
 
   // ========== Panel Management ==========

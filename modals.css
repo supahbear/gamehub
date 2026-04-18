@@ -1361,9 +1361,9 @@ body.modal-active main {
 .recap-tag {
     display: block;
     font-family: var(--font-ui);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(201, 181, 230, 0.5);
     margin-top: 2px;

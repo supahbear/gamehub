@@ -3,6 +3,8 @@
 body.world-breach {
     /* Breach Theme Variables - UPDATED to Purple */
     --primary-bg: linear-gradient(135deg, #1a0f1e, #2c2038, #3d3456, #4a3f5c);
+    /* Fallback background for browsers that don't support :has() (e.g. older Safari) */
+    background: linear-gradient(160deg, #0d0a12 0%, #1a1028 40%, #0f0c18 100%);
     --secondary-bg: rgba(177, 156, 217, 0.12);
     --card-bg: rgba(201, 181, 230, 0.08);
     --text-color: #fff8f0;

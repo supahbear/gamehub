@@ -70,28 +70,33 @@ body {
 }
 
 /* When world-hub is active, prevent body scrolling */
-body:has(.world-hub:not([style*="display: none"])) {
+body:has(.world-hub:not([style*="display: none"])),
+body.hub-active {
     overflow: hidden;
 }
 
 /* Hide background video layer in hub — replaced by dark gradient */
-body:has(.world-hub:not([style*="display: none"])) .world-background-layer {
+body:has(.world-hub:not([style*="display: none"])) .world-background-layer,
+body.hub-active .world-background-layer {
     opacity: 0;
     transition: opacity 0.8s ease;
 }
 
 /* Dark gradient background for hub */
-body:has(.world-hub:not([style*="display: none"])) {
+body:has(.world-hub:not([style*="display: none"])),
+body.hub-active {
     background: linear-gradient(160deg, #0d0a12 0%, #1a1028 40%, #0f0c18 100%);
 }
 
 /* Hide landing screen when world-hub is visible */
-body:has(.world-hub:not([style*="display: none"])) .landing-screen {
+body:has(.world-hub:not([style*="display: none"])) .landing-screen,
+body.hub-active .landing-screen {
     display: none;
 }
 
 /* Hide container header when world-hub is visible */
-body:has(.world-hub:not([style*="display: none"])) > .container > header {
+body:has(.world-hub:not([style*="display: none"])) > .container > header,
+body.hub-active > .container > header {
     display: none;
 }
 
