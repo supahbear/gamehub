@@ -417,4 +417,88 @@
         padding: 16px 20px;
         font-size: 16px;
     }
+
+    /* ========== GALLERY ========== */
+    .gallery-modal {
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        transform: none;
+        border-radius: 0;
+    }
+
+    .gallery-modal-content {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
+
+    /* Header: stack add-button below title/close row */
+    .gallery-modal-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 10px 14px;
+    }
+
+    .gallery-modal-header h2 {
+        font-size: 1.1rem;
+        flex: 1 1 auto;
+    }
+
+    .gallery-add-btn {
+        order: 3;
+        width: 100%;
+        text-align: center;
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
+    /* Form: inputs stack vertically */
+    .gallery-form-area {
+        padding: 10px 14px 12px;
+    }
+
+    .gallery-form-row-fields {
+        flex-direction: column;
+    }
+
+    .gallery-input-url,
+    .gallery-input-title,
+    .gallery-input-artist,
+    .gallery-textarea {
+        flex: none;
+        width: 100%;
+    }
+
+    /* Grid: 2 columns on phone */
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .gallery-body {
+        padding: 14px;
+    }
+
+    /* Lightbox: full-screen, stacked layout */
+    .gallery-lightbox {
+        padding: 56px 12px 20px;
+        border-radius: 0;
+    }
+
+    .gallery-lightbox-img {
+        max-height: 52vh;
+    }
+
+    .gallery-lightbox-title {
+        font-size: 1rem;
+    }
+
+    .gallery-lightbox-desc {
+        font-size: 0.82rem;
+    }
 }

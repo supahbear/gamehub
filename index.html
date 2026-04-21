@@ -71,6 +71,7 @@
                         </div>
                     </div>
                     <div class="hub-header-end">
+                        <button class="hub-action-btn" id="galleryBtn">Gallery</button>
                         <button class="hub-action-btn" id="journalBtn">Journal</button>
                         <button class="hub-action-btn" id="calendarBtn">Calendar</button>
                         <button class="hub-action-btn" id="inventoryBtn">Inventory</button>
@@ -309,6 +310,47 @@
                         <tbody id="inventoryTableBody"></tbody>
                     </table>
                     <div class="inventory-empty" id="inventoryEmptyMsg" style="display:none;">No items found. Add one above!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GALLERY MODAL ===== -->
+    <div id="galleryModalOverlay" class="modal-overlay">
+        <div class="gallery-modal" id="galleryModal">
+            <div class="gallery-modal-content">
+                <div class="modal-header gallery-modal-header">
+                    <h2>Gallery</h2>
+                    <button class="gallery-add-btn" id="galleryAddBtn">+ Add Image</button>
+                    <button class="close-btn" id="closeGalleryBtn">&times;</button>
+                </div>
+                <!-- Add / Edit form (hidden by default) -->
+                <div class="gallery-form-area" id="galleryFormArea" style="display:none;">
+                    <div class="gallery-form-row-fields">
+                        <input type="url" class="gallery-input gallery-input-url" id="galleryFormUrl" placeholder="Image URL" autocomplete="off">
+                        <input type="text" class="gallery-input gallery-input-title" id="galleryFormTitle" placeholder="Title">
+                        <input type="text" class="gallery-input gallery-input-artist" id="galleryFormArtist" placeholder="Artist (optional)">
+                        <textarea class="gallery-input gallery-textarea" id="galleryFormDescription" placeholder="Description (optional)"></textarea>
+                    </div>
+                    <div class="gallery-form-actions">
+                        <button class="gallery-btn gallery-btn-save" id="galleryFormSaveBtn">Save</button>
+                        <button class="gallery-btn gallery-btn-cancel" id="galleryFormCancelBtn">Cancel</button>
+                        <span class="gallery-form-status" id="galleryFormStatus"></span>
+                    </div>
+                </div>
+                <!-- Gallery grid -->
+                <div class="gallery-body" id="galleryBody">
+                    <div class="gallery-loading" id="galleryLoadingMsg">Loading gallery…</div>
+                    <div class="gallery-grid" id="galleryGrid" style="display:none;"></div>
+                    <div class="gallery-empty" id="galleryEmptyMsg" style="display:none;">No images yet. Add one above!</div>
+                </div>
+                <!-- Lightbox layer (covers the modal when an image is clicked) -->
+                <div class="gallery-lightbox" id="galleryLightbox" style="display:none;">
+                    <button class="gallery-lightbox-back" id="galleryLightboxBack">← Back</button>
+                    <button class="gallery-lightbox-edit" id="galleryLightboxEdit" title="Edit">&#9998;</button>
+                    <button class="gallery-lightbox-delete" id="galleryLightboxDelete" title="Delete">&times;</button>
+                    <img class="gallery-lightbox-img" id="galleryLightboxImg" src="" alt="">
+                    <div class="gallery-lightbox-info" id="galleryLightboxInfo"></div>
                 </div>
             </div>
         </div>

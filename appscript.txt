@@ -16,7 +16,7 @@ const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
   'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar',
-  'Inventory', 'PartyFund', 'Settings', 'Recaps', 'Journal'
+  'Inventory', 'PartyFund', 'Settings', 'Recaps', 'Journal', 'Gallery'
 ];
 
 // ---------------------------------------------------------------------------

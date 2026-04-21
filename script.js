@@ -323,6 +323,23 @@ class TTRPGHub {
       inventoryModal._hubModal = true;
     }
 
+    // Gallery modal
+    const closeGalleryBtn  = document.getElementById('closeGalleryBtn');
+    const galleryOverlay   = document.getElementById('galleryModalOverlay');
+    const galleryModal     = document.getElementById('galleryModal');
+    if (closeGalleryBtn && !closeGalleryBtn._hubClose) {
+      closeGalleryBtn.addEventListener('click', () => this.closeGalleryModal());
+      closeGalleryBtn._hubClose = true;
+    }
+    if (galleryOverlay && !galleryOverlay._hubOverlay) {
+      galleryOverlay.addEventListener('click', (e) => { if (e.target === galleryOverlay) this.closeGalleryModal(); });
+      galleryOverlay._hubOverlay = true;
+    }
+    if (galleryModal && !galleryModal._hubModal) {
+      galleryModal.addEventListener('click', (e) => e.stopPropagation());
+      galleryModal._hubModal = true;
+    }
+
     // Escape key closes whichever modal is open
     if (!this._hubEscBound) {
       document.addEventListener('keydown', (e) => {
@@ -337,7 +354,11 @@ class TTRPGHub {
         }
         if (document.body.classList.contains('journal-modal-active')) { this.closeJournalModal(); return; }
         if (document.body.classList.contains('calendar-modal-active')) { this.closeCalendarModal(); return; }
-        if (document.body.classList.contains('inventory-modal-active')) this.closeInventoryModal();
+        if (document.body.classList.contains('inventory-modal-active')) { this.closeInventoryModal(); return; }
+        if (document.body.classList.contains('gallery-modal-active')) {
+          if (this._galleryLightboxOpen) { this._closeGalleryLightbox(); } else { this.closeGalleryModal(); }
+          return;
+        }
       });
       this._hubEscBound = true;
     }
@@ -899,6 +920,281 @@ class TTRPGHub {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // ── Gallery modal ─────────────────────────────────────────────
+  async openGalleryModal() {
+    const overlay = document.getElementById('galleryModalOverlay');
+    const modal   = document.getElementById('galleryModal');
+    if (!overlay || !modal) return;
+
+    overlay.classList.add('show');
+    modal.classList.add('show');
+    document.body.classList.add('gallery-modal-active');
+
+    this._setupGalleryInteractions();
+
+    if (this._galleryItems) {
+      this._renderGallery();
+      this._loadGalleryData().then(() => this._renderGallery());
+    } else {
+      await this._loadGalleryData();
+      this._renderGallery();
+    }
+  }
+
+  closeGalleryModal() {
+    document.getElementById('galleryModalOverlay')?.classList.remove('show');
+    document.getElementById('galleryModal')?.classList.remove('show');
+    document.body.classList.remove('gallery-modal-active');
+    this._closeGalleryLightbox();
+    this._hideGalleryForm();
+    this._galleryEditingId = null;
+  }
+
+  async _loadGalleryData() {
+    const loadMsg = document.getElementById('galleryLoadingMsg');
+    const grid    = document.getElementById('galleryGrid');
+    if (!this._galleryItems) {
+      if (loadMsg) loadMsg.style.display = '';
+      if (grid)    grid.style.display = 'none';
+    }
+    try {
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('sheets', Config.SHEETS.GALLERY);
+      url.searchParams.set('filter_visible', 'false');
+      const data = await this.jsonp(url.toString());
+      this._galleryItems = data.success ? data.data : [];
+    } catch (e) {
+      Config.warn('Gallery load error:', e);
+      this._galleryItems = this._galleryItems || [];
+    }
+  }
+
+  _renderGallery() {
+    const loadMsg  = document.getElementById('galleryLoadingMsg');
+    const grid     = document.getElementById('galleryGrid');
+    const emptyMsg = document.getElementById('galleryEmptyMsg');
+    if (!grid) return;
+
+    if (loadMsg) loadMsg.style.display = 'none';
+
+    const items = this._galleryItems || [];
+    if (items.length === 0) {
+      grid.style.display = 'none';
+      if (emptyMsg) emptyMsg.style.display = '';
+      return;
+    }
+
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    grid.style.display = '';
+
+    grid.innerHTML = items.map(item => {
+      const id     = this._esc(String(item.id || ''));
+      const imgUrl = this._esc(String(item.url || ''));
+      const title  = this._esc(String(item.title || ''));
+      const artist = this._esc(String(item.artist || ''));
+      return `<div class="gallery-card" data-id="${id}">
+        <img class="gallery-card-img" src="${imgUrl}" alt="${title}" loading="lazy">
+        <div class="gallery-card-info">
+          ${title  ? `<div class="gallery-card-title">${title}</div>`       : ''}
+          ${artist ? `<div class="gallery-card-artist">by ${artist}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  _setupGalleryInteractions() {
+    if (this._galleryInteractionsSet) return;
+    this._galleryInteractionsSet = true;
+
+    const addBtn = document.getElementById('galleryAddBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        this._galleryEditingId = null;
+        this._showGalleryForm();
+      });
+    }
+
+    const saveBtn   = document.getElementById('galleryFormSaveBtn');
+    const cancelBtn = document.getElementById('galleryFormCancelBtn');
+    if (saveBtn)   saveBtn.addEventListener('click', () => this._submitGalleryItem());
+    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+      this._hideGalleryForm();
+      this._galleryEditingId = null;
+    });
+
+    const grid = document.getElementById('galleryGrid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const card = e.target.closest('.gallery-card');
+        if (card) this._openGalleryLightbox(card.dataset.id);
+      });
+    }
+
+    const backBtn = document.getElementById('galleryLightboxBack');
+    if (backBtn) backBtn.addEventListener('click', () => this._closeGalleryLightbox());
+
+    const lbEditBtn = document.getElementById('galleryLightboxEdit');
+    if (lbEditBtn) {
+      lbEditBtn.addEventListener('click', () => {
+        const id = this._galleryLightboxId;
+        if (!id) return;
+        this._closeGalleryLightbox();
+        this._galleryEditingId = id;
+        const item = (this._galleryItems || []).find(it => String(it.id) === String(id));
+        this._showGalleryForm(item);
+      });
+    }
+
+    const lbDeleteBtn = document.getElementById('galleryLightboxDelete');
+    if (lbDeleteBtn) {
+      lbDeleteBtn.addEventListener('click', () => {
+        if (this._galleryLightboxId) this._deleteGalleryItem(this._galleryLightboxId);
+      });
+    }
+  }
+
+  _showGalleryForm(prefill = null) {
+    const area    = document.getElementById('galleryFormArea');
+    const urlEl   = document.getElementById('galleryFormUrl');
+    const titleEl = document.getElementById('galleryFormTitle');
+    const artEl   = document.getElementById('galleryFormArtist');
+    const descEl  = document.getElementById('galleryFormDescription');
+    const status  = document.getElementById('galleryFormStatus');
+    if (!area) return;
+
+    if (prefill) {
+      if (urlEl)   urlEl.value   = prefill.url         || '';
+      if (titleEl) titleEl.value = prefill.title       || '';
+      if (artEl)   artEl.value   = prefill.artist      || '';
+      if (descEl)  descEl.value  = prefill.description || '';
+    } else {
+      if (urlEl)   urlEl.value   = '';
+      if (titleEl) titleEl.value = '';
+      if (artEl)   artEl.value   = '';
+      if (descEl)  descEl.value  = '';
+    }
+
+    if (status) status.textContent = '';
+    area.style.display = '';
+    urlEl?.focus();
+  }
+
+  _hideGalleryForm() {
+    const area = document.getElementById('galleryFormArea');
+    if (area) area.style.display = 'none';
+  }
+
+  async _submitGalleryItem() {
+    const urlEl   = document.getElementById('galleryFormUrl');
+    const titleEl = document.getElementById('galleryFormTitle');
+    const artEl   = document.getElementById('galleryFormArtist');
+    const descEl  = document.getElementById('galleryFormDescription');
+    const status  = document.getElementById('galleryFormStatus');
+    const saveBtn = document.getElementById('galleryFormSaveBtn');
+
+    const imgUrl      = (urlEl?.value   || '').trim();
+    const title       = (titleEl?.value || '').trim();
+    const artist      = (artEl?.value   || '').trim();
+    const description = (descEl?.value  || '').trim();
+
+    if (!imgUrl) {
+      if (status) { status.textContent = 'Image URL is required.'; status.style.color = '#eb5757'; }
+      return;
+    }
+
+    if (saveBtn) saveBtn.disabled = true;
+    if (status) { status.textContent = 'Saving…'; status.style.color = '#c9b5e6'; }
+
+    const isEdit = !!this._galleryEditingId;
+    const rowId  = isEdit ? this._galleryEditingId : String(Date.now());
+    const rowData = { id: rowId, url: imgUrl, title, artist, description };
+    const reqUrl = new URL(Config.APPS_SCRIPT_URL);
+
+    try {
+      if (isEdit) {
+        reqUrl.searchParams.set('action', 'edit');
+        reqUrl.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.GALLERY, row: rowData, rowId }));
+      } else {
+        reqUrl.searchParams.set('action', 'write');
+        reqUrl.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.GALLERY, row: rowData }));
+      }
+      const result = await this.jsonp(reqUrl.toString());
+      if (!result.success) throw new Error(result.error || 'Apps Script returned failure');
+
+      if (status) { status.textContent = 'Saved!'; status.style.color = '#6fcf97'; }
+
+      if (isEdit) {
+        const idx = (this._galleryItems || []).findIndex(it => String(it.id) === String(rowId));
+        if (idx !== -1) this._galleryItems[idx] = { ...rowData, _category: Config.SHEETS.GALLERY };
+      } else {
+        if (!this._galleryItems) this._galleryItems = [];
+        this._galleryItems.push({ ...rowData, _category: Config.SHEETS.GALLERY });
+      }
+
+      this._galleryEditingId = null;
+      setTimeout(() => {
+        this._hideGalleryForm();
+        this._renderGallery();
+      }, 500);
+
+    } catch (err) {
+      Config.error('Gallery save error:', err);
+      if (status) { status.textContent = 'Network error — check console.'; status.style.color = '#eb5757'; }
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  async _deleteGalleryItem(id) {
+    if (!confirm('Remove this image from the gallery?')) return;
+    const url = new URL(Config.APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'delete');
+    url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.GALLERY, id }));
+    try {
+      const result = await this.jsonp(url.toString());
+      if (!result.success) throw new Error(result.error || 'Delete failed');
+      this._galleryItems = (this._galleryItems || []).filter(it => String(it.id) !== String(id));
+      this._closeGalleryLightbox();
+      this._renderGallery();
+    } catch (err) {
+      Config.error('Gallery delete error:', err);
+      alert('Could not delete image. Check console for details.');
+    }
+  }
+
+  _openGalleryLightbox(id) {
+    const item = (this._galleryItems || []).find(it => String(it.id) === String(id));
+    if (!item) return;
+
+    this._galleryLightboxId   = id;
+    this._galleryLightboxOpen = true;
+
+    const lb   = document.getElementById('galleryLightbox');
+    const img  = document.getElementById('galleryLightboxImg');
+    const info = document.getElementById('galleryLightboxInfo');
+    if (!lb) return;
+
+    if (img) { img.src = item.url || ''; img.alt = item.title || ''; }
+
+    if (info) {
+      const titleHtml  = item.title       ? `<div class="gallery-lightbox-title">${this._esc(item.title)}</div>` : '';
+      const artistHtml = item.artist      ? `<div class="gallery-lightbox-artist">by ${this._esc(item.artist)}</div>` : '';
+      const descHtml   = item.description ? `<p class="gallery-lightbox-desc">${this._esc(item.description)}</p>` : '';
+      info.innerHTML = titleHtml + artistHtml + descHtml;
+    }
+
+    lb.style.display = '';
+  }
+
+  _closeGalleryLightbox() {
+    this._galleryLightboxOpen = false;
+    this._galleryLightboxId   = null;
+    const lb  = document.getElementById('galleryLightbox');
+    const img = document.getElementById('galleryLightboxImg');
+    if (lb)  lb.style.display = 'none';
+    if (img) img.src = '';
+  }
+
   renderRecapsList(entries) {
     const WORD_LIMIT  = 60;
     const CHARACTERS  = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
@@ -1420,6 +1716,11 @@ class TTRPGHub {
     if (inventoryBtn && !inventoryBtn._iClick) {
       inventoryBtn.addEventListener('click', () => this.openInventoryModal());
       inventoryBtn._iClick = true;
+    }
+    const galleryBtn = document.getElementById('galleryBtn');
+    if (galleryBtn && !galleryBtn._gClick) {
+      galleryBtn.addEventListener('click', () => this.openGalleryModal());
+      galleryBtn._gClick = true;
     }
 
     this.currentSelectedPanel = null;
