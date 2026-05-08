@@ -67,7 +67,7 @@ class TTRPGHub {
     const url = new URL(Config.APPS_SCRIPT_URL);
     url.searchParams.set('action', 'setDate');
     url.searchParams.set('payload', JSON.stringify({ day, monthIndex, year }));
-    const data = await this.jsonp(url.toString());
+    const data = await this.jsonp(url.toString(), 30000);
     if (data.success) {
       Config.CURRENT_DATE = { day, monthIndex, year };
       Config.log('Current date saved:', Config.CURRENT_DATE);
@@ -78,7 +78,7 @@ class TTRPGHub {
   }
 
   // ========== JSONP Helper ==========
-  jsonp(url) {
+  jsonp(url, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
       const callbackName = 'jsonp_callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       
@@ -107,16 +107,18 @@ class TTRPGHub {
         reject(new Error('JSONP request failed - script load error'));
       };
       
-      // Handle timeout
+      // Handle timeout — replace with a no-op instead of deleting, so a late-arriving
+      // Apps Script response doesn't throw "ReferenceError: jsonp_callback_... is not defined"
       const timeout = setTimeout(() => {
         try {
           document.head.removeChild(script);
         } catch (e) {
           // Script might already be removed
         }
-        delete window[callbackName];
+        window[callbackName] = () => {}; // no-op; cleaned up after a grace period
+        setTimeout(() => delete window[callbackName], 60000);
         reject(new Error('JSONP request timed out'));
-      }, 10000); // 10 second timeout
+      }, timeoutMs);
       
       // Clear timeout when callback succeeds
       const originalCallback = window[callbackName];
@@ -807,7 +809,7 @@ class TTRPGHub {
         url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.INVENTORY, row: rowData }));
       }
       Config.log('Inventory write payload:', JSON.parse(url.searchParams.get('payload')));
-      const result = await this.jsonp(url.toString());
+      const result = await this.jsonp(url.toString(), 30000);
       Config.log('Inventory write result:', result);
       if (!result.success) throw new Error(result.error || 'Apps Script returned failure');
 
@@ -842,7 +844,7 @@ class TTRPGHub {
     url.searchParams.set('action', 'delete');
     url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.INVENTORY, id }));
     try {
-      const result = await this.jsonp(url.toString());
+      const result = await this.jsonp(url.toString(), 30000);
       if (!result.success) throw new Error(result.error || 'Delete failed');
       this._inventoryItems = (this._inventoryItems || []).filter(it => String(it.id) !== String(id));
       this._renderInventory();
@@ -901,7 +903,7 @@ class TTRPGHub {
           row: { name: 'fund', drakons, scales }
         }));
       }
-      const result = await this.jsonp(url.toString());
+      const result = await this.jsonp(url.toString(), 30000);
       if (!result.success) throw new Error(result.error || 'Fund save failed');
 
       this._partyFund = { name: 'fund', drakons, scales };
@@ -1118,7 +1120,7 @@ class TTRPGHub {
         reqUrl.searchParams.set('action', 'write');
         reqUrl.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.GALLERY, row: rowData }));
       }
-      const result = await this.jsonp(reqUrl.toString());
+      const result = await this.jsonp(reqUrl.toString(), 30000);
       if (!result.success) throw new Error(result.error || 'Apps Script returned failure');
 
       if (status) { status.textContent = 'Saved!'; status.style.color = '#6fcf97'; }
@@ -1151,7 +1153,7 @@ class TTRPGHub {
     url.searchParams.set('action', 'delete');
     url.searchParams.set('payload', JSON.stringify({ sheet: Config.SHEETS.GALLERY, id }));
     try {
-      const result = await this.jsonp(url.toString());
+      const result = await this.jsonp(url.toString(), 30000);
       if (!result.success) throw new Error(result.error || 'Delete failed');
       this._galleryItems = (this._galleryItems || []).filter(it => String(it.id) !== String(id));
       this._closeGalleryLightbox();
@@ -1371,7 +1373,7 @@ class TTRPGHub {
       const url = new URL(Config.APPS_SCRIPT_URL);
       url.searchParams.set('action', 'edit');
       url.searchParams.set('payload', payload);
-      return await this.jsonp(url.toString());
+      return await this.jsonp(url.toString(), 30000);
     } catch (err) {
       Config.error('_saveRecapCharEntry error:', err);
       return { success: false, error: String(err) };
