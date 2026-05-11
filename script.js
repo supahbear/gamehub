@@ -1514,10 +1514,13 @@ class TTRPGHub {
     try {
       const entry = this._recapEntries?.[index];
       if (!entry) return { success: false, error: 'Entry not found' };
-      const rowData = { ...entry };
-      rowData[char] = text;
-      delete rowData._category;
-      const payload = JSON.stringify({ sheet: 'Recaps', originalName: entry.title, row: rowData });
+      // Send only the changed field (patch mode) to keep the URL short
+      const payload = JSON.stringify({
+        sheet: 'Recaps',
+        originalName: entry.title,
+        patch: true,
+        row: { [char]: text }
+      });
       const url = new URL(Config.APPS_SCRIPT_URL);
       url.searchParams.set('action', 'edit');
       url.searchParams.set('payload', payload);

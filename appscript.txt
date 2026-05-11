@@ -123,8 +123,18 @@ function handleEdit(e, callback) {
     if (matchIdx === -1) return jsonp(callback, { success: false, error: 'Row not found: ' + (rowId || origName) });
 
     const targetRow = matchIdx + 2; // +1 for header, +1 for 1-based
-    const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
-    sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+
+    if (payload.patch) {
+      // Patch mode — only update the fields present in rowData, leave others untouched
+      headers.forEach((h, i) => {
+        if (rowData[h] !== undefined) {
+          sheet.getRange(targetRow, i + 1).setValue(String(rowData[h]));
+        }
+      });
+    } else {
+      const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
+      sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+    }
 
     console.log('Updated row in ' + sheetName + ': ' + (rowData.name || rowId || origName));
     return jsonp(callback, { success: true });
