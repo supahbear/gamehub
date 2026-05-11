@@ -140,6 +140,16 @@ function handleEdit(e, callback) {
     }
 
     console.log('Updated row in ' + sheetName + ': ' + (rowData.name || rowId || origName));
+
+    // Notify Discord when a character patches their journal entry on a Recaps row
+    if (sheetName === 'Recaps' && payload.patch) {
+      const STRUCTURAL = new Set(['id', 'title', 'tag', 'content', 'visible', 'prepared', 'summary']);
+      const charKey = Object.keys(rowData).find(k => !STRUCTURAL.has(k.toLowerCase()));
+      if (charKey) {
+        notifyDiscord('Recaps', { character: charKey, content: rowData[charKey] });
+      }
+    }
+
     return jsonp(callback, { success: true });
 
   } catch (err) {
