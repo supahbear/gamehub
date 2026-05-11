@@ -1376,6 +1376,10 @@ body.modal-active main {
     max-width: 540px;
 }
 
+.new-chapter-form[hidden] {
+    display: none;
+}
+
 .new-chapter-title,
 .new-chapter-tag,
 .new-chapter-content {
