@@ -1343,6 +1343,93 @@ body.modal-active main {
     padding-top: 4px;
 }
 
+/* ── New chapter bar ── */
+.new-chapter-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0 24px;
+}
+
+.new-chapter-btn {
+    background: none;
+    border: 1px solid var(--color-accent, #8b6fff);
+    color: var(--color-accent, #8b6fff);
+    border-radius: 6px;
+    padding: 6px 20px;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.new-chapter-btn:hover {
+    background: var(--color-accent, #8b6fff);
+    color: #fff;
+}
+
+.new-chapter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 540px;
+}
+
+.new-chapter-title,
+.new-chapter-tag,
+.new-chapter-content {
+    width: 100%;
+    background: var(--color-surface, #1a1a2e);
+    border: 1px solid var(--color-border, #333);
+    border-radius: 5px;
+    color: inherit;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    resize: vertical;
+}
+.new-chapter-title:focus,
+.new-chapter-tag:focus,
+.new-chapter-content:focus {
+    outline: none;
+    border-color: var(--color-accent, #8b6fff);
+}
+
+.new-chapter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.new-chapter-submit {
+    background: var(--color-accent, #8b6fff);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 22px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.new-chapter-submit:disabled { opacity: 0.6; cursor: default; }
+
+.new-chapter-cancel {
+    background: none;
+    border: 1px solid var(--color-border, #333);
+    border-radius: 5px;
+    color: inherit;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.new-chapter-error {
+    color: #e05;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
 /* ── Individual entry ── */
 .recap-entry {
     padding: 36px 0 4px;

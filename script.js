@@ -1346,11 +1346,47 @@ class TTRPGHub {
         </article>
         <hr class="recap-divider" />`;
     }).join('');
-    return `<div class="recaps-list">${items}</div>`;
+    const newChapterForm = `
+      <div class="new-chapter-bar">
+        <button class="new-chapter-btn">+ New Chapter</button>
+        <form class="new-chapter-form" hidden>
+          <input  class="new-chapter-title"   type="text"     placeholder="Chapter title (required)" maxlength="120" />
+          <input  class="new-chapter-tag"     type="text"     placeholder="Tag (optional, e.g. Session 12)" maxlength="60" />
+          <textarea class="new-chapter-content" rows="4"     placeholder="Summary / OOC notes (optional)"></textarea>
+          <div class="new-chapter-actions">
+            <button type="submit" class="new-chapter-submit">Create Chapter</button>
+            <button type="button" class="new-chapter-cancel">Cancel</button>
+          </div>
+          <span class="new-chapter-error" hidden></span>
+        </form>
+      </div>`;
+    return `<div class="recaps-list">${newChapterForm}${items}</div>`;
   }
 
   _setupRecapsInteractions(body) {
     body.addEventListener('click', async (e) => {
+      // ── New chapter toggle ──────────────────────────────────────
+      const newChapterBtn = e.target.closest('.new-chapter-btn');
+      if (newChapterBtn) {
+        const form = body.querySelector('.new-chapter-form');
+        const isHidden = form.hidden;
+        form.hidden = !isHidden;
+        newChapterBtn.textContent = isHidden ? '✕ Cancel' : '+ New Chapter';
+        if (isHidden) body.querySelector('.new-chapter-title')?.focus();
+        return;
+      }
+
+      // ── New chapter cancel ─────────────────────────────────────
+      const newChapterCancel = e.target.closest('.new-chapter-cancel');
+      if (newChapterCancel) {
+        const form = body.querySelector('.new-chapter-form');
+        form.hidden = true;
+        form.reset();
+        const btn = body.querySelector('.new-chapter-btn');
+        if (btn) btn.textContent = '+ New Chapter';
+        return;
+      }
+
       // ── Edit button ────────────────────────────────────────────
       const editBtn = e.target.closest('.recap-char-edit-btn');
       if (editBtn) {
@@ -1503,6 +1539,59 @@ class TTRPGHub {
         return;
       }
     });
+    body.addEventListener('submit', async (e) => {
+      if (!e.target.closest('.new-chapter-form')) return;
+      e.preventDefault();
+      const form    = e.target.closest('.new-chapter-form');
+      const title   = form.querySelector('.new-chapter-title').value.trim();
+      const tag     = form.querySelector('.new-chapter-tag').value.trim();
+      const content = form.querySelector('.new-chapter-content').value.trim();
+      const errEl   = form.querySelector('.new-chapter-error');
+      const submitBtn = form.querySelector('.new-chapter-submit');
+      if (!title) {
+        errEl.textContent = 'Title is required.';
+        errEl.hidden = false;
+        form.querySelector('.new-chapter-title').focus();
+        return;
+      }
+      errEl.hidden = true;
+      submitBtn.textContent = 'Creating…';
+      submitBtn.disabled = true;
+      const result = await this._saveNewChapter({ title, tag, content });
+      if (result?.success) {
+        // Reload the campaign panel to show the new entry
+        const panel = body.closest('#journalTabCampaignLog');
+        if (panel) {
+          delete panel.dataset.loaded;
+          panel.innerHTML = '<div class="recaps-loading">Loading…</div>';
+          try {
+            const [entries, commentRows] = await Promise.all([
+              this.loadSheets([Config.SHEETS.RECAPS]),
+              this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
+            ]);
+            const commentsMap = {};
+            for (const c of commentRows) {
+              const t = (c.recap_title || '').trim();
+              const ch = (c.character || '').trim().toLowerCase();
+              if (!commentsMap[t]) commentsMap[t] = {};
+              if (!commentsMap[t][ch]) commentsMap[t][ch] = [];
+              commentsMap[t][ch].push(c);
+            }
+            panel.innerHTML = this.renderRecapsList(entries, commentsMap);
+            panel.dataset.loaded = 'true';
+            this._setupRecapsInteractions(panel);
+          } catch (err) {
+            panel.innerHTML = '<div class="recaps-loading">Could not reload.</div>';
+          }
+        }
+      } else {
+        submitBtn.textContent = 'Create Chapter';
+        submitBtn.disabled = false;
+        errEl.textContent = 'Save failed. Try again.';
+        errEl.hidden = false;
+      }
+    });
+
     body.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const header = e.target.closest('.recap-entry-header');
@@ -1527,6 +1616,26 @@ class TTRPGHub {
       return await this.jsonp(url.toString(), 30000);
     } catch (err) {
       Config.error('_saveRecapCharEntry error:', err);
+      return { success: false, error: String(err) };
+    }
+  }
+
+  async _saveNewChapter({ title, tag, content }) {
+    try {
+      const row = {
+        id:      Date.now().toString(),
+        title,
+        tag,
+        content,
+        visible: 'TRUE'
+      };
+      const payload = JSON.stringify({ sheet: 'Recaps', row });
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('action', 'write');
+      url.searchParams.set('payload', payload);
+      return await this.jsonp(url.toString(), 30000);
+    } catch (err) {
+      Config.error('_saveNewChapter error:', err);
       return { success: false, error: String(err) };
     }
   }
