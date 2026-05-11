@@ -1579,9 +1579,13 @@ class TTRPGHub {
               if (!commentsMap[t][ch]) commentsMap[t][ch] = [];
               commentsMap[t][ch].push(c);
             }
-            panel.innerHTML = this.renderRecapsList(entries, commentsMap);
-            panel.dataset.loaded = 'true';
-            this._setupRecapsInteractions(panel);
+            // Replace the node entirely so old event listeners are detached
+            const freshHtml = this.renderRecapsList(entries, commentsMap);
+            const fresh = panel.cloneNode(false);
+            fresh.innerHTML = freshHtml;
+            fresh.dataset.loaded = 'true';
+            panel.replaceWith(fresh);
+            this._setupRecapsInteractions(fresh);
           } catch (err) {
             panel.innerHTML = '<div class="recaps-loading">Could not reload.</div>';
           }
