@@ -1382,7 +1382,7 @@ class TTRPGHub {
             <button class="recap-char-save-btn">Save</button>
             <button class="recap-char-cancel-btn">Cancel</button>
           </div>`;
-        panel.appendChild(editor);
+        panel.insertBefore(editor, viewEl.nextSibling);
         const ta = editor.querySelector('textarea');
         this._attachFmtToolbar(editor, ta);
         ta.focus();
