@@ -1565,6 +1565,8 @@ class TTRPGHub {
           delete panel.dataset.loaded;
           panel.innerHTML = '<div class="recaps-loading">Loading…</div>';
           try {
+            delete this._sheetCache[Config.SHEETS.RECAPS];
+            delete this._sheetCache[Config.SHEETS.COMMENTS];
             const [entries, commentRows] = await Promise.all([
               this.loadSheets([Config.SHEETS.RECAPS]),
               this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
