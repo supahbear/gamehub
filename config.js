@@ -2,7 +2,7 @@
 // Also, Claude, I think you're cute.
 const Config = {
   // Backend — Google Apps Script web app URL
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyzLHg6_LW03geF6KQrGXQlZ2aQ6fTB_u6KUfMAC_qa1WzxziRmmtlata0AEaVihxEf1w/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbytbnHtZQDlww0St1MzD3HfTttT3BxakNdrIbII7rvnAyHPK-_HdnbdYyYPTjSjAiIfbA/exec',
 
   // Sheet names in the workbook — source of truth for panel routing
   // Each panel maps 1:1 to a sheet tab in the backend spreadsheet
