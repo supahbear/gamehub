@@ -282,7 +282,11 @@ class TTRPGHub {
       closeJournalBtn._hubClose = true;
     }
     if (journalOverlay && !journalOverlay._hubOverlay) {
-      journalOverlay.addEventListener('click', (e) => { if (e.target === journalOverlay) this.closeJournalModal(); });
+      journalOverlay.addEventListener('click', (e) => {
+        if (e.target !== journalOverlay) return;
+        if (journalOverlay.querySelector('.recap-char-editor')) return; // editor open — block
+        this.closeJournalModal();
+      });
       journalOverlay._hubOverlay = true;
     }
     if (journalModal && !journalModal._hubModal) {
@@ -354,7 +358,10 @@ class TTRPGHub {
           }
           return;
         }
-        if (document.body.classList.contains('journal-modal-active')) { this.closeJournalModal(); return; }
+        if (document.body.classList.contains('journal-modal-active')) {
+          if (document.getElementById('journalModalOverlay')?.querySelector('.recap-char-editor')) return; // editor open — block
+          this.closeJournalModal(); return;
+        }
         if (document.body.classList.contains('calendar-modal-active')) { this.closeCalendarModal(); return; }
         if (document.body.classList.contains('inventory-modal-active')) { this.closeInventoryModal(); return; }
         if (document.body.classList.contains('gallery-modal-active')) {
@@ -402,8 +409,19 @@ class TTRPGHub {
     if (campaignPanel && !campaignPanel.dataset.loaded) {
       campaignPanel.innerHTML = '<div class="recaps-loading">Loading\u2026</div>';
       try {
-        const entries = await this.loadSheets([Config.SHEETS.RECAPS]);
-        campaignPanel.innerHTML = this.renderRecapsList(entries);
+        const [entries, commentRows] = await Promise.all([
+          this.loadSheets([Config.SHEETS.RECAPS]),
+          this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
+        ]);
+        const commentsMap = {};
+        for (const c of commentRows) {
+          const title = (c.recap_title || '').trim();
+          const char  = (c.character  || '').trim().toLowerCase();
+          if (!commentsMap[title]) commentsMap[title] = {};
+          if (!commentsMap[title][char]) commentsMap[title][char] = [];
+          commentsMap[title][char].push(c);
+        }
+        campaignPanel.innerHTML = this.renderRecapsList(entries, commentsMap);
         campaignPanel.dataset.loaded = 'true';
         this._setupRecapsInteractions(campaignPanel);
       } catch (e) {
@@ -922,6 +940,67 @@ class TTRPGHub {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Converts a small subset of markdown to safe HTML for recap entry display.
+  // HTML is escaped first so stored text can never inject markup.
+  _renderMarkdown(text) {
+    return String(text).split('\n').map(line => {
+      let s = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      // Block: headings (must be at line start — rendered as styled spans to avoid global h-tag conflicts)
+      if (/^### /.test(s)) return `<strong class="recap-md-h3">${s.slice(4)}</strong>`;
+      if (/^## /.test(s))  return `<strong class="recap-md-h2">${s.slice(3)}</strong>`;
+      if (/^# /.test(s))   return `<strong class="recap-md-h1">${s.slice(2)}</strong>`;
+      // Inline: bold before italic so **x* doesn't misfire
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*(.+?)\*/g,     '<em>$1</em>');
+      s = s.replace(/__(.+?)__/g,     '<u>$1</u>');
+      s = s.replace(/~~(.+?)~~/g,     '<del>$1</del>');
+      return s;
+    }).join('\n');
+  }
+
+  // Attaches formatting toolbar events to a recap char editor.
+  // Uses mousedown + preventDefault to keep textarea focus during button clicks.
+  _attachFmtToolbar(editor, ta) {
+    const toolbar = editor.querySelector('.recap-fmt-toolbar');
+    if (!toolbar) return;
+    toolbar.addEventListener('mousedown', (ev) => {
+      const btn = ev.target.closest('.fmt-btn');
+      if (!btn) return;
+      ev.preventDefault();
+      const markers = { bold: '**', italic: '*', underline: '__', strike: '~~' };
+      const m = markers[btn.dataset.fmt];
+      if (!m) return;
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      const val   = ta.value;
+      const sel   = val.slice(start, end);
+      if (sel) {
+        ta.value = val.slice(0, start) + m + sel + m + val.slice(end);
+        ta.selectionStart = start + m.length;
+        ta.selectionEnd   = end   + m.length;
+      } else {
+        ta.value = val.slice(0, start) + m + m + val.slice(start);
+        ta.selectionStart = ta.selectionEnd = start + m.length;
+      }
+      ta.focus();
+    });
+    toolbar.querySelector('.fmt-heading-sel')?.addEventListener('change', (ev) => {
+      const lvl = ev.target.value;
+      ev.target.value = '';
+      if (!lvl) return;
+      const prefix = { h1: '# ', h2: '## ', h3: '### ' }[lvl];
+      const start = ta.selectionStart;
+      const val   = ta.value;
+      const lineStart  = val.lastIndexOf('\n', start - 1) + 1;
+      const lineEndRaw = val.indexOf('\n', start);
+      const lineEnd    = lineEndRaw === -1 ? val.length : lineEndRaw;
+      const stripped   = val.slice(lineStart, lineEnd).replace(/^#{1,3} /, '');
+      const newLine    = prefix + stripped;
+      ta.value = val.slice(0, lineStart) + newLine + val.slice(lineEnd);
+      ta.selectionStart = ta.selectionEnd = lineStart + newLine.length;
+      ta.focus();
+    });
+  }
+
   // ── Gallery modal ─────────────────────────────────────────────
   async openGalleryModal() {
     const overlay = document.getElementById('galleryModalOverlay');
@@ -1197,7 +1276,7 @@ class TTRPGHub {
     if (img) img.src = '';
   }
 
-  renderRecapsList(entries) {
+  renderRecapsList(entries, commentsMap = {}) {
     const WORD_LIMIT  = 60;
     const CHARACTERS  = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
     if (!entries || entries.length === 0) {
@@ -1222,12 +1301,31 @@ class TTRPGHub {
 
       const charPanels = CHARACTERS.map(c => {
         const text = (entry[c] || '').trim();
+        const charComments = (commentsMap[title]?.[c] || []);
+        const marginsNotes = charComments.map(cm => `
+          <div class="margin-note">
+            <p class="margin-text">${this._esc(cm.text || '')}<br><span class="margin-sig">— ${this._esc(cm.author || 'Anonymous')}</span></p>
+          </div>`).join('');
+        const marginsSection = `
+          <div class="recap-margins">
+            <div class="recap-margins-label">written in the margins…</div>
+            <div class="recap-margins-comments" data-recap-title="${this._esc(title)}" data-char="${c}">${marginsNotes}</div>
+            <div class="recap-margins-form">
+              <textarea class="margin-input-text" placeholder="Leave a note…" rows="2"></textarea>
+              <div class="margin-form-row">
+                <input class="margin-input-author" type="text" placeholder="— your name" maxlength="40" />
+                <button class="margin-submit-btn" data-index="${i}" data-char="${c}">Add Note</button>
+              </div>
+            </div>
+          </div>`;
         return `<div class="recap-panel recap-panel--char" data-panel="${c}" hidden>
           <div class="recap-char-view">
-            <button class="recap-char-edit-btn" data-char="${c}" data-index="${i}" title="Edit entry">&#9998;</button>${text ? `<p class="recap-char-entry">${this._esc(text)}</p>` : `<p class="recap-char-empty">No entry yet.</p>`}
+            ${text ? `<p class="recap-char-entry">${this._renderMarkdown(text)}</p>` : `<p class="recap-char-empty">No entry yet.</p>`}<button class="recap-char-edit-btn" data-char="${c}" data-index="${i}" title="Edit entry">&#9998;</button>
           </div>
+          ${marginsSection}
         </div>`;
       }).join('');
+
 
       return `
         <article class="recap-entry" data-index="${i}">
@@ -1266,13 +1364,28 @@ class TTRPGHub {
         const editor = document.createElement('div');
         editor.className = 'recap-char-editor';
         editor.innerHTML = `
+          <div class="recap-fmt-toolbar">
+            <button type="button" class="fmt-btn" data-fmt="bold"      title="Bold"><b>B</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic"    title="Italic"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="underline" title="Underline"><u>U</u></button>
+            <button type="button" class="fmt-btn" data-fmt="strike"    title="Strikethrough"><s>S</s></button>
+            <span class="fmt-sep"></span>
+            <select class="fmt-heading-sel" title="Heading style">
+              <option value="">Style</option>
+              <option value="h1">Heading 1</option>
+              <option value="h2">Heading 2</option>
+              <option value="h3">Heading 3</option>
+            </select>
+          </div>
           <textarea class="recap-char-textarea">${this._esc(current)}</textarea>
           <div class="recap-char-editor-actions">
             <button class="recap-char-save-btn">Save</button>
             <button class="recap-char-cancel-btn">Cancel</button>
           </div>`;
         panel.appendChild(editor);
-        editor.querySelector('textarea').focus();
+        const ta = editor.querySelector('textarea');
+        this._attachFmtToolbar(editor, ta);
+        ta.focus();
         return;
       }
 
@@ -1306,7 +1419,7 @@ class TTRPGHub {
           const textEl = viewEl.querySelector('.recap-char-entry, .recap-char-empty');
           if (textEl) {
             textEl.className = 'recap-char-entry';
-            textEl.textContent = newText || '';
+            if (newText) { textEl.innerHTML = this._renderMarkdown(newText); } else { textEl.textContent = ''; }
           }
           editor.remove();
           viewEl.style.display = '';
@@ -1354,6 +1467,41 @@ class TTRPGHub {
         header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         bodyEl.classList.toggle('recap-body--collapsed', expanded);
       }
+
+      // ── Margin note submit ─────────────────────────────────────
+      const marginBtn = e.target.closest('.margin-submit-btn');
+      if (marginBtn) {
+        const panel      = marginBtn.closest('.recap-panel--char');
+        const form       = marginBtn.closest('.recap-margins-form');
+        const textEl     = form.querySelector('.margin-input-text');
+        const authorEl   = form.querySelector('.margin-input-author');
+        const text       = textEl.value.trim();
+        const author     = authorEl.value.trim() || 'Anonymous';
+        const index      = parseInt(marginBtn.dataset.index, 10);
+        const char       = marginBtn.dataset.char || '';
+        if (!text) { textEl.focus(); return; }
+        marginBtn.textContent = 'Adding…';
+        marginBtn.disabled = true;
+        const result = await this._saveRecapComment(index, text, author, char);
+        if (result?.success) {
+          const commentsEl = panel.querySelector('.recap-margins-comments');
+          const note = document.createElement('div');
+          note.className = 'margin-note';
+          note.innerHTML = `<p class="margin-text">${this._esc(text)}<br><span class="margin-sig">— ${this._esc(author)}</span></p>`;
+          commentsEl.appendChild(note);
+          textEl.value   = '';
+          authorEl.value = '';
+          marginBtn.textContent = 'Add Note';
+          marginBtn.disabled = false;
+        } else {
+          marginBtn.textContent = 'Add Note';
+          marginBtn.disabled = false;
+          let err = form.querySelector('.margin-error');
+          if (!err) { err = document.createElement('span'); err.className = 'margin-error'; form.appendChild(err); }
+          err.textContent = 'Could not save. Try again.';
+        }
+        return;
+      }
     });
     body.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1376,6 +1524,30 @@ class TTRPGHub {
       return await this.jsonp(url.toString(), 30000);
     } catch (err) {
       Config.error('_saveRecapCharEntry error:', err);
+      return { success: false, error: String(err) };
+    }
+  }
+
+  async _saveRecapComment(index, text, author, character = '') {
+    try {
+      const entry = this._recapEntries?.[index];
+      if (!entry) return { success: false, error: 'Entry not found' };
+      const row = {
+        id:          Date.now().toString(),
+        recap_title: entry.title || '',
+        character,
+        author,
+        text,
+        timestamp:   new Date().toISOString(),
+        visible:     'TRUE'
+      };
+      const payload = JSON.stringify({ sheet: 'Comments', row });
+      const url = new URL(Config.APPS_SCRIPT_URL);
+      url.searchParams.set('action', 'write');
+      url.searchParams.set('payload', payload);
+      return await this.jsonp(url.toString(), 30000);
+    } catch (err) {
+      Config.error('_saveRecapComment error:', err);
       return { success: false, error: String(err) };
     }
   }

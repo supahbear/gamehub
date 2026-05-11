@@ -1360,20 +1360,19 @@ body.modal-active main {
 
 .recap-tag {
     display: block;
-    font-family: var(--font-ui);
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-family: 'La Belle Aurore', cursive;
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     color: rgba(201, 181, 230, 0.5);
     margin-top: 2px;
     text-align: center;
 }
 
 .recap-title {
-    font-family: var(--font-editorial);
+    font-family: 'Patrick Hand SC', cursive;
     font-size: 2rem;
-    font-weight: 600;
+    font-weight: 400;
     color: #fff8f0;
     margin: 0;
     line-height: 1.15;
@@ -1384,7 +1383,7 @@ body.modal-active main {
 
 body.world-breach .recap-title {
     color: #fff8f0 !important;
-    font-family: var(--font-editorial) !important;
+    font-family: 'Patrick Hand SC', cursive !important;
     text-transform: none !important;
     letter-spacing: normal !important;
 }
@@ -1461,6 +1460,7 @@ body.world-breach .recap-title {
     line-height: 1.75;
     color: rgba(255, 248, 240, 0.85);
     margin: 0 0 10px;
+    white-space: pre-wrap;
 }
 
 .recap-read-more {
@@ -1494,11 +1494,10 @@ body.world-breach .recap-title {
     border: 1px solid rgba(177, 156, 217, 0.2);
     border-radius: 4px;
     padding: 3px 10px;
-    font-family: var(--font-ui);
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-family: 'La Belle Aurore', cursive;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     color: rgba(201, 181, 230, 0.4);
     cursor: pointer;
     transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
@@ -1518,7 +1517,7 @@ body.world-breach .recap-title {
 /* ── Character journal entry text ── */
 .recap-char-view {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     gap: 8px;
 }
 
@@ -1526,11 +1525,11 @@ body.world-breach .recap-title {
 .recap-char-empty {
     font-family: var(--font-body);
     font-size: 1rem;
-    font-style: italic;
     line-height: 1.8;
     color: rgba(255, 248, 240, 0.8);
     margin: 0;
     flex: 1;
+    white-space: pre-wrap;
 }
 
 .recap-char-empty {
@@ -1558,20 +1557,80 @@ body.world-breach .recap-title {
 .recap-char-editor {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     margin-top: 4px;
 }
+
+/* Formatting toolbar */
+.recap-fmt-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(177, 156, 217, 0.25);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+}
+
+.fmt-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 2px 7px;
+    font-size: 0.8rem;
+    color: rgba(201, 181, 230, 0.55);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    line-height: 1.4;
+    font-family: var(--font-ui);
+}
+
+.fmt-btn:hover {
+    color: #b19cd9;
+    background: rgba(177, 156, 217, 0.1);
+    border-color: rgba(177, 156, 217, 0.3);
+}
+
+.fmt-sep {
+    width: 1px;
+    height: 14px;
+    background: rgba(177, 156, 217, 0.2);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.fmt-heading-sel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(177, 156, 217, 0.25);
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-size: 0.68rem;
+    font-family: var(--font-ui);
+    color: rgba(201, 181, 230, 0.55);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.fmt-heading-sel:hover {
+    color: #b19cd9;
+    border-color: rgba(177, 156, 217, 0.45);
+}
+
+/* Heading sizes inside recap entry text */
+.recap-md-h1 { font-size: 1.3rem; font-weight: 700; display: block; }
+.recap-md-h2 { font-size: 1.1rem; font-weight: 700; display: block; }
+.recap-md-h3 { font-size: 1rem;   font-weight: 700; display: block; }
 
 .recap-char-textarea {
     width: 100%;
     min-height: 120px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(177, 156, 217, 0.3);
-    border-radius: 6px;
+    border-radius: 0 0 4px 4px;
     color: rgba(255, 248, 240, 0.9);
     font-family: var(--font-body);
     font-size: 1rem;
-    font-style: italic;
     line-height: 1.75;
     padding: 10px 14px;
     resize: vertical;
@@ -1588,6 +1647,7 @@ body.world-breach .recap-title {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 8px;
 }
 
 .recap-char-save-btn,
@@ -1640,6 +1700,140 @@ body.world-breach .recap-title {
     border: none;
     border-top: 1px solid rgba(177, 156, 217, 0.1);
     margin: 8px 0 0;
+}
+
+/* ── Written in the margins ── */
+.recap-margins {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(177, 156, 217, 0.18);
+}
+
+.recap-margins-label {
+    font-family: 'Indie Flower', cursive;
+    font-size: 1.2rem;
+    color: rgba(201, 181, 230, 0.35);
+    text-align: center;
+    margin-bottom: 14px;
+    letter-spacing: 0.04em;
+}
+
+.recap-margins-comments {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.margin-note {
+    padding: 4px 0;
+}
+
+.margin-text {
+    font-family: 'Indie Flower', cursive;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 248, 220, 0.75);
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.margin-sig {
+    font-family: 'Indie Flower', cursive;
+    font-size: 0.85rem;
+    color: rgba(201, 181, 150, 0.55);
+    font-style: italic;
+    display: block;
+    text-align: center;
+}
+
+/* ── Margin note form ── */
+.recap-margins-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.margin-input-text {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(201, 181, 150, 0.25);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: 'Indie Flower', cursive;
+    font-size: 0.95rem;
+    color: rgba(255, 248, 220, 0.8);
+    resize: vertical;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+    line-height: 1.6;
+}
+
+.margin-input-text::placeholder {
+    color: rgba(201, 181, 150, 0.3);
+}
+
+.margin-input-text:focus {
+    outline: none;
+    border-color: rgba(201, 181, 150, 0.5);
+}
+
+.margin-form-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.margin-input-author {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 1px dashed rgba(201, 181, 150, 0.25);
+    padding: 4px 4px;
+    font-family: 'Indie Flower', cursive;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: rgba(201, 181, 150, 0.65);
+    transition: border-color 0.15s ease;
+}
+
+.margin-input-author::placeholder {
+    color: rgba(201, 181, 150, 0.3);
+}
+
+.margin-input-author:focus {
+    outline: none;
+    border-color: rgba(201, 181, 150, 0.55);
+}
+
+.margin-submit-btn {
+    background: none;
+    border: 1px dashed rgba(201, 181, 150, 0.3);
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-family: 'Indie Flower', cursive;
+    font-size: 0.85rem;
+    color: rgba(201, 181, 150, 0.55);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.margin-submit-btn:hover:not(:disabled) {
+    color: rgba(201, 181, 150, 0.9);
+    border-color: rgba(201, 181, 150, 0.6);
+}
+
+.margin-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.margin-error {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    color: #e07070;
+    margin-top: 2px;
 }
 
 /* ── Empty / loading states ── */

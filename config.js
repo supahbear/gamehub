@@ -28,7 +28,8 @@ const Config = {
     RECAPS:      'Recaps',
     INVENTORY:   'Inventory',
     PARTY_FUND:  'PartyFund',
-    GALLERY:     'Gallery'
+    GALLERY:     'Gallery',
+    COMMENTS:    'Comments'
   },
 
   // Per-sheet extra meta fields shown in the article writer form.
