@@ -346,7 +346,11 @@ function readSheet(name, filterVisible) {
 // Discord notifier — posts a rich embed to the configured webhook channel
 // ---------------------------------------------------------------------------
 function toTitleCase(str) {
-  return String(str || '').replace(/\b\w/g, c => c.toUpperCase());
+  return String(str || '').replace(/(?<!')\b\w/g, c => c.toUpperCase());
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function notifyDiscord(sheetName, rowData) {
@@ -355,24 +359,44 @@ function notifyDiscord(sheetName, rowData) {
     let colour      = 0x5865F2;
 
     if (sheetName === 'Comments') {
-      // "[Ash] just wrote on [Author]'s recap..."
-      const character  = toTitleCase(rowData.character) || 'Someone';
-      const author     = toTitleCase(rowData.author)    || 'someone';
+      const commenter  = toTitleCase(rowData.author)    || 'Someone';
+      const recapOwner = toTitleCase(rowData.character) || 'someone';
       const recapTitle = rowData.recap_title             || 'a recap';
-      description = '**' + character + '** just wrote on **' + author + "'s** recap *\"" + recapTitle + '"*...';
+      const t = '"' + recapTitle + '"';
+      description = pick([
+        '**' + commenter + '** just wrote on **' + recapOwner + "'s** recap *" + t + '*...',
+        '**' + commenter + '** left their mark on **' + recapOwner + "'s** recap *" + t + '*...',
+        'Something\'s been scrawled in the margins of **' + recapOwner + "'s** recap by **" + commenter + '**...',
+        '**' + commenter + '** had something to say about **' + recapOwner + "'s** recap *" + t + '*...',
+        '**' + commenter + "'s** handwriting fills the margins of *" + t + '*...',
+      ]);
       colour = 0xEB459E; // pink
+
     } else if (sheetName === 'Recaps') {
       if (rowData.title) {
-        // OOC chapter announcement — title column is populated
-        description = '📖 **A new chapter has been posted!**\n*"' + rowData.title + '"*';
+        // OOC chapter announcement
+        const t = '*"' + rowData.title + '"*';
+        description = pick([
+          '📖 **A new chapter has been posted!**\n' + t,
+          '📖 **The story continues...**\n' + t,
+          '📖 **A new chapter awaits.**\n' + t,
+          '📖 **Turn the page.**\n' + t,
+          '📖 **Another chapter is written.**\n' + t,
+        ]);
         colour = 0x5865F2; // blurple
       } else {
-        // In-character journal entry — character column is populated
+        // In-character journal entry
         const character = toTitleCase(rowData.character) || 'Someone';
         const body      = String(rowData.body || rowData.text || rowData.content || rowData.summary || '').trim();
         const teaser    = body.length > 150 ? body.slice(0, 147) + '…' : body;
-        description = '**' + character + '** just wrote about their day...';
-        if (teaser) description += '\n> *"' + teaser + '"*';
+        const teaserLine = teaser ? '\n> *"' + teaser + '"*' : '';
+        description = pick([
+          '**' + character + '** just wrote about their day...' + teaserLine,
+          '**' + character + '** put quill to parchment...' + teaserLine,
+          '**' + character + '** adds another entry to their journal...' + teaserLine,
+          '**' + character + '** had something worth writing down...' + teaserLine,
+          '**' + character + "'s** journal gains another page..." + teaserLine,
+        ]);
         colour = 0x57F287; // green
       }
     } else {
@@ -380,12 +404,21 @@ function notifyDiscord(sheetName, rowData) {
       return;
     }
 
-    UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, {
+    console.log('notifyDiscord: sending to Discord for sheet=' + sheetName + ', description=' + description);
+
+    const response = UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, {
       method:      'post',
       contentType: 'application/json',
       payload:     JSON.stringify({ embeds: [{ description, color: colour }] }),
       muteHttpExceptions: true
     });
+
+    const status = response.getResponseCode();
+    if (status === 204) {
+      console.log('notifyDiscord: success (204)');
+    } else {
+      console.warn('notifyDiscord: unexpected status ' + status + ' — ' + response.getContentText());
+    }
   } catch (err) {
     console.warn('Discord notification failed:', err);
   }
