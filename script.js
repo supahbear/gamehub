@@ -6,6 +6,7 @@ class TTRPGHub {
     this.currentSelectedPanel = 'encyclopedia';
     this.worlds = [];
     this._sheetCache = {};        // Demand-loaded sheet data, keyed by sheet name
+    this._sheetFetching = {};     // In-flight fetch promises, keyed by sheet name (dedup)
     
     this.activeBackgroundWorld = 'neutral';
     this.backgroundVideos = {};
@@ -34,7 +35,7 @@ class TTRPGHub {
     await this.loadWorlds();
     this.renderWorlds();
     this._revealWorldCard();
-    this._warmCache(['Journal', 'Recaps', 'Calendar']);
+    this._warmCache(['Journal', 'Recaps', 'Comments', 'Calendar']);
 
     Config.log('TTRPG Hub initialized');
   }
@@ -409,10 +410,9 @@ class TTRPGHub {
     if (campaignPanel && !campaignPanel.dataset.loaded) {
       campaignPanel.innerHTML = '<div class="recaps-loading">Loading\u2026</div>';
       try {
-        const [entries, commentRows] = await Promise.all([
-          this.loadSheets([Config.SHEETS.RECAPS]),
-          this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
-        ]);
+        const allRows     = await this.loadSheets([Config.SHEETS.RECAPS, Config.SHEETS.COMMENTS]);
+        const entries     = allRows.filter(r => r._category === Config.SHEETS.RECAPS);
+        const commentRows = allRows.filter(r => r._category === Config.SHEETS.COMMENTS);
         const commentsMap = {};
         for (const c of commentRows) {
           const title = (c.recap_title || '').trim();
@@ -1567,10 +1567,9 @@ class TTRPGHub {
           try {
             delete this._sheetCache[Config.SHEETS.RECAPS];
             delete this._sheetCache[Config.SHEETS.COMMENTS];
-            const [entries, commentRows] = await Promise.all([
-              this.loadSheets([Config.SHEETS.RECAPS]),
-              this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
-            ]);
+            const allRows     = await this.loadSheets([Config.SHEETS.RECAPS, Config.SHEETS.COMMENTS]);
+            const entries     = allRows.filter(r => r._category === Config.SHEETS.RECAPS);
+            const commentRows = allRows.filter(r => r._category === Config.SHEETS.COMMENTS);
             const commentsMap = {};
             for (const c of commentRows) {
               const t = (c.recap_title || '').trim();
@@ -2215,25 +2214,37 @@ class TTRPGHub {
 
   // Fetches one or more sheet names, serving from per-sheet demand cache on revisit.
   // Returns the flat array of row objects, each with a ._category field.
+  // Deduplicates in-flight requests so warmCache and modal loads never double-fetch.
   async loadSheets(sheetNames) {
     try {
-      // Serve any already-cached sheets and only fetch the rest.
       const uncached = sheetNames.filter(name => !(name in this._sheetCache));
 
       if (uncached.length > 0) {
-        const url  = Config.getSheetUrl(uncached);
-        const data = await this.jsonp(url);
-        if (!data.success) {
-          Config.error('loadSheets failed:', data.error);
-          return [];
+        // Split into sheets already being fetched vs genuinely new
+        const alreadyFetching = uncached.filter(name =>  name in this._sheetFetching);
+        const toFetch         = uncached.filter(name => !(name in this._sheetFetching));
+
+        if (toFetch.length > 0) {
+          const fetchPromise = this.jsonp(Config.getSheetUrl(toFetch)).then(data => {
+            if (!data.success) { Config.error('loadSheets failed:', data.error); return; }
+            toFetch.forEach(name => { this._sheetCache[name] = []; });
+            (data.data || []).forEach(row => {
+              const cat = row._category;
+              if (cat && cat in this._sheetCache) this._sheetCache[cat].push(row);
+            });
+            Config.log('loadSheets fetched and cached:', toFetch);
+          }).finally(() => {
+            toFetch.forEach(name => { delete this._sheetFetching[name]; });
+          });
+          toFetch.forEach(name => { this._sheetFetching[name] = fetchPromise; });
         }
-        // Populate the demand cache for each fetched sheet.
-        uncached.forEach(name => { this._sheetCache[name] = []; });
-        (data.data || []).forEach(row => {
-          const cat = row._category;
-          if (cat && cat in this._sheetCache) this._sheetCache[cat].push(row);
-        });
-        Config.log('loadSheets fetched and cached:', uncached);
+
+        // Await all relevant in-flight fetches
+        const waits = [...new Set([
+          ...alreadyFetching.map(name => this._sheetFetching[name]),
+          ...toFetch.map(name => this._sheetFetching[name])
+        ])].filter(Boolean);
+        await Promise.all(waits);
       }
 
       const rows = sheetNames.flatMap(name => this._sheetCache[name] || []);
