@@ -12,6 +12,9 @@
 
 const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 
+// Discord webhook — posts to your channel when Recaps or Journal entries are created
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1503471265078313041/tTFAowBOIp4203SN86YOWus-fXIjqGk3IjcXmi3dpD3EKFHIg-W5W3CdARW-ZqKNzCWZ';
+
 // Sheets that may be written to — used by handleWrite, handleEdit, and handleDelete
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
@@ -210,6 +213,11 @@ function handleWrite(e, callback) {
     const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
     sheet.appendRow(rowValues);
 
+    // Notify Discord when a new Recap or Comment is posted
+    if (sheetName === 'Recaps' || sheetName === 'Comments') {
+      notifyDiscord(sheetName, rowData);
+    }
+
     console.log('Appended row to ' + sheetName + ': ' + (rowData.name || '(unnamed)'));
     return jsonp(callback, { success: true });
 
@@ -332,6 +340,55 @@ function readSheet(name, filterVisible) {
     if (p === 'x') return false;
     return true;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Discord notifier — posts a rich embed to the configured webhook channel
+// ---------------------------------------------------------------------------
+function toTitleCase(str) {
+  return String(str || '').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function notifyDiscord(sheetName, rowData) {
+  try {
+    let description = '';
+    let colour      = 0x5865F2;
+
+    if (sheetName === 'Comments') {
+      // "[Ash] just wrote on [Author]'s recap..."
+      const character  = toTitleCase(rowData.character) || 'Someone';
+      const author     = toTitleCase(rowData.author)    || 'someone';
+      const recapTitle = rowData.recap_title             || 'a recap';
+      description = '**' + character + '** just wrote on **' + author + "'s** recap *\"" + recapTitle + '"*...';
+      colour = 0xEB459E; // pink
+    } else if (sheetName === 'Recaps') {
+      if (rowData.title) {
+        // OOC chapter announcement — title column is populated
+        description = '📖 **A new chapter has been posted!**\n*"' + rowData.title + '"*';
+        colour = 0x5865F2; // blurple
+      } else {
+        // In-character journal entry — character column is populated
+        const character = toTitleCase(rowData.character) || 'Someone';
+        const body      = String(rowData.body || rowData.text || rowData.content || rowData.summary || '').trim();
+        const teaser    = body.length > 150 ? body.slice(0, 147) + '…' : body;
+        description = '**' + character + '** just wrote about their day...';
+        if (teaser) description += '\n> *"' + teaser + '"*';
+        colour = 0x57F287; // green
+      }
+    } else {
+      // Fallback — should not be reached with current trigger conditions
+      return;
+    }
+
+    UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, {
+      method:      'post',
+      contentType: 'application/json',
+      payload:     JSON.stringify({ embeds: [{ description, color: colour }] }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    console.warn('Discord notification failed:', err);
+  }
 }
 
 // ---------------------------------------------------------------------------
