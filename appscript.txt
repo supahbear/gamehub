@@ -143,11 +143,14 @@ function handleEdit(e, callback) {
     if (sheetName === 'Recaps' && payload.patch) {
       const icCol = RECAP_CHARACTER_COLUMNS.find(col => rowData[col] !== undefined && String(rowData[col]).trim());
       if (icCol) {
-        notifyDiscord('RecapIC', {
-          character:   icCol,
-          entry:       String(rowData[icCol]).trim(),
-          recap_title: origName || '',
-        });
+        SpreadsheetApp.flush();
+        try {
+          notifyDiscord('RecapIC', {
+            character:   icCol,
+            entry:       String(rowData[icCol]).trim(),
+            recap_title: origName || '',
+          });
+        } catch (notifyErr) { console.warn('notifyDiscord (edit) failed:', notifyErr); }
       }
     }
 
@@ -224,10 +227,11 @@ function handleWrite(e, callback) {
     const headers   = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
     const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
     sheet.appendRow(rowValues);
+    SpreadsheetApp.flush(); // commit the write before making external HTTP calls
 
     // Notify Discord when a new recap or comment is posted
     if (sheetName === 'Recaps' || sheetName === 'Comments') {
-      notifyDiscord(sheetName, rowData);
+      try { notifyDiscord(sheetName, rowData); } catch (notifyErr) { console.warn('notifyDiscord (write) failed:', notifyErr); }
     }
 
     console.log('Appended row to ' + sheetName + ': ' + (rowData.name || '(unnamed)'));
@@ -432,23 +436,24 @@ function buildCommentEmbed(rowData) {
 
 // Dispatches to the correct embed builder and sends the webhook
 function notifyDiscord(sheetName, rowData) {
-  let embed;
-
-  if (sheetName === 'Recaps') {
-    embed = buildRecapEmbed(rowData);
-  } else if (sheetName === 'RecapIC') {
-    embed = buildIcEntryEmbed(rowData);
-  } else if (sheetName === 'Comments') {
-    embed = buildCommentEmbed(rowData);
-  } else {
-    return;
-  }
-
   try {
+    let embed;
+
+    if (sheetName === 'Recaps') {
+      embed = buildRecapEmbed(rowData);
+    } else if (sheetName === 'RecapIC') {
+      embed = buildIcEntryEmbed(rowData);
+    } else if (sheetName === 'Comments') {
+      embed = buildCommentEmbed(rowData);
+    } else {
+      return;
+    }
+
+    const body = JSON.stringify({ embeds: [embed] });
     const response = UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, {
       method:      'post',
       contentType: 'application/json',
-      payload:     JSON.stringify({ embeds: [embed] }),
+      payload:     body,
       muteHttpExceptions: true,
     });
 
@@ -456,10 +461,10 @@ function notifyDiscord(sheetName, rowData) {
     if (status === 204) {
       console.log(`notifyDiscord: sent successfully for ${sheetName}`);
     } else {
-      console.warn(`notifyDiscord: HTTP ${status} — ${response.getContentText()}`);
+      console.warn(`notifyDiscord: HTTP ${status} for ${sheetName} — ${response.getContentText()}`);
     }
   } catch (err) {
-    console.error('notifyDiscord: fetch failed:', err);
+    console.error(`notifyDiscord: failed for ${sheetName}:`, err);
   }
 }
 
