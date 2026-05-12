@@ -140,16 +140,6 @@ function handleEdit(e, callback) {
     }
 
     console.log('Updated row in ' + sheetName + ': ' + (rowData.name || rowId || origName));
-
-    // Notify Discord when a character patches their journal entry on a Recaps row
-    if (sheetName === 'Recaps' && payload.patch) {
-      const STRUCTURAL = new Set(['id', 'title', 'tag', 'content', 'visible', 'prepared', 'summary']);
-      const charKey = Object.keys(rowData).find(k => !STRUCTURAL.has(k.toLowerCase()));
-      if (charKey) {
-        notifyDiscord('Recaps', { character: charKey, content: rowData[charKey], chapterTitle: origName || '' });
-      }
-    }
-
     return jsonp(callback, { success: true });
 
   } catch (err) {
@@ -397,16 +387,15 @@ function notifyDiscord(sheetName, rowData) {
       } else {
         // In-character journal entry
         const character = toTitleCase(rowData.character) || 'Someone';
-        const chapterLine = rowData.chapterTitle ? '\n*Chapter: "' + rowData.chapterTitle + '"*' : '';
         const body      = String(rowData.body || rowData.text || rowData.content || rowData.summary || '').trim();
         const teaser    = body.length > 150 ? body.slice(0, 147) + '…' : body;
         const teaserLine = teaser ? '\n> *"' + teaser + '"*' : '';
         description = pick([
-          '**' + character + '** just wrote about their day...' + chapterLine + teaserLine,
-          '**' + character + '** put quill to parchment...' + chapterLine + teaserLine,
-          '**' + character + '** adds another entry to their journal...' + chapterLine + teaserLine,
-          '**' + character + '** had something worth writing down...' + chapterLine + teaserLine,
-          '**' + character + "'s** journal gains another page..." + chapterLine + teaserLine,
+          '**' + character + '** just wrote about their day...' + teaserLine,
+          '**' + character + '** put quill to parchment...' + teaserLine,
+          '**' + character + '** adds another entry to their journal...' + teaserLine,
+          '**' + character + '** had something worth writing down...' + teaserLine,
+          '**' + character + "'s** journal gains another page..." + teaserLine,
         ]);
         colour = 0x57F287; // green
       }

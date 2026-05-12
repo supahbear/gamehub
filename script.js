@@ -1286,9 +1286,9 @@ class TTRPGHub {
     const sorted = [...entries].reverse();
     this._recapEntries = sorted; // stash for edit handler
     const items = sorted.map((entry, i) => {
-      const tag     = String(entry.tag     || '').trim();
-      const title   = String(entry.title   || '').trim();
-      const content = String(entry.content || '').trim();
+      const tag     = (entry.tag     || '').trim();
+      const title   = (entry.title   || '').trim();
+      const content = (entry.content || '').trim();
       const words   = content.split(/\s+/).filter(Boolean);
       const isTruncated = words.length > WORD_LIMIT;
       const preview     = isTruncated ? words.slice(0, WORD_LIMIT).join(' ') + '\u2026' : content;
@@ -1314,7 +1314,7 @@ class TTRPGHub {
               <textarea class="margin-input-text" placeholder="Leave a note…" rows="2"></textarea>
               <div class="margin-form-row">
                 <input class="margin-input-author" type="text" placeholder="— your name" maxlength="40" />
-                <button type="button" class="margin-submit-btn" data-index="${i}" data-char="${c}">Add Note</button>
+                <button class="margin-submit-btn" data-index="${i}" data-char="${c}">Add Note</button>
               </div>
             </div>
           </div>`;
@@ -1579,13 +1579,9 @@ class TTRPGHub {
               if (!commentsMap[t][ch]) commentsMap[t][ch] = [];
               commentsMap[t][ch].push(c);
             }
-            // Replace the node entirely so old event listeners are detached
-            const freshHtml = this.renderRecapsList(entries, commentsMap);
-            const fresh = panel.cloneNode(false);
-            fresh.innerHTML = freshHtml;
-            fresh.dataset.loaded = 'true';
-            panel.replaceWith(fresh);
-            this._setupRecapsInteractions(fresh);
+            panel.innerHTML = this.renderRecapsList(entries, commentsMap);
+            panel.dataset.loaded = 'true';
+            this._setupRecapsInteractions(panel);
           } catch (err) {
             panel.innerHTML = '<div class="recaps-loading">Could not reload.</div>';
           }
