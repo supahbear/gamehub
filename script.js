@@ -1286,9 +1286,9 @@ class TTRPGHub {
     const sorted = [...entries].reverse();
     this._recapEntries = sorted; // stash for edit handler
     const items = sorted.map((entry, i) => {
-      const tag     = (entry.tag     || '').trim();
-      const title   = (entry.title   || '').trim();
-      const content = (entry.content || '').trim();
+      const tag     = String(entry.tag     || '').trim();
+      const title   = String(entry.title   || '').trim();
+      const content = String(entry.content || '').trim();
       const words   = content.split(/\s+/).filter(Boolean);
       const isTruncated = words.length > WORD_LIMIT;
       const preview     = isTruncated ? words.slice(0, WORD_LIMIT).join(' ') + '\u2026' : content;
