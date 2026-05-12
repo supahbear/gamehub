@@ -225,7 +225,7 @@ function handleWrite(e, callback) {
     const rowValues = headers.map(h => (rowData[h] !== undefined ? String(rowData[h]) : ''));
     sheet.appendRow(rowValues);
 
-    // Notify Discord when a new Recap or Comment is posted
+    // Notify Discord when a new recap or comment is posted
     if (sheetName === 'Recaps' || sheetName === 'Comments') {
       notifyDiscord(sheetName, rowData);
     }

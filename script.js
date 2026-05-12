@@ -423,7 +423,9 @@ class TTRPGHub {
         }
         campaignPanel.innerHTML = this.renderRecapsList(entries, commentsMap);
         campaignPanel.dataset.loaded = 'true';
-        this._setupRecapsInteractions(campaignPanel);
+        if (this._recapsAbortController) this._recapsAbortController.abort();
+        this._recapsAbortController = new AbortController();
+        this._setupRecapsInteractions(campaignPanel, this._recapsAbortController.signal);
       } catch (e) {
         campaignPanel.innerHTML = '<div class="recaps-loading">Could not load campaign log.</div>';
         Config.warn('Campaign log load error:', e);
@@ -1363,7 +1365,7 @@ class TTRPGHub {
     return `<div class="recaps-list">${newChapterForm}${items}</div>`;
   }
 
-  _setupRecapsInteractions(body) {
+  _setupRecapsInteractions(body, signal) {
     body.addEventListener('click', async (e) => {
       // ── New chapter toggle ──────────────────────────────────────
       const newChapterBtn = e.target.closest('.new-chapter-btn');
@@ -1538,7 +1540,7 @@ class TTRPGHub {
         }
         return;
       }
-    });
+    }, { signal });
     body.addEventListener('submit', async (e) => {
       if (!e.target.closest('.new-chapter-form')) return;
       e.preventDefault();
@@ -1581,7 +1583,9 @@ class TTRPGHub {
             }
             panel.innerHTML = this.renderRecapsList(entries, commentsMap);
             panel.dataset.loaded = 'true';
-            this._setupRecapsInteractions(panel);
+            if (this._recapsAbortController) this._recapsAbortController.abort();
+            this._recapsAbortController = new AbortController();
+            this._setupRecapsInteractions(panel, this._recapsAbortController.signal);
           } catch (err) {
             panel.innerHTML = '<div class="recaps-loading">Could not reload.</div>';
           }
@@ -1592,13 +1596,13 @@ class TTRPGHub {
         errEl.textContent = 'Save failed. Try again.';
         errEl.hidden = false;
       }
-    });
+    }, { signal });
 
     body.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const header = e.target.closest('.recap-entry-header');
       if (header) { e.preventDefault(); header.click(); }
-    });
+    }, { signal });
   }
 
   async _saveRecapCharEntry(index, char, text) {

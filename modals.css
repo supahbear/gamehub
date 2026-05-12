@@ -1369,11 +1369,14 @@ body.modal-active main {
 }
 
 .new-chapter-form {
-    display: flex;
+    display: none; /* shown only after button click */
     flex-direction: column;
     gap: 10px;
     width: 100%;
     max-width: 540px;
+}
+.new-chapter-form:not([hidden]) {
+    display: flex;
 }
 
 .new-chapter-title,
