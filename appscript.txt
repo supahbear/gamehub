@@ -139,6 +139,18 @@ function handleEdit(e, callback) {
       sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
     }
 
+    // Notify Discord when a character posts an IC journal entry on a recap
+    if (sheetName === 'Recaps' && payload.patch) {
+      const icCol = RECAP_CHARACTER_COLUMNS.find(col => rowData[col] !== undefined && String(rowData[col]).trim());
+      if (icCol) {
+        notifyDiscord('RecapIC', {
+          character:   icCol,
+          entry:       String(rowData[icCol]).trim(),
+          recap_title: origName || '',
+        });
+      }
+    }
+
     console.log('Updated row in ' + sheetName + ': ' + (rowData.name || rowId || origName));
     return jsonp(callback, { success: true });
 
@@ -343,8 +355,12 @@ function readSheet(name, filterVisible) {
 }
 
 // ---------------------------------------------------------------------------
-// Discord notifier — posts a rich embed to the configured webhook channel
+// Discord notification system
 // ---------------------------------------------------------------------------
+
+// Character columns on the Recaps sheet that hold IC journal entries
+const RECAP_CHARACTER_COLUMNS = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
+
 function toTitleCase(str) {
   return String(str || '').replace(/(?<!')\b\w/g, c => c.toUpperCase());
 }
@@ -353,74 +369,97 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Builds an embed for a chapter recap — OOC title and summary teaser only.
+function buildRecapEmbed(rowData) {
+  const title  = String(rowData.title   || '').trim();
+  const body   = String(rowData.content || '').trim();
+  const teaser = body.length > 200 ? body.slice(0, 197) + '…' : body;
+
+  return {
+    title: title || 'New Recap',
+    description: pick([
+      '📖 A new chapter has been posted!',
+      '📖 The story continues...',
+      '📖 A new chapter awaits.',
+      '📖 Turn the page.',
+      '📖 Another chapter is written.',
+    ]) + (teaser ? `\n> ${teaser}` : ''),
+    color: 0x5865F2,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// Builds an embed for an IC journal entry posted under a recap
+function buildIcEntryEmbed(rowData) {
+  const character  = toTitleCase(rowData.character) || 'Someone';
+  const recapTitle = String(rowData.recap_title || '').trim();
+  const entry      = String(rowData.entry || '').trim();
+  const teaser     = entry.length > 200 ? entry.slice(0, 197) + '…' : entry;
+  const teaserLine = teaser ? `\n> *"${teaser}"*` : '';
+
+  return {
+    description: pick([
+      `**${character}** just wrote about their day...`,
+      `**${character}** put quill to parchment...`,
+      `**${character}** adds another entry to their journal...`,
+      `**${character}** had something worth writing down...`,
+      `**${character}'s** journal gains another page...`,
+    ]) + teaserLine,
+    color: 0x57F287,
+    footer: recapTitle ? { text: recapTitle } : undefined,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// Builds an embed for a new comment on a recap
+function buildCommentEmbed(rowData) {
+  const commenter  = toTitleCase(rowData.author)    || 'Someone';
+  const recapOwner = toTitleCase(rowData.character) || 'someone';
+  const recapTitle = String(rowData.recap_title || 'a recap').trim();
+
+  return {
+    description: pick([
+      `**${commenter}** just wrote on **${recapOwner}'s** recap *"${recapTitle}"*...`,
+      `**${commenter}** left their mark on **${recapOwner}'s** recap *"${recapTitle}"*...`,
+      `Something's been scrawled in the margins of **${recapOwner}'s** recap by **${commenter}**...`,
+      `**${commenter}** had something to say about **${recapOwner}'s** recap *"${recapTitle}"*...`,
+      `**${commenter}'s** handwriting fills the margins of *"${recapTitle}"*...`,
+    ]),
+    color: 0xEB459E,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// Dispatches to the correct embed builder and sends the webhook
 function notifyDiscord(sheetName, rowData) {
+  let embed;
+
+  if (sheetName === 'Recaps') {
+    embed = buildRecapEmbed(rowData);
+  } else if (sheetName === 'RecapIC') {
+    embed = buildIcEntryEmbed(rowData);
+  } else if (sheetName === 'Comments') {
+    embed = buildCommentEmbed(rowData);
+  } else {
+    return;
+  }
+
   try {
-    let description = '';
-    let colour      = 0x5865F2;
-
-    if (sheetName === 'Comments') {
-      const commenter  = toTitleCase(rowData.author)    || 'Someone';
-      const recapOwner = toTitleCase(rowData.character) || 'someone';
-      const recapTitle = rowData.recap_title             || 'a recap';
-      const t = '"' + recapTitle + '"';
-      description = pick([
-        '**' + commenter + '** just wrote on **' + recapOwner + "'s** recap *" + t + '*...',
-        '**' + commenter + '** left their mark on **' + recapOwner + "'s** recap *" + t + '*...',
-        'Something\'s been scrawled in the margins of **' + recapOwner + "'s** recap by **" + commenter + '**...',
-        '**' + commenter + '** had something to say about **' + recapOwner + "'s** recap *" + t + '*...',
-        '**' + commenter + "'s** handwriting fills the margins of *" + t + '*...',
-      ]);
-      colour = 0xEB459E; // pink
-
-    } else if (sheetName === 'Recaps') {
-      if (rowData.title) {
-        // OOC chapter announcement
-        const t = '*"' + rowData.title + '"*';
-        description = pick([
-          '📖 **A new chapter has been posted!**\n' + t,
-          '📖 **The story continues...**\n' + t,
-          '📖 **A new chapter awaits.**\n' + t,
-          '📖 **Turn the page.**\n' + t,
-          '📖 **Another chapter is written.**\n' + t,
-        ]);
-        colour = 0x5865F2; // blurple
-      } else {
-        // In-character journal entry
-        const character = toTitleCase(rowData.character) || 'Someone';
-        const body      = String(rowData.body || rowData.text || rowData.content || rowData.summary || '').trim();
-        const teaser    = body.length > 150 ? body.slice(0, 147) + '…' : body;
-        const teaserLine = teaser ? '\n> *"' + teaser + '"*' : '';
-        description = pick([
-          '**' + character + '** just wrote about their day...' + teaserLine,
-          '**' + character + '** put quill to parchment...' + teaserLine,
-          '**' + character + '** adds another entry to their journal...' + teaserLine,
-          '**' + character + '** had something worth writing down...' + teaserLine,
-          '**' + character + "'s** journal gains another page..." + teaserLine,
-        ]);
-        colour = 0x57F287; // green
-      }
-    } else {
-      // Fallback — should not be reached with current trigger conditions
-      return;
-    }
-
-    console.log('notifyDiscord: sending to Discord for sheet=' + sheetName + ', description=' + description);
-
     const response = UrlFetchApp.fetch(DISCORD_WEBHOOK_URL, {
       method:      'post',
       contentType: 'application/json',
-      payload:     JSON.stringify({ embeds: [{ description, color: colour }] }),
-      muteHttpExceptions: true
+      payload:     JSON.stringify({ embeds: [embed] }),
+      muteHttpExceptions: true,
     });
 
     const status = response.getResponseCode();
     if (status === 204) {
-      console.log('notifyDiscord: success (204)');
+      console.log(`notifyDiscord: sent successfully for ${sheetName}`);
     } else {
-      console.warn('notifyDiscord: unexpected status ' + status + ' — ' + response.getContentText());
+      console.warn(`notifyDiscord: HTTP ${status} — ${response.getContentText()}`);
     }
   } catch (err) {
-    console.warn('Discord notification failed:', err);
+    console.error('notifyDiscord: fetch failed:', err);
   }
 }
 
