@@ -15,6 +15,9 @@ const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 // Discord webhook — posts to your channel when Recaps or Journal entries are created
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1503471265078313041/tTFAowBOIp4203SN86YOWus-fXIjqGk3IjcXmi3dpD3EKFHIg-W5W3CdARW-ZqKNzCWZ';
 
+// Base URL for deep-link hashes posted to Discord
+const NEXUS_BASE_URL = 'https://btvnexus.netlify.app/';
+
 // Sheets that may be written to — used by handleWrite, handleEdit, and handleDelete
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
@@ -369,6 +372,10 @@ function toTitleCase(str) {
   return String(str || '').replace(/(?<!')\b\w/g, c => c.toUpperCase());
 }
 
+function slugify(str) {
+  return String(str || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -378,9 +385,11 @@ function buildRecapEmbed(rowData) {
   const title  = String(rowData.title   || '').trim();
   const body   = String(rowData.content || '').trim();
   const teaser = body.length > 200 ? body.slice(0, 197) + '…' : body;
+  const url    = NEXUS_BASE_URL + '#breach/journal/recap/' + slugify(title);
 
   return {
     title: title || 'New Recap',
+    url,
     description: pick([
       '📖 A new chapter has been posted!',
       '📖 The story continues...',
@@ -396,12 +405,16 @@ function buildRecapEmbed(rowData) {
 // Builds an embed for an IC journal entry posted under a recap
 function buildIcEntryEmbed(rowData) {
   const character  = toTitleCase(rowData.character) || 'Someone';
+  const charSlug   = String(rowData.character || '').toLowerCase().trim();
   const recapTitle = String(rowData.recap_title || '').trim();
   const entry      = String(rowData.entry || '').trim();
   const teaser     = entry.length > 200 ? entry.slice(0, 197) + '…' : entry;
   const teaserLine = teaser ? `\n> *"${teaser}"*` : '';
+  const url        = NEXUS_BASE_URL + '#breach/journal/recap/' + slugify(recapTitle) + (charSlug ? '/' + charSlug : '');
 
   return {
+    title: `${character}'s Journal — ${recapTitle || 'New Entry'}`,
+    url,
     description: pick([
       `**${character}** just wrote about their day...`,
       `**${character}** put quill to parchment...`,
@@ -419,9 +432,13 @@ function buildIcEntryEmbed(rowData) {
 function buildCommentEmbed(rowData) {
   const commenter  = toTitleCase(rowData.author)    || 'Someone';
   const recapOwner = toTitleCase(rowData.character) || 'someone';
+  const charSlug   = String(rowData.character || '').toLowerCase().trim();
   const recapTitle = String(rowData.recap_title || 'a recap').trim();
+  const url        = NEXUS_BASE_URL + '#breach/journal/recap/' + slugify(recapTitle) + (charSlug ? '/' + charSlug : '');
 
   return {
+    title: recapTitle,
+    url,
     description: pick([
       `**${commenter}** just wrote on **${recapOwner}'s** recap *"${recapTitle}"*...`,
       `**${commenter}** left their mark on **${recapOwner}'s** recap *"${recapTitle}"*...`,

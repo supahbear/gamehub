@@ -35,6 +35,7 @@ class TTRPGHub {
     this.renderWorlds();
     this._revealWorldCard();
     this._warmCache(['Journal', 'Recaps', 'Calendar']);
+    this._initHashRouting();
 
     Config.log('TTRPG Hub initialized');
   }
@@ -207,6 +208,7 @@ class TTRPGHub {
     if (this.currentWorld) {
       Config.log('Selected world:', this.currentWorld.name);
       this.applyWorldTheme(worldId);
+      if (!this._suppressHashWrite) this._setHash(worldId);
       // Skip full re-init if returning to an already-loaded world
       if (alreadyLoaded) {
         this.setPageVisibility('hub');
@@ -221,6 +223,7 @@ class TTRPGHub {
     // Keep currentWorld so the card re-entry skips re-init
     this.currentMode = 'explore';
     this.clearWorldTheme();
+    this._setHash('');
     // Reset hub back to selection grid for clean re-entry
     this._resetHubToSelection();
   }
@@ -397,6 +400,7 @@ class TTRPGHub {
     const modal   = document.getElementById('journalModal');
     if (!overlay || !modal) return;
 
+    if (!this._suppressHashWrite) this._setHash(`${this.currentWorld?.id}/journal`);
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('journal-modal-active');
@@ -477,6 +481,7 @@ class TTRPGHub {
     document.getElementById('journalModalOverlay')?.classList.remove('show');
     document.getElementById('journalModal')?.classList.remove('show');
     document.body.classList.remove('journal-modal-active');
+    if (!this._suppressHashWrite) this._setHash(this.currentWorld?.id || '');
   }
 
   // ── Calendar modal ─────────────────────────────────────────────
@@ -1480,6 +1485,11 @@ class TTRPGHub {
         const char  = charTab.dataset.char;
         entry.querySelectorAll('.recap-char-tab').forEach(t => t.classList.toggle('active', t.dataset.char === char));
         entry.querySelectorAll('.recap-panel').forEach(p => { p.hidden = p.dataset.panel !== char; });
+        const slug = this._slugify(entry.querySelector('.recap-title')?.textContent || '');
+        if (slug) {
+          const hashChar = (char === 'recap') ? '' : `/${char}`;
+          this._setHash(`${this.currentWorld?.id}/journal/recap/${slug}${hashChar}`);
+        }
         return;
       }
 
@@ -1505,6 +1515,12 @@ class TTRPGHub {
         const expanded = header.getAttribute('aria-expanded') !== 'false';
         header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         bodyEl.classList.toggle('recap-body--collapsed', expanded);
+        if (!expanded) {
+          const slug = this._slugify(entry.querySelector('.recap-title')?.textContent || '');
+          if (slug) this._setHash(`${this.currentWorld?.id}/journal/recap/${slug}`);
+        } else {
+          this._setHash(`${this.currentWorld?.id}/journal`);
+        }
       }
 
       // ── Margin note submit ─────────────────────────────────────
@@ -2056,6 +2072,7 @@ class TTRPGHub {
 
   async selectPanel(panelName) {
     this.currentSelectedPanel = panelName;
+    if (!this._suppressHashWrite) this._setHash(`${this.currentWorld?.id}/${panelName}`);
 
     // Update header nav
     const titleText        = document.getElementById('hubTitleText');
@@ -2357,6 +2374,76 @@ class TTRPGHub {
     }
     
     this.activeBackgroundWorld = worldId;
+  }
+
+  // ========== Hash Routing ==========
+
+  _slugify(str) {
+    return String(str).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  _setHash(hash) {
+    history.replaceState(null, '', hash ? '#' + hash : window.location.pathname + window.location.search);
+  }
+
+  _initHashRouting() {
+    this._suppressHashWrite = false;
+    window.addEventListener('hashchange', () => this._restoreFromHash());
+    this._restoreFromHash();
+  }
+
+  async _restoreFromHash() {
+    const raw = window.location.hash.slice(1);
+    if (!raw) return;
+
+    const parts = raw.split('/');
+    const worldId = parts[0];
+    if (!worldId) return;
+
+    const world = this.worlds.find(w => w.id === worldId);
+    if (!world) return;
+
+    this._suppressHashWrite = true;
+    try {
+      this.selectWorld(worldId);
+
+      const section = parts[1];
+      if (!section) return;
+
+      if (section === 'journal') {
+        await this.openJournalModal();
+        if (parts[2] === 'recap' && parts[3]) {
+          await this._expandRecapBySlug(parts[3], parts[4] || null);
+        }
+      } else {
+        await this.selectPanel(section);
+      }
+    } finally {
+      this._suppressHashWrite = false;
+    }
+  }
+
+  async _expandRecapBySlug(slug, char) {
+    const campaignPanel = document.getElementById('journalTabCampaignLog');
+    if (!campaignPanel) return;
+
+    for (const entry of campaignPanel.querySelectorAll('.recap-entry')) {
+      const titleEl = entry.querySelector('.recap-title');
+      if (!titleEl || this._slugify(titleEl.textContent) !== slug) continue;
+
+      const header = entry.querySelector('.recap-entry-header');
+      const body   = entry.querySelector('.recap-body');
+      header.setAttribute('aria-expanded', 'true');
+      body.classList.remove('recap-body--collapsed');
+
+      if (char && char !== 'recap') {
+        entry.querySelectorAll('.recap-char-tab').forEach(t => t.classList.toggle('active', t.dataset.char === char));
+        entry.querySelectorAll('.recap-panel').forEach(p => { p.hidden = p.dataset.panel !== char; });
+      }
+
+      setTimeout(() => entry.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      return;
+    }
   }
 }
 
