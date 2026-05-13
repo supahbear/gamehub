@@ -64,9 +64,6 @@ const Config = {
   getSheetUrl(sheets) {
     const url = new URL(this.APPS_SCRIPT_URL);
     url.searchParams.set('sheets', Array.isArray(sheets) ? sheets.join(',') : sheets);
-    // Cache-bust: Google Apps Script caches GET responses aggressively.
-    // A timestamp param forces a fresh response every time.
-    url.searchParams.set('_t', Date.now());
     return url.toString();
   },
 

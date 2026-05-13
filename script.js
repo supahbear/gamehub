@@ -127,9 +127,10 @@ class TTRPGHub {
         originalCallback(data);
       };
       
-      // Add callback parameter to URL
+      // Add callback + cache-bust parameters to URL
+      // The _t timestamp prevents the browser from serving a cached <script> response
       const separator = url.includes('?') ? '&' : '?';
-      script.src = url + separator + 'callback=' + callbackName;
+      script.src = url + separator + 'callback=' + callbackName + '&_t=' + Date.now();
       
       Config.log('JSONP request:', script.src);
       document.head.appendChild(script);
