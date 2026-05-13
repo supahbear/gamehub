@@ -808,10 +808,23 @@ class ArticleViewer {
       'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society',
       'Technology', 'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations'
     ];
+
+    // Show a small loading indicator while fetching from the backend
+    let indicator = document.querySelector('.article-fetch-indicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.className = 'article-fetch-indicator';
+      indicator.textContent = 'Loading article…';
+      document.body.appendChild(indicator);
+    }
+    requestAnimationFrame(() => indicator.classList.add('show'));
+
     try {
       await this.hub.loadSheets(allArticleSheets);
     } catch (e) {
       Config.error('article-link: failed to load sheets for cross-sheet lookup:', e.message);
+    } finally {
+      indicator.classList.remove('show');
     }
 
     const nameLower = name.replace(/\s+/g, ' ').trim().toLowerCase();

@@ -2105,6 +2105,49 @@ body.world-breach .recap-title {
     text-shadow: 0 0 8px rgba(177, 156, 217, 0.4);
 }
 
+/* Article fetch loading indicator */
+@keyframes article-fetch-spin {
+    to { transform: rotate(360deg); }
+}
+
+.article-fetch-indicator {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 10500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(44, 44, 62, 0.92);
+    border: 1px solid rgba(177, 156, 217, 0.4);
+    border-radius: 20px;
+    padding: 8px 16px 8px 12px;
+    color: #b19cd9;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.article-fetch-indicator.show {
+    opacity: 1;
+}
+
+.article-fetch-indicator::before {
+    content: '';
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(177, 156, 217, 0.3);
+    border-top-color: #b19cd9;
+    border-radius: 50%;
+    animation: article-fetch-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
 /* Full-screen backdrop for stacked article layers */
 .article-layer-wrap {
     position: fixed;
