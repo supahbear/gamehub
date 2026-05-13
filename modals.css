@@ -13,6 +13,7 @@
     width: 100%;
     height: 100%;
     background: rgba(44, 44, 62, 0.85); /* Purple-tinted dark overlay instead of neutral */
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     opacity: 0;
     pointer-events: none;
@@ -122,6 +123,7 @@
     z-index: 10;
     background: rgba(0, 0, 0, 0.45);
     border-radius: 6px;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
 }
 
@@ -141,6 +143,7 @@
     cursor: pointer;
     padding: 5px 8px;
     border-radius: 6px;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     transition: all 0.3s ease;
     line-height: 1;
@@ -888,6 +891,7 @@ body.modal-active main {
     width: 100%;
     height: 100%;
     background: rgba(44, 44, 62, 0.85);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     opacity: 0;
     pointer-events: none;
@@ -2153,6 +2157,7 @@ body.world-breach .recap-title {
     position: fixed;
     inset: 0;
     background: rgba(20, 20, 32, 0.6);
+    -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     z-index: 10200; /* overridden inline per layer depth */
     opacity: 0;
@@ -2177,6 +2182,7 @@ body.world-breach .recap-title {
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(44, 44, 62, 0.85);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     opacity: 0;
     pointer-events: none;
@@ -2700,6 +2706,7 @@ body.world-breach .recap-title {
     width: 100%;
     height: 100%;
     background: rgba(44, 44, 62, 0.85);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     opacity: 0;
     pointer-events: none;
@@ -2970,6 +2977,7 @@ body.world-breach .recap-title {
     font-size: 0.82rem;
     transition: all 0.2s ease;
     z-index: 11;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
 }
 
@@ -2987,6 +2995,7 @@ body.world-breach .recap-title {
     font-size: 16px;
     transition: all 0.2s ease;
     z-index: 11;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     line-height: 1;
 }
