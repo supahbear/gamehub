@@ -415,8 +415,9 @@ class ArticleViewer {
 
     modal.classList.add('article-mode');
     if (title) title.textContent = article.name;
-    if (content) this._fillArticleContent(article, content, 0);
 
+    // Show the modal BEFORE filling content so paginateContent can
+    // measure pagesContainer.clientHeight with the correct layout.
     overlay.classList.add('show');
     modal.classList.add('show');
     document.body.classList.add('modal-active');
@@ -433,6 +434,8 @@ class ArticleViewer {
         this.openWriter(this._currentModalArticle);
       };
     }
+
+    if (content) this._fillArticleContent(article, content, 0);
 
     Config.log('Article modal opened:', article.name);
   }
@@ -753,54 +756,94 @@ class ArticleViewer {
   }
 
   bindArticleLinks(container) {
-    container.querySelectorAll('.article-link').forEach(link => {
-      if (link._articleLinkBound) return;
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.openArticleByName(e.currentTarget.dataset.article);
-      });
-      link._articleLinkBound = true;
+    // Use event delegation on the container so links work regardless of when
+    // they were inserted (pagination, lazy rendering, etc.).
+    // Guard prevents duplicate listeners when the same container is reused.
+    if (container._linkDelegBound) return;
+    container._linkDelegBound = true;
+    container.addEventListener('click', (e) => {
+      const link = e.target.closest('.article-link');
+      if (!link) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.openArticleByName(link.dataset.article);
     });
   }
 
   openArticleByName(name) {
-    const nameLower = name.toLowerCase();
+    const cleanName = name.replace(/\s+/g, ' ').trim();
+    const nameLower = cleanName.toLowerCase();
 
     // Search own loaded articles first
-    let article = this.currentArticles.find(a => (a.name || '').toLowerCase() === nameLower);
+    let article = this.currentArticles.find(a => (a.name || '').trim().toLowerCase() === nameLower);
 
     // Fall back to the hub's global sheet cache so links can cross sheet boundaries
     if (!article && this.hub?._sheetCache) {
       for (const rows of Object.values(this.hub._sheetCache)) {
-        const found = rows.find(a => (a.name || '').toLowerCase() === nameLower);
+        const found = rows.find(a => (a.name || '').trim().toLowerCase() === nameLower);
         if (found) { article = found; break; }
       }
     }
 
+    // Article not found in any cached sheet — try loading all article sheets
+    // then retry. This handles cross-sheet links when the target sheet hasn't
+    // been visited yet in the current session.
+    if (!article && this.hub) {
+      this._loadAllAndOpenByName(cleanName);
+      return;
+    }
+
+    if (!article) {
+      Config.warn('article-link: no article found with name:', cleanName);
+      return;
+    }
+
+    this._openArticleObject(article);
+  }
+
+  // Fallback: load all article sheets and retry opening by name.
+  // Called when the target article isn't found in any cached sheet.
+  async _loadAllAndOpenByName(name) {
+    const allArticleSheets = [
+      'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society',
+      'Technology', 'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations'
+    ];
+    try {
+      await this.hub.loadSheets(allArticleSheets);
+    } catch (e) {
+      Config.error('article-link: failed to load sheets for cross-sheet lookup:', e.message);
+    }
+
+    const nameLower = name.replace(/\s+/g, ' ').trim().toLowerCase();
+    let article = null;
+    for (const rows of Object.values(this.hub._sheetCache)) {
+      const found = rows.find(a => (a.name || '').replace(/\s+/g, ' ').trim().toLowerCase() === nameLower);
+      if (found) { article = found; break; }
+    }
     if (!article) {
       Config.warn('article-link: no article found with name:', name);
       return;
     }
+    // Open directly — we already have the article object, no need to re-search
+    this._openArticleObject(article);
+  }
 
+  // Open an article object directly, bypassing the name lookup.
+  _openArticleObject(article) {
     const layerDepth = this._articleStack.length + 1;
     const zBase      = 10200 + (layerDepth - 1) * 20;
 
-    // Backdrop overlay
     const layerOverlay = document.createElement('div');
     layerOverlay.className = 'article-layer-wrap';
     layerOverlay.style.zIndex = String(zBase);
 
-    // Modal panel — reuses all existing .article-modal styles
     const modalEl = document.createElement('div');
     modalEl.className = 'article-modal article-mode article-modal-layer';
     modalEl.style.zIndex = String(zBase + 10);
     modalEl.innerHTML = `
       <div class="modal-content">
         <button class="close-btn article-layer-close">&times;</button>
-        <div class="modal-header">
-          <h1>${article.name}</h1>
-        </div>
+        <div class="modal-header"><h1>${article.name}</h1></div>
         <div class="modal-body"></div>
       </div>
     `;
@@ -808,20 +851,20 @@ class ArticleViewer {
     document.body.appendChild(layerOverlay);
     document.body.appendChild(modalEl);
 
-    const bodyEl       = modalEl.querySelector('.modal-body');
-    const arrowHandler = this._fillArticleContent(article, bodyEl, layerDepth);
-
-    modalEl.querySelector('.article-layer-close')
-      .addEventListener('click', () => this.closeTopLayer());
+    const bodyEl = modalEl.querySelector('.modal-body');
+    modalEl.querySelector('.article-layer-close').addEventListener('click', () => this.closeTopLayer());
     layerOverlay.addEventListener('click', () => this.closeTopLayer());
     modalEl.addEventListener('click', (e) => e.stopPropagation());
 
-    this._articleStack.push({ layerOverlay, modalEl, arrowHandler });
+    this._articleStack.push({ layerOverlay, modalEl, arrowHandler: null });
 
-    // Trigger fade-in on next frame so the CSS transition fires
     requestAnimationFrame(() => {
       layerOverlay.classList.add('show');
       modalEl.classList.add('show');
+      const entry = this._articleStack.find(e => e.modalEl === modalEl);
+      if (entry) {
+        entry.arrowHandler = this._fillArticleContent(article, bodyEl, layerDepth);
+      }
     });
 
     Config.log('Article layer opened:', article.name, '(depth:', layerDepth, ')');
@@ -1089,7 +1132,7 @@ class ArticleViewer {
     
     // Basic markdown conversion - you might want a proper library later
     return markdown
-      .replace(/\[\[([^\]]+)\]\]/g, '<a class="article-link" data-article="$1">$1</a>')
+      .replace(/\[\[([^\]]+)\]\]/g, (_, raw) => { const n = raw.replace(/\s+/g, ' ').trim(); return `<a class="article-link" data-article="${n}">${n}</a>`; })
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h2>$1</h2>')
       .replace(/^# (.*$)/gim, '<h1>$1</h1>')
