@@ -12,7 +12,7 @@
 
 const SHEET_ID = '11dLpf_wqHdRZu1EpvD3CMiGQKuj1aCQf47R9pyscUb4';
 
-// Discord webhook — posts to your channel when Recaps or Journal entries are created
+// Discord webhook — posts to your channel when Recaps, Journal entries, or Articles are created
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1503471265078313041/tTFAowBOIp4203SN86YOWus-fXIjqGk3IjcXmi3dpD3EKFHIg-W5W3CdARW-ZqKNzCWZ';
 
 // Base URL for deep-link hashes posted to Discord
@@ -232,8 +232,8 @@ function handleWrite(e, callback) {
     sheet.appendRow(rowValues);
     SpreadsheetApp.flush(); // commit the write before making external HTTP calls
 
-    // Notify Discord when a new recap or comment is posted
-    if (sheetName === 'Recaps' || sheetName === 'Comments') {
+    // Notify Discord when a new recap, comment, or article is posted
+    if (sheetName === 'Recaps' || sheetName === 'Comments' || ARTICLE_SHEETS.includes(sheetName)) {
       try { notifyDiscord(sheetName, rowData); } catch (notifyErr) { console.warn('notifyDiscord (write) failed:', notifyErr); }
     }
 
@@ -365,6 +365,12 @@ function readSheet(name, filterVisible) {
 // Discord notification system
 // ---------------------------------------------------------------------------
 
+// Article (lore/compendium) sheets that trigger a Discord notification when a new entry is written
+const ARTICLE_SHEETS = [
+  'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
+  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations',
+];
+
 // Character columns on the Recaps sheet that hold IC journal entries
 const RECAP_CHARACTER_COLUMNS = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
 
@@ -451,6 +457,31 @@ function buildCommentEmbed(rowData) {
   };
 }
 
+// Builds an embed for a newly created article (lore / compendium entry)
+function buildArticleEmbed(sheetName, rowData) {
+  const name    = String(rowData.name || '').trim();
+  const summary = String(rowData.summary || '').trim();
+  const teaser  = summary.length > 200 ? summary.slice(0, 197) + '…' : summary;
+  // Technology articles live in the Society panel on the frontend
+  const panelName = sheetName === 'Technology' ? 'society' : sheetName.toLowerCase();
+  const url = NEXUS_BASE_URL + '#breach/' + panelName;
+
+  return {
+    title: name || 'New ' + sheetName + ' Entry',
+    url,
+    description: pick([
+      `📜 A new **${sheetName}** entry has been added to the Nexus!`,
+      `📜 The compendium grows — a new **${sheetName}** article has been written.`,
+      `📜 Lore expands: a new entry appears under **${sheetName}**.`,
+      `📜 Something new has been catalogued in **${sheetName}**.`,
+      `📜 New knowledge added to **${sheetName}**.`,
+    ]) + (teaser ? `\n> ${teaser}` : ''),
+    color: 0xFAA61A,
+    footer: { text: sheetName },
+    timestamp: new Date().toISOString(),
+  };
+}
+
 // Dispatches to the correct embed builder and sends the webhook
 function notifyDiscord(sheetName, rowData) {
   try {
@@ -462,6 +493,8 @@ function notifyDiscord(sheetName, rowData) {
       embed = buildIcEntryEmbed(rowData);
     } else if (sheetName === 'Comments') {
       embed = buildCommentEmbed(rowData);
+    } else if (ARTICLE_SHEETS.includes(sheetName)) {
+      embed = buildArticleEmbed(sheetName, rowData);
     } else {
       return;
     }
