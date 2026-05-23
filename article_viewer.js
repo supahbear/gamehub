@@ -437,6 +437,15 @@ class ArticleViewer {
 
     if (content) this._fillArticleContent(article, content, 0);
 
+    // Update URL hash so the link can be shared / restored
+    if (this.hub && !this.hub._suppressHashWrite) {
+      const worldId   = this.hub.currentWorld?.id || 'breach';
+      const cat       = article._category || '';
+      const panelName = cat === 'Technology' ? 'society' : cat.toLowerCase();
+      const slug      = this.hub._slugify(article.name || '');
+      if (panelName && slug) this.hub._setHash(`${worldId}/${panelName}/${slug}`);
+    }
+
     Config.log('Article modal opened:', article.name);
   }
 

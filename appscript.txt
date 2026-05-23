@@ -464,7 +464,7 @@ function buildArticleEmbed(sheetName, rowData) {
   const teaser  = summary.length > 200 ? summary.slice(0, 197) + '…' : summary;
   // Technology articles live in the Society panel on the frontend
   const panelName = sheetName === 'Technology' ? 'society' : sheetName.toLowerCase();
-  const url = NEXUS_BASE_URL + '#breach/' + panelName;
+  const url = NEXUS_BASE_URL + '#breach/' + panelName + (name ? '/' + slugify(name) : '');
 
   return {
     title: name || 'New ' + sheetName + ' Entry',

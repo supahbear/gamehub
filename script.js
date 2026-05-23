@@ -392,6 +392,8 @@ class TTRPGHub {
       this._activeArticleViewer._arrowKeyHandler = null;
     }
     if (this.atlasViewer) this.atlasViewer._lightboxOpen = false;
+    // Revert hash to panel level
+    if (this.currentSelectedPanel) this._setHash(`${this.currentWorld?.id}/${this.currentSelectedPanel}`);
   }
 
   // ── Journal modal (Campaign Log + Leads tabs) ─────────────────
@@ -2417,10 +2419,19 @@ class TTRPGHub {
         }
       } else {
         await this.selectPanel(section);
+        if (parts[2]) await this._openArticleBySlug(section, parts[2]);
       }
     } finally {
       this._suppressHashWrite = false;
     }
+  }
+
+  async _openArticleBySlug(panelName, slug) {
+    const viewer = this[`_viewer_${panelName}`];
+    if (!viewer) return;
+    const article = viewer.currentArticles.find(a => this._slugify(a.name || '') === slug);
+    if (!article) return;
+    viewer.openArticle(article._uid, article._category);
   }
 
   async _expandRecapBySlug(slug, char) {
