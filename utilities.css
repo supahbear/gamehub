@@ -48,6 +48,35 @@
     font-size: 16px;
 }
 
+/* ========== PANEL SKELETON LOADER ========== */
+.panel-skeleton {
+    display: grid;
+    grid-template-columns: repeat(6, 200px);
+    gap: 12px;
+    padding: 0 80px;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.skeleton-card {
+    width: 200px;
+    height: 370px;
+    border-radius: 12px;
+    background: linear-gradient(
+        90deg,
+        rgba(177, 156, 217, 0.06) 0%,
+        rgba(177, 156, 217, 0.14) 40%,
+        rgba(177, 156, 217, 0.06) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 .explore-submode-content .error {
     text-align: center;
     padding: 40px 20px;

@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&display=swap');
+/* breach-theme.css: Cinzel is already loaded by base.css — no second import needed */
 
 body.world-breach {
     /* Breach Theme Variables - UPDATED to Purple */
     --primary-bg: linear-gradient(135deg, #1a0f1e, #2c2038, #3d3456, #4a3f5c);
+    /* Fallback background for browsers that don't support :has() (e.g. older Safari) */
+    background: linear-gradient(160deg, #0d0a12 0%, #1a1028 40%, #0f0c18 100%);
     --secondary-bg: rgba(177, 156, 217, 0.12);
     --card-bg: rgba(201, 181, 230, 0.08);
     --text-color: #fff8f0;
@@ -11,7 +13,7 @@ body.world-breach {
     --border-color: rgba(177, 156, 217, 0.3);
     --button-bg: rgba(177, 156, 217, 0.13);
     --button-hover: rgba(201, 181, 230, 0.18);
-    --font-family: 'Cinzel', serif;
+    --font-family: var(--font-ui);
     --font-weight-normal: 400;
     --font-weight-bold: 600;
     --font-weight-heavy: 900;
@@ -33,21 +35,22 @@ body.world-breach {
     --modal-bg: #1a0f1e;
     --modal-border: #b19cd9;
     --modal-overlay: rgba(26, 15, 30, 0.85);
-
-    /* Tour System Purple Colors */
-    --tour-accent: #b19cd9;
-    --tour-bg: rgba(26, 15, 30, 0.97);
-    --tour-card-bg: rgba(177, 156, 217, 0.07);
-    --tour-nav-bg: #b19cd9;
-    --tour-nav-text: #1a0f1e;
-    --tour-dot-inactive: rgba(177, 156, 217, 0.2);
-    --tour-slide-bg: #1a0f1e;
 }
 
 /* Remove blurred image background layer */
 body.world-breach::before {
     /* ...remove image background... */
     content: none;
+}
+
+/* Landing page heading - Fjalla One matches world card title */
+.landing-screen h2 {
+    font-family: 'Fjalla One', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 2.5rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9) !important;
 }
 
 /* Breach-specific styling */
@@ -60,7 +63,7 @@ body.world-breach h1 {
 }
 
 body.world-breach h2 {
-    font-family: 'Cinzel', serif;
+    font-family: var(--font-ui);
     color: #b19cd9;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -71,24 +74,6 @@ body.world-breach .world-card:hover {
     box-shadow: 0 10px 25px rgba(177, 156, 217, 0.3);
 }
 
-body.world-breach .play-btn:hover {
-    border-color: #6b8e23;
-    box-shadow: 0 4px 12px rgba(107, 142, 35, 0.2);
-}
-
-body.world-breach .read-btn:hover {
-    border-color: #a0522d;
-    box-shadow: 0 4px 12px rgba(160, 82, 45, 0.2);
-}
-
-body.world-breach .build-btn:hover {
-    border-color: #8b6f4a;
-    box-shadow: 0 4px 12px rgba(139, 111, 74, 0.2);
-}
-
-body.world-breach .mode-btn:hover {
-    box-shadow: 0 4px 12px rgba(191, 167, 122, 0.2);
-}
 
 /* Remove lower gradient for Breach article cards */
 body.world-breach .article-card .card-overlay {
@@ -97,103 +82,9 @@ body.world-breach .article-card .card-overlay {
 
 /* Light text for better readability */
 body.world-breach .article-card .card-title,
-body.world-breach .article-card .card-tag,
 body.world-breach .article-card .card-summary {
     color: #ffffff !important; /* Changed from #fff8f0 to pure white */
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9) !important; /* Darker shadow, no color tint */
-}
-
-/* Compact header: title and tag on same line */
-body.world-breach .article-card .card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-}
-
-/* Top bar layout for tag above category, right aligned */
-body.world-breach .article-card .card-top-bar {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    left: auto;
-    display: flex;
-    flex-direction: column; /* Category above tag */
-    gap: 3px;
-    z-index: 3;
-    align-items: flex-end;
-    justify-content: flex-start;
-}
-
-/* Category badge - right aligned, no extra margin */
-body.world-breach .article-card .card-category-badge {
-    font-size: 0.68rem !important;
-    padding: 1px 6px !important;
-    border-radius: 8px !important;
-    background: rgba(231, 215, 177, 0.9);
-    color: #8b6f4a;
-    border: 1px solid #bfa77a;
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
-    margin: 0 !important;
-    box-shadow: none;
-    text-align: right;
-}
-
-/* Tag badge - right aligned, no margin-left */
-body.world-breach .article-card .card-tag {
-    font-size: 0.68rem !important;
-    padding: 1px 6px !important;
-    border-radius: 8px !important;
-    background: #bfa77a;
-    color: #4a2c2a !important;
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
-    text-transform: capitalize;
-    margin: 0 !important;
-    box-shadow: none;
-    text-align: right;
-    position: relative;
-    top: -3px; /* Raise tag badge by 3px */
-}
-
-/* Breach theme: override badge positioning for new bottom layout */
-body.world-breach .article-card .card-category-badge,
-body.world-breach .article-card .card-tag {
-    position: static !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
-    margin: 0 !important;
-}
-
-/* Remove the old top-3px offset for tags */
-body.world-breach .article-card .card-tag {
-    /* Keep Breach styling but with purple colors */
-    font-size: 0.68rem !important;
-    padding: 1px 6px !important;
-    border-radius: 8px !important;
-    background: rgba(201, 181, 230, 0.9); /* Purple background */
-    color: #2c2c3e !important; /* Dark contrasting text */
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
-    text-transform: capitalize;
-    box-shadow: none;
-    text-align: center;
-    border: none;
-}
-
-body.world-breach .article-card .card-category-badge {
-    font-size: 0.68rem !important;
-    padding: 1px 6px !important;
-    border-radius: 8px !important;
-    background: rgba(177, 156, 217, 0.9); /* Darker purple background */
-    color: #2c2c3e; /* Dark contrasting text */
-    border: none;
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
-    box-shadow: none;
-    text-align: center;
 }
 
 /* Reduce fantasy glows for article cards */
@@ -225,16 +116,6 @@ body.world-breach .article-card:not(.tag-operator):not(.tag-handler):not(.tag-br
     box-shadow: 0 0 8px var(--card-glow-default), 0 4px 12px rgba(191, 167, 122, 0.12);
 }
 
-body.world-breach .card-background-placeholder {
-    background: linear-gradient(135deg, #3d3456, #2c2038);
-}
-
-body.world-breach .card-category-badge {
-    background: rgba(177, 156, 217, 0.9);
-    color: #2c2c3e;
-    border: none;
-}
-
 body.world-breach .clear-btn {
     background: rgba(177, 156, 217, 0.25) !important;
     color: #e8e8e8 !important;
@@ -247,71 +128,11 @@ body.world-breach .clear-btn:hover {
     color: #ffffff !important;
 }
 
-body.world-breach .current-mode {
-    background: #b19cd9;
-    color: #1a0f1e;
-}
-
-/* Typography overrides for fantasy feel */
+/* Typography overrides */
 body.world-breach h2,
 body.world-breach h3,
 body.world-breach h4 {
-    font-family: 'Cinzel', serif;
-    color: #8b6f4a;
-}
-
-body.world-breach .card-title {
-    font-family: 'Cinzel', serif;
-    color: #8b6f4a;
-}
-
-body.world-breach .card-tag {
-    font-family: 'Cinzel', serif;
-    text-transform: capitalize;
-    color: #bfa77a;
-}
-
-/* Dropdown option styling */
-body.world-breach .filter-group select option {
-    background: #e7d7b1;
-    color: #4a2c2a;
-    padding: 8px;
-}
-
-/* Modal styling */
-body.world-breach .modal-body::-webkit-scrollbar-thumb {
-    background: #bfa77a;
-}
-
-body.world-breach .modal-body::-webkit-scrollbar-track {
-    background: #e7d7b1;
-}
-
-body.world-breach .modal-header {
-    background: rgba(191, 167, 122, 0.2);
-    border-bottom: 2px solid #bfa77a;
-}
-
-body.world-breach .modal-header h2 {
-    color: #8b6f4a;
-    font-family: 'Cinzel', serif;
-    text-shadow: 1px 1px 2px rgba(139, 111, 74, 0.2);
-}
-
-body.world-breach .close-btn:hover {
-    color: #8b6f4a;
-}
-
-body.world-breach .modal-body h1, 
-body.world-breach .modal-body h2, 
-body.world-breach .modal-body h3 {
-    color: #8b6f4a;
-    font-family: 'Cinzel', serif;
-    text-shadow: 1px 1px 2px rgba(139, 111, 74, 0.2);
-}
-
-body.world-breach .modal-body p {
-    color: #4a2c2a;
+    font-family: var(--font-ui);
 }
 
 /* ========== ARTICLE MODAL OVERRIDES ========== */
@@ -324,7 +145,7 @@ body.world-breach .modal-body p {
 
 body.world-breach .article-modal .modal-header h2 {
     color: #b19cd9 !important;
-    font-family: 'Cinzel', serif !important;
+    font-family: var(--font-ui) !important;
     font-weight: 900 !important;
     text-shadow: 0 0 20px rgba(177, 156, 217, 0.8), /* Strong purple glow */
                  0 0 40px rgba(177, 156, 217, 0.4), /* Extended glow */
@@ -335,7 +156,7 @@ body.world-breach .article-modal .modal-body {
     color: #ffffff !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
-    font-family: 'Faculty Glyphic', 'Cinzel', serif !important; /* Use Faculty Glyphic for body text */
+    font-family: var(--font-body) !important; /* Use Faculty Glyphic for body text */
 }
 
 body.world-breach .article-modal .modal-body::-webkit-scrollbar {
@@ -347,11 +168,12 @@ body.world-breach .article-modal .modal-body h1,
 body.world-breach .article-modal .modal-body h2,
 body.world-breach .article-modal .modal-body h3 {
     color: #b19cd9 !important;
+    letter-spacing: normal !important;
 }
 
 body.world-breach .article-modal .modal-body p {
     color: #ffffff !important;
-    font-family: 'Faculty Glyphic', 'Cinzel', serif !important; /* Use Faculty Glyphic for paragraphs */
+    font-family: var(--font-body) !important; /* Use Faculty Glyphic for paragraphs */
 }
 
 body.world-breach .article-modal .article-modal-summary {
@@ -359,7 +181,7 @@ body.world-breach .article-modal .article-modal-summary {
     background: rgba(177, 156, 217, 0.08) !important;
     border-left: 3px solid #b19cd9 !important;
     font-style: normal !important;
-    font-family: 'Faculty Glyphic', 'Cinzel', serif !important; /* Use Faculty Glyphic for summary */
+    font-family: var(--font-body) !important; /* Use Faculty Glyphic for summary */
 }
 
 /* Breach: remove borders on article preview cards only in this theme */
@@ -379,7 +201,7 @@ body.world-breach .logo {
 /* ========== QUEST SYSTEM OVERRIDES ========== */
 body.world-breach .quest-detail-title {
   color: #b19cd9 !important;
-  font-family: 'Cinzel', serif !important;
+  font-family: var(--font-ui) !important;
   font-weight: 900 !important;
   text-shadow: 0 0 20px rgba(177, 156, 217, 0.6) !important;
   background: none !important;
@@ -389,7 +211,7 @@ body.world-breach .quest-detail-title {
 }
 
 body.world-breach .quest-detail-tag {
-  font-family: 'Cinzel', serif !important;
+  font-family: var(--font-ui) !important;
   color: #c9b5e6 !important;
   background: rgba(201, 181, 230, 0.25) !important;
   border: 1px solid rgba(201, 181, 230, 0.4) !important;

@@ -9,7 +9,7 @@ class TourViewer {
 
     // Bind the handleKeydown method to the instance
     this.handleKeydown = this.handleKeydown.bind(this);
-    this._keydownAttached = false; // NEW: prevent duplicate attachment
+    this._keydownAttached = false;
   }
 
   async loadTourData(worldId) {
@@ -146,7 +146,7 @@ class TourViewer {
 
   async startTour(tourId) {
     try {
-        // NEW: show only overlay + tiny loading box (no modal yet)
+        // Show only overlay + tiny loading box (no modal yet)
         this.showTourLoadingOverlay();
 
         // Load slides in background
@@ -169,7 +169,7 @@ class TourViewer {
     }
   }
 
-  // NEW: show overlay + centered loading box, keep modal hidden
+  // Show overlay + centered loading box, keep modal hidden
   showTourLoadingOverlay() {
     const overlay = document.getElementById('tourModalOverlay');
     const modal = document.getElementById('tourModal');
@@ -215,11 +215,6 @@ class TourViewer {
     const loadingBox = document.getElementById('tourLoadingBox');
     const tourModal = document.getElementById('tourModal');
     const tourModalOverlay = document.getElementById('tourModalOverlay');
-
-    // Remove this broken title update - you don't have tourModalTitle element anymore
-    // if (tourModalTitle) {
-    //     tourModalTitle.textContent = this.activeTour.title;
-    // }
 
     if (tourSlideContainer) {
         tourSlideContainer.innerHTML = this.renderAllModalSlides();
@@ -326,7 +321,7 @@ class TourViewer {
     }
   }
 
-  // ADD THIS: Markdown conversion utility
+  // Markdown conversion utility
   markdownToHtml(markdown) {
     if (!markdown) return 'No content available';
     
@@ -610,10 +605,8 @@ class TourViewer {
     this.slides = [];
     this.currentSlideIndex = 0;
     
-    // Remove inline overflow manipulation
     document.body.style.overflow = '';
 
-    // Return to explore mode instead of calling showWorldHub directly
     this.hub.currentMode = 'explore';
     this.hub.currentExploreSubmode = 'tours';
     this.hub.showWorldHub();
