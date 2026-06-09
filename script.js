@@ -1323,7 +1323,7 @@ class TTRPGHub {
             <div class="recap-margins-form">
               <textarea class="margin-input-text" placeholder="Leave a note…" rows="2"></textarea>
               <div class="margin-form-row">
-                <input class="margin-input-author" type="text" placeholder="— your name" maxlength="80" />
+                <input class="margin-input-author" type="text" placeholder="— your name" maxlength="150" />
                 <button class="margin-submit-btn" data-index="${i}" data-char="${c}">Add Note</button>
               </div>
             </div>
