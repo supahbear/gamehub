@@ -264,35 +264,6 @@
         display: block !important;
     }
 
-    /* Nav always visible at the bottom — never scrolled away */
-    .article-nav-mount {
-        flex-shrink: 0;
-    }
-
-    .article-navigation {
-        margin-top: 0;
-        padding: 6px 0;
-    }
-
-    /* Dots: scrollable single row — active dot is scrolled into center */
-    .article-dots {
-        flex-wrap: nowrap !important;
-        min-width: 0;
-        flex-shrink: 1;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .article-dots::-webkit-scrollbar { display: none; }
-
-    .article-dot {
-        flex-shrink: 0;
-        width: 7px !important;
-        height: 7px !important;
-    }
-
     /* Article modal: two columns collapse to single column */
     .article-modal-columns {
         grid-template-columns: 1fr;

@@ -698,14 +698,30 @@ body.modal-active main {
     flex-shrink: 0;
 }
 
-/* Article pages container */
+/* Article pages container — scrolls independently within text column */
 .article-pages-container {
-    position: relative;
     flex: 1;
     width: 100%;
     min-width: 0;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: scroll;       /* always reserve gutter — prevents layout jitter */
+    scrollbar-gutter: stable; /* belt-and-suspenders for non-webkit browsers */
+    padding-right: 8px;
+    box-sizing: border-box;
+}
+
+.article-pages-container::-webkit-scrollbar {
+    width: 4px;
+}
+.article-pages-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.article-pages-container::-webkit-scrollbar-thumb {
+    background: rgba(177, 156, 217, 0.35);
+    border-radius: 2px;
+}
+.article-pages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(177, 156, 217, 0.6);
 }
 
 /* ========== ARTICLE META (Type / Effect fields) ========== */
@@ -747,25 +763,9 @@ body.modal-active main {
     margin: 6px 40px 12px 0;
 }
 
+/* .article-page — kept for any legacy references but no longer used for pagination */
 .article-page {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
-    padding: 0 40px 0 0;
-    box-sizing: border-box;
-}
-
-.article-page.active {
-    opacity: 1;
-    pointer-events: auto;
-    position: relative;
-    min-width: 100%;
 }
 
 /* NEW: Article navigation (similar to tour navigation) */
@@ -824,17 +824,13 @@ body.modal-active main {
     border-radius: 50%;
     background: rgba(177, 156, 217, 0.3);
     border: none;
-    cursor: pointer;
+    cursor: default;
     transition: all 0.3s ease;
 }
 
 .article-dot.active {
     background: #b19cd9;
     transform: scale(1.2);
-}
-
-.article-dot:hover {
-    background: rgba(177, 156, 217, 0.6);
 }
 
 @media (max-width: 900px) {

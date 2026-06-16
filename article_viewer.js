@@ -482,7 +482,7 @@ class ArticleViewer {
       </div>
       <hr class="article-modal-meta-divider">` : '';
 
-    // ── Phase 1: render the shell so the text column is in the DOM ──────────
+    // Render the two-column shell with content injected directly — no pagination
     bodyEl.innerHTML = `
       <div class="article-modal-columns">
         <div class="article-modal-image-col">
@@ -491,33 +491,12 @@ class ArticleViewer {
         <div class="article-modal-text-col">
           <h1 class="article-modal-title">${article.name}</h1>
           ${metaHtml}
-          <div class="article-pages-container"></div>
+          <div class="article-pages-container">${htmlContent}</div>
         </div>
       </div>
-      <div class="article-nav-mount"></div>
     `;
 
-    // ── Phase 2: measure in the real text column, build pages ───────────────
-    const pagesContainer = bodyEl.querySelector('.article-pages-container');
-    const navMount       = bodyEl.querySelector('.article-nav-mount');
-
-    // Pre-render a nav placeholder BEFORE measuring so that its height is
-    // already subtracted from pagesCtr.clientHeight when paginateContent runs.
-    if (navMount) {
-      navMount.innerHTML = this.renderArticleNavigation(2);
-    }
-
-    const pages = this.paginateContent(htmlContent, pagesContainer);
-    if (pagesContainer) {
-      pagesContainer.innerHTML = this.renderArticlePages(pages);
-    }
-    if (navMount) {
-      navMount.innerHTML = pages.length > 1 ? this.renderArticleNavigation(pages.length) : '';
-    }
     let arrowHandler = null;
-    if (pages.length > 1) {
-      arrowHandler = this.setupArticlePagination(pages.length, bodyEl, arrowDepth);
-    }
 
     const imageUrls = this.parseImageUrls(article.image_url);
     if (imageUrls.length > 1) {
@@ -631,15 +610,27 @@ class ArticleViewer {
 
   // Render navigation controls
   renderArticleNavigation(totalPages) {
-    const dots = Array.from({ length: totalPages }, (_, i) => 
-      `<button class="article-dot ${i === 0 ? 'active' : ''}" data-page="${i}"></button>`
-    ).join('');
-    
+    let dots;
+    if (totalPages === 2) {
+      // 2 dots: first / last
+      dots = [
+        `<span class="article-dot active" data-indicator="first"></span>`,
+        `<span class="article-dot" data-indicator="last"></span>`,
+      ].join('');
+    } else {
+      // 3 dots: first / middle / last  (used for 3+ pages and the pre-render placeholder)
+      dots = [
+        `<span class="article-dot active" data-indicator="first"></span>`,
+        `<span class="article-dot" data-indicator="middle"></span>`,
+        `<span class="article-dot" data-indicator="last"></span>`,
+      ].join('');
+    }
+
     return `
       <div class="article-navigation">
         <button class="article-nav-btn article-prev" disabled>‹</button>
         <div class="article-dots">${dots}</div>
-        <button class="article-nav-btn article-next" ${totalPages <= 1 ? 'disabled' : ''}>›</button>
+        <button class="article-nav-btn article-next">›</button>
       </div>
     `;
   }
@@ -653,12 +644,17 @@ class ArticleViewer {
       const pages = containerEl.querySelectorAll('.article-page');
       const dots  = containerEl.querySelectorAll('.article-dot');
       pages[currentPage]?.classList.remove('active');
-      dots[currentPage]?.classList.remove('active');
       currentPage = newPage;
       pages[currentPage]?.classList.add('active');
-      dots[currentPage]?.classList.add('active');
-      // Scroll active dot into view (handles overflow on mobile)
-      dots[currentPage]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      // Map current page to indicator dot
+      dots.forEach(d => d.classList.remove('active'));
+      if (currentPage === 0) {
+        dots[0]?.classList.add('active');
+      } else if (currentPage === totalPages - 1) {
+        dots[dots.length - 1]?.classList.add('active');
+      } else {
+        dots[1]?.classList.add('active');
+      }
       // Reset page scroll to top on each page change
       containerEl.querySelector('.article-pages-container')?.scrollTo({ top: 0 });
       const prevBtn = containerEl.querySelector('.article-prev');
@@ -669,9 +665,7 @@ class ArticleViewer {
 
     containerEl.querySelector('.article-prev')?.addEventListener('click', () => updatePage(currentPage - 1));
     containerEl.querySelector('.article-next')?.addEventListener('click', () => updatePage(currentPage + 1));
-    containerEl.querySelectorAll('.article-dot').forEach(dot => {
-      dot.addEventListener('click', (e) => updatePage(parseInt(e.target.dataset.page)));
-    });
+    // Dots are indicators only — no click navigation
 
     // Arrow key navigation — only fires for the currently active stack depth
     const arrowKeyHandler = (e) => {
