@@ -216,11 +216,10 @@
     }
 
     /* Article modal: image + text scroll as one unified flow on mobile.
-       Modal body scrolls; columns/text-col size to content; pages-container is flat. */
+       Body is a block scroll container; columns size to natural content height. */
     .article-modal .modal-body {
-        overflow-y: auto;
-        display: flex !important;
-        flex-direction: column !important;
+        overflow-y: auto !important;
+        display: block !important;
         -webkit-overflow-scrolling: touch;
     }
 
