@@ -372,7 +372,7 @@ const ARTICLE_SHEETS = [
 ];
 
 // Character columns on the Recaps sheet that hold IC journal entries
-const RECAP_CHARACTER_COLUMNS = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
+const RECAP_CHARACTER_COLUMNS = ['ash', 'missy', 'salwyck', 'toby', 'zilrion', 'guest'];
 
 function toTitleCase(str) {
   return String(str || '').replace(/(?<!')\b\w/g, c => c.toUpperCase());
@@ -410,10 +410,22 @@ function buildRecapEmbed(rowData) {
 
 // Builds an embed for an IC journal entry posted under a recap
 function buildIcEntryEmbed(rowData) {
-  const character  = toTitleCase(rowData.character) || 'Someone';
+  let character  = toTitleCase(rowData.character) || 'Someone';
   const charSlug   = String(rowData.character || '').toLowerCase().trim();
   const recapTitle = String(rowData.recap_title || '').trim();
-  const entry      = String(rowData.entry || '').trim();
+  let entry        = String(rowData.entry || '').trim();
+
+  // Parse #Name prefix from guest entries (e.g. "#Pike I can't believe...")
+  if (rowData.character === 'guest') {
+    const m = entry.match(/^#(\S+)\s*/);
+    if (m) {
+      character = m[1];
+      entry     = entry.slice(m[0].length).trim();
+    } else {
+      character = 'Guest';
+    }
+  }
+
   const teaser     = entry.length > 200 ? entry.slice(0, 197) + '…' : entry;
   const teaserLine = teaser ? `\n> *"${teaser}"*` : '';
   const url        = NEXUS_BASE_URL + '#breach/journal/recap/' + slugify(recapTitle) + (charSlug ? '/' + charSlug : '');

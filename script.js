@@ -1288,7 +1288,13 @@ class TTRPGHub {
 
   renderRecapsList(entries, commentsMap = {}) {
     const WORD_LIMIT  = 60;
-    const CHARACTERS  = ['ash', 'missy', 'salwyck', 'toby', 'zilrion'];
+    const CHARACTERS  = ['ash', 'missy', 'salwyck', 'toby', 'zilrion', 'guest'];
+    // Parses #Name prefix from a guest entry — returns { label, text }
+    // e.g. "#Pike I can't believe what happened!" → { label: 'Pike', text: "I can't believe..." }
+    const parseGuest = raw => {
+      const m = raw.match(/^#(\S+)\s*/);
+      return m ? { label: m[1], text: raw.slice(m[0].length).trim() } : { label: 'Guest', text: raw };
+    };
     if (!entries || entries.length === 0) {
       return '<div class="recaps-empty">No entries found in the Campaign Log.</div>';
     }
@@ -1306,11 +1312,20 @@ class TTRPGHub {
       const tabBar = `
         <div class="recap-char-tabs">
           <button class="recap-char-tab active" data-char="recap">Summary</button>
-          ${CHARACTERS.map(c => `<button class="recap-char-tab" data-char="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('')}
+          ${CHARACTERS.map(c => {
+            if (c === 'guest') {
+              const raw = (entry.guest || '').trim();
+              if (!raw) return '';
+              const { label } = parseGuest(raw);
+              return `<button class="recap-char-tab" data-char="guest">${this._esc(label)}</button>`;
+            }
+            return `<button class="recap-char-tab" data-char="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`;
+          }).join('')}
         </div>`;
 
       const charPanels = CHARACTERS.map(c => {
-        const text = (entry[c] || '').trim();
+        const rawText = (entry[c] || '').trim();
+        const text = c === 'guest' ? parseGuest(rawText).text : rawText;
         const charComments = (commentsMap[title]?.[c] || []);
         const marginsNotes = charComments.map(cm => `
           <div class="margin-note">
@@ -1350,6 +1365,7 @@ class TTRPGHub {
               <p class="recap-preview">${preview}</p>
               ${isTruncated ? `<p class="recap-full" hidden>${content}</p>` : ''}
               ${isTruncated ? `<button class="recap-read-more">Read More</button>` : ''}
+              ${!(entry.guest || '').trim() ? `<button class="recap-guest-add-btn" data-index="${i}">+ Guest entry</button>` : ''}
             </div>
             ${charPanels}
           </div>
@@ -1394,6 +1410,95 @@ class TTRPGHub {
         form.reset();
         const btn = body.querySelector('.new-chapter-btn');
         if (btn) btn.textContent = '+ New Chapter';
+        return;
+      }
+
+      // ── Guest entry: open ──────────────────────────────────────
+      const guestAddBtn = e.target.closest('.recap-guest-add-btn');
+      if (guestAddBtn) {
+        const recapPanel = guestAddBtn.closest('.recap-panel');
+        if (recapPanel.querySelector('.recap-guest-editor')) return;
+        guestAddBtn.hidden = true;
+        const index = parseInt(guestAddBtn.dataset.index, 10);
+        const editor = document.createElement('div');
+        editor.className = 'recap-guest-editor';
+        editor.dataset.index = index;
+        editor.innerHTML = `
+          <input class="recap-guest-name" type="text" placeholder="Character name (e.g. Pike)" maxlength="60" />
+          <textarea class="recap-char-textarea" rows="5" placeholder="Write your journal entry here…"></textarea>
+          <div class="recap-char-editor-actions">
+            <button class="recap-guest-save-btn">Save</button>
+            <button class="recap-guest-cancel-btn">Cancel</button>
+            <span class="recap-save-error" hidden></span>
+          </div>`;
+        recapPanel.appendChild(editor);
+        editor.querySelector('.recap-guest-name').focus();
+        return;
+      }
+
+      // ── Guest entry: cancel ────────────────────────────────────
+      const guestCancelBtn = e.target.closest('.recap-guest-cancel-btn');
+      if (guestCancelBtn) {
+        const recapPanel = guestCancelBtn.closest('.recap-panel');
+        recapPanel.querySelector('.recap-guest-editor')?.remove();
+        const addBtn = recapPanel.querySelector('.recap-guest-add-btn');
+        if (addBtn) addBtn.hidden = false;
+        return;
+      }
+
+      // ── Guest entry: save ──────────────────────────────────────
+      const guestSaveBtn = e.target.closest('.recap-guest-save-btn');
+      if (guestSaveBtn) {
+        const editor     = guestSaveBtn.closest('.recap-guest-editor');
+        const nameInput  = editor.querySelector('.recap-guest-name');
+        const textarea   = editor.querySelector('textarea');
+        const errEl      = editor.querySelector('.recap-save-error');
+        const index      = parseInt(editor.dataset.index, 10);
+        const guestName  = nameInput.value.trim();
+        const entryText  = textarea.value.trim();
+        if (!guestName) { errEl.textContent = 'Character name is required.'; errEl.hidden = false; nameInput.focus(); return; }
+        if (!entryText) { textarea.focus(); return; }
+        // Assemble stored value: "#Name entry text"
+        const newText = `#${guestName} ${entryText}`;
+        guestSaveBtn.textContent = 'Saving…';
+        guestSaveBtn.disabled = true;
+        const result = await this._saveRecapCharEntry(index, 'guest', newText);
+        if (result?.success) {
+          // Re-render the whole panel so the guest tab appears with the right name
+          const panel = body.closest('#journalTabCampaignLog');
+          if (panel) {
+            delete panel.dataset.loaded;
+            panel.innerHTML = '<div class="recaps-loading">Loading…</div>';
+            try {
+              delete this._sheetCache[Config.SHEETS.RECAPS];
+              delete this._sheetCache[Config.SHEETS.COMMENTS];
+              const [entries, commentRows] = await Promise.all([
+                this.loadSheets([Config.SHEETS.RECAPS]),
+                this.loadSheets([Config.SHEETS.COMMENTS]).catch(() => [])
+              ]);
+              const commentsMap = {};
+              for (const c of commentRows) {
+                const t  = (c.recap_title || '').trim();
+                const ch = (c.character   || '').trim().toLowerCase();
+                if (!commentsMap[t])     commentsMap[t] = {};
+                if (!commentsMap[t][ch]) commentsMap[t][ch] = [];
+                commentsMap[t][ch].push(c);
+              }
+              panel.innerHTML = this.renderRecapsList(entries, commentsMap);
+              panel.dataset.loaded = 'true';
+              if (this._recapsAbortController) this._recapsAbortController.abort();
+              this._recapsAbortController = new AbortController();
+              this._setupRecapsInteractions(panel, this._recapsAbortController.signal);
+            } catch (err) {
+              panel.innerHTML = '<div class="recaps-loading">Could not reload.</div>';
+            }
+          }
+        } else {
+          guestSaveBtn.textContent = 'Save';
+          guestSaveBtn.disabled = false;
+          errEl.textContent = 'Save failed. Try again.';
+          errEl.hidden = false;
+        }
         return;
       }
 
