@@ -467,10 +467,16 @@ class ArticleViewer {
     const leaderField   = _getField(article, 'leader');
     const hqField       = _getField(article, 'hq');
     const dateField     = _getField(article, 'date');
-    const metaHtml = (typeField || effectField || habitatField || sizeField || homelandField || lifespanField || authorField || leaderField || hqField || dateField) ? `
+    const speciesField  = _getField(article, 'species');
+    const ageField      = _getField(article, 'age');
+    const classField    = _getField(article, 'class');
+    const metaHtml = (typeField || effectField || habitatField || sizeField || homelandField || lifespanField || authorField || leaderField || hqField || dateField || speciesField || ageField || classField) ? `
       <div class="article-modal-meta">
         ${dateField     ? `<div class="article-meta-item"><span class="article-meta-label">Date</span><span class="article-meta-value">${dateField}</span></div>` : ''}
         ${typeField     ? `<div class="article-meta-item"><span class="article-meta-label">Type</span><span class="article-meta-value">${typeField}</span></div>` : ''}
+        ${speciesField  ? `<div class="article-meta-item"><span class="article-meta-label">Species</span><span class="article-meta-value">${speciesField}</span></div>` : ''}
+        ${classField    ? `<div class="article-meta-item"><span class="article-meta-label">Class</span><span class="article-meta-value">${classField}</span></div>` : ''}
+        ${ageField      ? `<div class="article-meta-item"><span class="article-meta-label">Age</span><span class="article-meta-value">${ageField}</span></div>` : ''}
         ${authorField   ? `<div class="article-meta-item"><span class="article-meta-label">Author</span><span class="article-meta-value">${authorField}</span></div>` : ''}
         ${leaderField   ? `<div class="article-meta-item"><span class="article-meta-label">Leader</span><span class="article-meta-value">${leaderField}</span></div>` : ''}
         ${hqField       ? `<div class="article-meta-item"><span class="article-meta-label">HQ</span><span class="article-meta-value">${hqField}</span></div>` : ''}
