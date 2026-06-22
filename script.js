@@ -2188,8 +2188,9 @@ class TTRPGHub {
     const activePanelTitle = document.getElementById('hubActivePanelTitle');
     if (titleText)        titleText.style.display = 'none';
     if (panelNav)         panelNav.style.display = 'flex';
+    const PANEL_TITLES = { maincharacters: 'Main Characters' };
     if (activePanelTitle) activePanelTitle.textContent =
-      panelName.charAt(0).toUpperCase() + panelName.slice(1);
+      PANEL_TITLES[panelName] ?? (panelName.charAt(0).toUpperCase() + panelName.slice(1));
 
     const selection   = document.getElementById('hubSelection');
     const contentArea = document.getElementById('hubContentArea');
@@ -2213,19 +2214,20 @@ class TTRPGHub {
     }
 
     const idMap = {
-      nations:    'nationsContent',
-      species:    'speciesContent',
-      deities:    'deitiesContent',
-      history:    'historyContent',
-      literature: 'literatureContent',
-      society:    'societyContent',
-      characters: 'charactersContent',
-      factions:   'factionsContent',
-      bestiary:   'bestiaryContent',
-      items:      'itemsContent',
-      alchemy:    'alchemyContent',
-      locations:  'locationsContent',
-      calendar:   'calendarContent'
+      nations:          'nationsContent',
+      species:          'speciesContent',
+      deities:          'deitiesContent',
+      history:          'historyContent',
+      literature:       'literatureContent',
+      society:          'societyContent',
+      characters:       'charactersContent',
+      factions:         'factionsContent',
+      bestiary:         'bestiaryContent',
+      items:            'itemsContent',
+      alchemy:          'alchemyContent',
+      locations:        'locationsContent',
+      calendar:         'calendarContent',
+      maincharacters:   'maincharactersContent'
     };
     const contentEl = document.getElementById(idMap[panelName]);
     if (contentEl) {

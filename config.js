@@ -51,7 +51,7 @@ const Config = {
     Society:     ['type'],
     Technology:  ['type'],
     Calendar:    ['date'],
-    MC:          ['type', 'homeland'],
+    MC:          ['species', 'age', 'homeland', 'class'],
   },
 
   // Current in-world date — update this as the campaign advances
