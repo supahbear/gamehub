@@ -22,6 +22,8 @@ const Config = {
     ITEMS:       'Items',
     ALCHEMY:     'Alchemy',
     LOCATIONS:   'Locations',
+    // MAIN CHARACTERS group
+    MC:          'MC',
     // Utility sheets
     JOURNAL:     'Journal',
     CALENDAR:    'Calendar',
@@ -49,6 +51,7 @@ const Config = {
     Society:     ['type'],
     Technology:  ['type'],
     Calendar:    ['date'],
+    MC:          ['type', 'homeland'],
   },
 
   // Current in-world date — update this as the campaign advances

@@ -947,7 +947,7 @@ class ArticleViewer {
 
     panel.querySelector('.writer-close')
       ?.addEventListener('click', () => this.closeWriter());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) this.closeWriter(); });
+    // Overlay click is intentionally blocked — use ESC or the X button to close
     panel.querySelector('.writer-cancel-btn')
       ?.addEventListener('click', () => this.closeWriter());
     panel.querySelector('.writer-submit-btn')

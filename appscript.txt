@@ -22,7 +22,8 @@ const NEXUS_BASE_URL = 'https://btvnexus.netlify.app/';
 const ALLOWED_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
   'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'Calendar',
-  'Inventory', 'PartyFund', 'Settings', 'Recaps', 'Journal', 'Gallery', 'Comments'
+  'Inventory', 'PartyFund', 'Settings', 'Recaps', 'Journal', 'Gallery', 'Comments',
+  'MC'
 ];
 
 // ---------------------------------------------------------------------------
@@ -368,7 +369,7 @@ function readSheet(name, filterVisible) {
 // Article (lore/compendium) sheets that trigger a Discord notification when a new entry is written
 const ARTICLE_SHEETS = [
   'Nations', 'Species', 'Deities', 'History', 'Literature', 'Society', 'Technology',
-  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations',
+  'Characters', 'Factions', 'Bestiary', 'Items', 'Alchemy', 'Locations', 'MC',
 ];
 
 // Character columns on the Recaps sheet that hold IC journal entries
@@ -474,8 +475,9 @@ function buildArticleEmbed(sheetName, rowData) {
   const name    = String(rowData.name || '').trim();
   const summary = String(rowData.summary || '').trim();
   const teaser  = summary.length > 200 ? summary.slice(0, 197) + '…' : summary;
-  // Technology articles live in the Society panel on the frontend
-  const panelName = sheetName === 'Technology' ? 'society' : sheetName.toLowerCase();
+  // Map sheet names to their frontend panel routes where they differ
+  const SHEET_TO_PANEL = { Technology: 'society', MC: 'maincharacters' };
+  const panelName = SHEET_TO_PANEL[sheetName] ?? sheetName.toLowerCase();
   const url = NEXUS_BASE_URL + '#breach/' + panelName + (name ? '/' + slugify(name) : '');
 
   return {

@@ -11,19 +11,20 @@ class TTRPGHub {
     this.backgroundVideos = {};
 
     this._panelIdMap = {
-      nations:    'nationsContent',
-      species:    'speciesContent',
-      deities:    'deitiesContent',
-      history:    'historyContent',
-      literature: 'literatureContent',
-      society:    'societyContent',
-      characters: 'charactersContent',
-      factions:   'factionsContent',
-      bestiary:   'bestiaryContent',
-      items:      'itemsContent',
-      alchemy:    'alchemyContent',
-      locations:  'locationsContent',
-      calendar:   'calendarContent'
+      nations:          'nationsContent',
+      species:          'speciesContent',
+      deities:          'deitiesContent',
+      history:          'historyContent',
+      literature:       'literatureContent',
+      society:          'societyContent',
+      characters:       'charactersContent',
+      factions:         'factionsContent',
+      bestiary:         'bestiaryContent',
+      items:            'itemsContent',
+      alchemy:          'alchemyContent',
+      locations:        'locationsContent',
+      calendar:         'calendarContent',
+      maincharacters:   'maincharactersContent'
     };
 
     this.init();
@@ -2298,7 +2299,9 @@ class TTRPGHub {
     if (!contentEl || contentEl.dataset.loaded === 'true') return;
 
     // Sheet name matches panel name with capital first letter (Nations, Species, etc.)
-    const sheetName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
+    // Exceptions: 'society' loads two sheets; 'maincharacters' maps to the 'MC' tab
+    const sheetName = panelName === 'maincharacters' ? 'MC'
+      : panelName.charAt(0).toUpperCase() + panelName.slice(1);
     const sheetNames = panelName === 'society' ? ['Society', 'Technology'] : [sheetName];
     const viewerKey = `_viewer_${panelName}`;
 
